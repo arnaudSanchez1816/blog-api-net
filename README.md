@@ -1,5 +1,7 @@
 # Blog-API
 
+[![API Build status](https://github.com/arnaudSanchez1816/blog-api-spring/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/arnaudSanchez1816/blog-api-spring/actions/workflows/ci.yml)
+
 A blogging platform built with Spring and React.
 
 This is a reimplementation of the back-end API of my already existing [Node.js/Express version](https://github.com/arnaudSanchez1816/blog-api).
@@ -34,6 +36,12 @@ cp ./apps/cms/.env.example ./apps/cms/.env
 pnpm exec turbo dev
 ```
 
+## 📖 OpenAPI Documentation
+
+Swagger UI is available at: [http://localhost:3000/api/v1/swagger-ui.html](http://localhost:3000/api/v1/swagger-ui.html)
+
+API documentation (OAS 3.1) is accessible at: [http://localhost:3000/api/v1/api-docs](http://localhost:3000/api/v1/api-docs)
+
 ## Apps and Packages
 
 This monorepo includes the following packages/apps:
@@ -49,7 +57,7 @@ This monorepo includes the following packages/apps:
 - `@repo/tailwind-config`: `tailwindcss` configuration
 - `@repo/heroui-config`: [heroui](https://www.heroui.com/) UI library configuration
 
-## Endpoints
+## 📌 Endpoints
 
 | Endpoint            | Method | Description                                      |
 | ------------------- | ------ | ------------------------------------------------ |

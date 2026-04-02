@@ -1,4 +1,4 @@
-name: API CI CD pipeline
+name: API CI on master branch
 on:
   push:
     branches:
