@@ -13,6 +13,10 @@ This is a reimplementation of the back-end API of my already existing [Node.js/E
 - JWT-based authentication and role based authorization to ensure only authorized users can manage your blog.
 - Intuitive user interface for browsing, reading and filtering posts.
 
+## Screenshot of the React client
+
+<img width="1301" height="897" alt="client" src="https://github.com/user-attachments/assets/61548fef-0b2d-4d58-a28a-27c5d7c9fe66" />
+
 ## Installation
 
 ```sh
