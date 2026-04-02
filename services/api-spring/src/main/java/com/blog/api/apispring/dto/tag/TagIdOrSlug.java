@@ -2,10 +2,14 @@ package com.blog.api.apispring.dto.tag;
 
 import com.blog.api.apispring.utils.TagUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Tag identifier: either a numeric ID or a slug string", oneOf = {Long.class, String.class})
 public class TagIdOrSlug
 {
+	@Schema(name = "id", description = "Id of a tag", example = "1")
 	private final Long id;
+	@Schema(name = "slug", description = "Slug of a tag", example = "javascript")
 	private final String slug;
 
 	private TagIdOrSlug(Long id, String slug)

@@ -91,7 +91,9 @@ public class SecurityConfig
 					 .authenticated();
 			// Comments routes
 			// Authority check done with MethodSecutiry
-			authorize.requestMatchers("/comments/**")
+			authorize.requestMatchers(HttpMethod.GET, "/comments/*")
+					 .permitAll()
+					 .requestMatchers("/comments/**")
 					 .authenticated();
 			// Any
 			authorize.anyRequest()

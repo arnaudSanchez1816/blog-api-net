@@ -6,6 +6,8 @@ import com.blog.api.apispring.dto.tag.TagIdOrSlug;
 import com.blog.api.apispring.enums.PostSortBy;
 import com.blog.api.apispring.model.Post;
 import com.blog.api.apispring.specs.PostSpecs;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -77,6 +79,7 @@ public class GetUserPostsRequest implements GetPostsRequest
 		this.getPostsRequest.setTags(tags);
 	}
 
+	@Schema(hidden = true)
 	@Override
 	public boolean isUnpublished()
 	{

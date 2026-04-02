@@ -122,16 +122,6 @@ class CommentControllerTests
 											.exchange();
 			assertThat(response).hasStatus(HttpStatus.NOT_FOUND);
 		}
-
-		@Test
-		void getComment_Is401_WhenUnauthenticated()
-		{
-			MvcTestResult response = mockMvc.get()
-											.contentType(MediaType.APPLICATION_JSON)
-											.uri("/comments/" + 1L)
-											.exchange();
-			assertThat(response).hasStatus(HttpStatus.UNAUTHORIZED);
-		}
 	}
 
 	@Nested
