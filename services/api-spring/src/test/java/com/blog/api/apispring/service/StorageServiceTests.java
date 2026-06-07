@@ -1,7 +1,6 @@
 package com.blog.api.apispring.service;
 
 import com.blog.api.apispring.FlociS3TestConfig;
-import com.blog.api.apispring.PostgresTestConfig;
 import io.awspring.cloud.s3.S3Template;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Test;
