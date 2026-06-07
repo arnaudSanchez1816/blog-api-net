@@ -45,9 +45,21 @@
     </profiles>
     <properties>
         <java.version>25</java.version>
+        <spring.cloud.version>4.0.2</spring.cloud.version>
         <docker.image.name.notags>com.blog.${project.artifactId}</docker.image.name.notags>
         <docker.image.name.versioned>${docker.image.name.notags}:${project.version}</docker.image.name.versioned>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.awspring.cloud</groupId>
+                <artifactId>spring-cloud-aws-dependencies</artifactId>
+                <version>${spring.cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -177,6 +189,14 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>3.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.awspring.cloud</groupId>
+            <artifactId>spring-cloud-aws-starter-s3</artifactId>
         </dependency>
     </dependencies>
 

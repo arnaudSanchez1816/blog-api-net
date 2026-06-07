@@ -34,6 +34,17 @@
       "name": "blog-api.security.cors-allowed-urls",
       "type": "java.lang.String",
       "description": "Seeding admin user password."
+    },
+    {
+      "name": "blog-api.aws.s3.bucket-name",
+      "type": "java.lang.String",
+      "description": "Name of AWS S3 bucket used to store post images."
+    },
+    {
+      "name": "blog-api.aws.s3.verify-bucket-on-startup",
+      "type": "java.lang.Boolean",
+      "description": "Whether to verify at startup that the configured S3 bucket exists, failing fast if it does not.",
+      "defaultValue": true
     }
   ]
 }
