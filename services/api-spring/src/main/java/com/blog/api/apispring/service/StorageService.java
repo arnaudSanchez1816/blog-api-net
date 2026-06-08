@@ -1,9 +1,11 @@
 package com.blog.api.apispring.service;
 
 import com.blog.api.apispring.config.AwsS3BucketProperties;
+import io.awspring.cloud.s3.S3Resource;
 import io.awspring.cloud.s3.S3Template;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,11 +25,15 @@ class StorageService
 		this.s3Template = s3Template;
 	}
 
-	public void save(@NotNull MultipartFile file) throws IOException
+	public Resource save(@NotNull MultipartFile file) throws IOException
 	{
-		String originalFilename = file.getOriginalFilename();
+		return this.save(file, file.getOriginalFilename());
+	}
+
+	public Resource save(@NotNull MultipartFile file, @NotNull String key) throws IOException
+	{
 		String bucketName = bucketProperties.getBucketName();
-		s3Template.upload(bucketName, originalFilename, file.getInputStream());
+		return s3Template.upload(bucketName, key, file.getInputStream());
 	}
 
 	public void delete(@NotNull String objectKey)
