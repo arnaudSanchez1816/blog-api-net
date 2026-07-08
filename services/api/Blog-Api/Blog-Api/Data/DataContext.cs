@@ -6,6 +6,8 @@ namespace BlogApi.Data;
 
 public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
 {
+    public DbSet<Post> Posts { get; set; }
+
     public DataContext(DbContextOptions options) : base(options)
     {
     }
@@ -15,8 +17,19 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
         base.OnModelCreating(builder);
 
         ConfigureUser(builder);
+        ConfigurePost(builder);
     }
-    
+
+    private static void ConfigurePost(ModelBuilder builder)
+    {
+        builder.Entity<Post>(post =>
+        {
+            post.Property(p => p.Title).HasMaxLength(300);
+            post.Property(p => p.Slug).HasMaxLength(220);
+            post.HasIndex(p => p.Slug).IsUnique();
+        });
+    }
+
     private static void ConfigureUser(ModelBuilder builder)
     {
         builder.Entity<BlogUser>(user =>
