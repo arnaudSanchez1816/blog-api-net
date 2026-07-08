@@ -14,19 +14,22 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
     {
         base.OnModelCreating(builder);
 
-        IgnoreUnusedIdentityUserProperties(builder);
+        ConfigureUser(builder);
     }
-
-    private static void IgnoreUnusedIdentityUserProperties(ModelBuilder builder)
+    
+    private static void ConfigureUser(ModelBuilder builder)
     {
-        builder.Entity<BlogUser>().Ignore(user => user.EmailConfirmed);
-        builder.Entity<BlogUser>().Ignore(user => user.AccessFailedCount);
-        builder.Entity<BlogUser>().Ignore(user => user.ConcurrencyStamp);
-        builder.Entity<BlogUser>().Ignore(user => user.LockoutEnabled);
-        builder.Entity<BlogUser>().Ignore(user => user.LockoutEnd);
-        builder.Entity<BlogUser>().Ignore(user => user.PhoneNumber);
-        builder.Entity<BlogUser>().Ignore(user => user.PhoneNumberConfirmed);
-        builder.Entity<BlogUser>().Ignore(user => user.SecurityStamp);
-        builder.Entity<BlogUser>().Ignore(user => user.TwoFactorEnabled);
+        builder.Entity<BlogUser>(user =>
+        {
+            user.Ignore(u => u.EmailConfirmed);
+            user.Ignore(u => u.AccessFailedCount);
+            user.Ignore(u => u.ConcurrencyStamp);
+            user.Ignore(u => u.LockoutEnabled);
+            user.Ignore(u => u.LockoutEnd);
+            user.Ignore(u => u.PhoneNumber);
+            user.Ignore(u => u.PhoneNumberConfirmed);
+            user.Ignore(u => u.SecurityStamp);
+            user.Ignore(u => u.TwoFactorEnabled);
+        });
     }
 }
