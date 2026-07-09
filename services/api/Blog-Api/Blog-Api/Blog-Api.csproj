@@ -6,6 +6,10 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>BlogApi</RootNamespace>
 	</PropertyGroup>
+	<PropertyGroup>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Asp.Versioning.Mvc" Version="10.0.0"/>
