@@ -1,3 +1,4 @@
+using System.Net.Mime;
 using Asp.Versioning;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
@@ -10,6 +11,8 @@ namespace BlogApi.Controllers.V1;
 [ApiVersion(1)]
 [ApiController]
 [Route(ApiRoutes.Posts.Base)]
+[Consumes(MediaTypeNames.Application.Json)]
+[Produces(MediaTypeNames.Application.Json)]
 public class PostsController : ControllerBase
 {
     private readonly IPostsService _postsService;
