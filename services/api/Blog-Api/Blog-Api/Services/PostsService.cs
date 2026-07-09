@@ -1,4 +1,5 @@
 using BlogApi.Data;
+using BlogApi.Domain;
 using BlogApi.Utils;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,11 @@ public class PostsService : IPostsService
     public PostsService(DataContext dataContext)
     {
         _dataContext = dataContext;
+    }
+
+    public async Task<Post?> GetPostBySlug(string slug)
+    {
+        return await _dataContext.Posts.AsNoTracking().SingleOrDefaultAsync(x => x.Slug == slug);
     }
 
     public async Task<string> GenerateUniqueSlugAsync(string title)
