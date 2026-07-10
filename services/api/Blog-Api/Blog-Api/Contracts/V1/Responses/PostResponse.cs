@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using BlogApi.Utils;
+
 namespace BlogApi.Contracts.V1.Responses;
 
 public record PostResponse
@@ -16,6 +19,7 @@ public record PostResponse
     /// The slug of this post, derived from the title
     /// </summary>
     /// <example>this-is-an-article-title</example>
+    [RegularExpression(SlugGenerator.Pattern)]
     public string Slug { get; }
 
     /// <summary>
