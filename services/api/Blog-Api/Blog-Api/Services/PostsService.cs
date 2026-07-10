@@ -21,7 +21,7 @@ public class PostsService : IPostsService
 
     public async Task<string> GenerateUniqueSlugAsync(string title)
     {
-        string baseSlug = SlugGenerator.Slugify(title);
+        string baseSlug = SlugGenerator.Generate(title);
 
         List<string> takenSlugs = await _dataContext.Posts
             .Where(p => p.Slug == baseSlug || EF.Functions.Like(p.Slug, baseSlug + "-%"))

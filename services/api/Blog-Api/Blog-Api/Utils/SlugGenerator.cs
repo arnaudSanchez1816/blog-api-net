@@ -6,9 +6,11 @@ namespace BlogApi.Utils;
 
 public static class SlugGenerator
 {
+    public const string Pattern = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
+
     private const int MaxSlugLength = 200;
 
-    public static string Slugify(string input)
+    public static string Generate(string input)
     {
         string normalized = input.Normalize(NormalizationForm.FormD);
 
@@ -39,6 +41,8 @@ public static class SlugGenerator
             slug = slug[..MaxSlugLength].TrimEnd('-');
         }
 
-        return slug.Length == 0 ? $"post-{Guid.NewGuid():N}"[..12] : slug;
+        return slug.Length == 0
+            ? throw new ArgumentException("Could not generate a valid slug.", nameof(input))
+            : slug;
     }
 }
