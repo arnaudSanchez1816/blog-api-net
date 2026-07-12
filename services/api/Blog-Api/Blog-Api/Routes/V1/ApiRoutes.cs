@@ -12,4 +12,16 @@ public static class ApiRoutes
         public const string GetAll = "";
         public const string GetBySlug = "{slug}";
     }
+
+    public static class Tags
+    {
+        public const string Base = $"{ApiRoutes.Base}/tags";
+
+        public const string GetBySlug = "{slug}";
+        public const string GetById = "id/{id}";
+        public const string GetAll = "";
+        public const string Create = "";
+        public const string DeleteBySlug = "{slug}";
+        public const string UpdateBySlug = "{slug}";
+    }
 }

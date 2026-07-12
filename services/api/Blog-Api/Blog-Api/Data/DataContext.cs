@@ -7,6 +7,7 @@ namespace BlogApi.Data;
 public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
 {
     public DbSet<Post> Posts { get; set; }
+    public DbSet<Tag> Tags { get; set; }
 
     public DataContext(DbContextOptions options) : base(options)
     {
