@@ -4,7 +4,7 @@ using Asp.Versioning;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
 using BlogApi.Routes.V1;
-using BlogApi.Services;
+using BlogApi.Services.Posts;
 using BlogApi.Utils;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,7 +25,8 @@ public class PostsController : ControllerBase
     }
 
     [HttpGet(ApiRoutes.Posts.GetBySlug, Name = "GetPostBySlug")]
-    public async Task<ActionResult<PostResponse>> GetBySlug([FromRoute] [RegularExpression(SlugGenerator.Pattern)] string slug)
+    public async Task<ActionResult<PostResponse>> GetBySlug(
+        [FromRoute] [RegularExpression(SlugGenerator.Pattern)] string slug)
     {
         Post? post = await _postsService.GetPostBySlug(slug);
 
