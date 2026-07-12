@@ -25,4 +25,12 @@
 		<PackageReference Include="Scalar.AspNetCore" Version="2.16.11"/>
 	</ItemGroup>
 
+	<ItemGroup>
+		<ProjectReference Include="..\Blog-Api.Contracts\Blog-Api.Contracts.csproj"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Contracts\"/>
+	</ItemGroup>
+
 </Project>
