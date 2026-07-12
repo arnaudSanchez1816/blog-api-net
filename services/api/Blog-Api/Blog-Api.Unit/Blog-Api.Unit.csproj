@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>BlogApi.Unit</RootNamespace>
+		<TargetFramework>net10.0</TargetFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Xunit"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AwesomeAssertions" Version="9.4.0"/>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.7.0"/>
+		<PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Blog-Api.Contracts\Blog-Api.Contracts.csproj"/>
+		<ProjectReference Include="..\Blog-Api\Blog-Api.csproj"/>
+	</ItemGroup>
+
+</Project>

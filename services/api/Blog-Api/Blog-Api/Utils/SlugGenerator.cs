@@ -8,7 +8,7 @@ public static class SlugGenerator
 {
     public const string Pattern = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
 
-    private const int MaxSlugLength = 200;
+    public const int MaxSlugLength = 200;
 
     public static string Generate(string input)
     {
