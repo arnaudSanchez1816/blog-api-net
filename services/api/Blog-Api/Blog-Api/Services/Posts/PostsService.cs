@@ -3,7 +3,7 @@ using BlogApi.Domain;
 using BlogApi.Utils;
 using Microsoft.EntityFrameworkCore;
 
-namespace BlogApi.Services;
+namespace BlogApi.Services.Posts;
 
 public class PostsService : IPostsService
 {

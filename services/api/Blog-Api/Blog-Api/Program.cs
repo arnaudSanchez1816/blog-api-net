@@ -8,6 +8,7 @@ builder.Services.InstallDatabase(builder.Configuration);
 builder.Services.InstallIdentity();
 builder.Services.InstallOpenApi(builder.Configuration);
 builder.Services.InstallDomainServices();
+builder.Services.InstallRepositories();
 builder.Services.AddControllers();
 
 WebApplication app = builder.Build();

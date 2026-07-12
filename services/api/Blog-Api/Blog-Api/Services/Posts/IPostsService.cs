@@ -1,6 +1,6 @@
 using BlogApi.Domain;
 
-namespace BlogApi.Services;
+namespace BlogApi.Services.Posts;
 
 public interface IPostsService
 {
