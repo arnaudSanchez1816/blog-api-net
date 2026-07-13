@@ -40,6 +40,11 @@ public class TagsRepository : ITagsRepository
         return await _context.Tags.Where(x => ids.Contains(x.Id)).ToListAsync();
     }
 
+    public async Task<List<Tag>> GetAllTagsByIdOrSlug(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs)
+    {
+        return await _context.Tags.Where(x => slugs.Contains(x.Slug) || ids.Contains(x.Id)).ToListAsync();
+    }
+
     public async Task<bool> AddTag(Tag newTag)
     {
         try

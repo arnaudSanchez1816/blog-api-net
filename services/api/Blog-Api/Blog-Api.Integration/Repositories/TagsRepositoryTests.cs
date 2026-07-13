@@ -285,6 +285,55 @@ public class TagsRepositoryTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task GetAllTagsByIdOrSlug_ReturnsEmpty_WhenInputCollectionIsEmpty()
+    {
+        // Arrange
+        await _tagsRepository.AddTag(new Tag { Name = "Dotnet", Slug = "dotnet" });
+        await _tagsRepository.AddTag(new Tag { Name = "Asp Net core", Slug = "asp" });
+
+        // Act
+        List<Tag> result = await _tagsRepository.GetAllTagsByIdOrSlug([], []);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAllTagsByIdOrSlug_ReturnsEmpty_WhenNoMatchFound()
+    {
+        // Arrange
+        await _tagsRepository.AddTag(new Tag { Name = "Dotnet", Slug = "dotnet" });
+        await _tagsRepository.AddTag(new Tag { Name = "Asp Net core", Slug = "asp" });
+
+        // Act
+        List<Tag> result = await _tagsRepository.GetAllTagsByIdOrSlug([Guid.NewGuid()], ["random-slug"]);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetAllTagsByIdOrSlug_ReturnsMatchingTags_ExcludesNonMatching()
+    {
+        // Arrange
+        Tag tag1 = new Tag { Name = "Dotnet", Slug = "dotnet" };
+        await _tagsRepository.AddTag(tag1);
+        Tag tag2 = new Tag { Name = "Asp Net core", Slug = "asp" };
+        await _tagsRepository.AddTag(tag2);
+        Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
+        await _tagsRepository.AddTag(tag3);
+
+        // Act
+        List<Tag> result = await _tagsRepository.GetAllTagsByIdOrSlug([tag1.Id], [tag2.Slug]);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(t => t.Slug == "dotnet");
+        result.Should().Contain(t => t.Slug == "asp");
+        result.Should().NotContain(t => t.Slug == "docker");
+    }
+
+    [Fact]
     public async Task DeleteTag_Success_WhenTagExists()
     {
         Tag tag = new Tag { Name = "Tag to delete", Slug = "tag-to-delete" };
