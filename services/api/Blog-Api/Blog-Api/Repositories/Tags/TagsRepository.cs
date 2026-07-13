@@ -7,10 +7,12 @@ namespace BlogApi.Repositories.Tags;
 public class TagsRepository : ITagsRepository
 {
     private readonly DataContext _context;
+    private readonly ILogger<TagsRepository> _logger;
 
-    public TagsRepository(DataContext context)
+    public TagsRepository(DataContext context, ILogger<TagsRepository> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<List<Tag>> GetAllTags()
@@ -40,19 +42,43 @@ public class TagsRepository : ITagsRepository
 
     public async Task<bool> AddTag(Tag newTag)
     {
-        _context.Tags.Add(newTag);
-        return await _context.SaveChangesAsync() > 0;
+        try
+        {
+            _context.Tags.Add(newTag);
+            return await _context.SaveChangesAsync() > 0;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to add tag {tag}", newTag);
+            return false;
+        }
     }
 
     public async Task<bool> UpdateTag(Tag tagToUpdate)
     {
-        _context.Tags.Update(tagToUpdate);
-        return await _context.SaveChangesAsync() > 0;
+        try
+        {
+            _context.Tags.Update(tagToUpdate);
+            return await _context.SaveChangesAsync() > 0;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to update tag {tag}", tagToUpdate);
+            return false;
+        }
     }
 
     public async Task<bool> DeleteTag(Tag tagToDelete)
     {
-        _context.Tags.Remove(tagToDelete);
-        return await _context.SaveChangesAsync() > 0;
+        try
+        {
+            _context.Tags.Remove(tagToDelete);
+            return await _context.SaveChangesAsync() > 0;
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Failed to delete tag {tag}", tagToDelete);
+            return false;
+        }
     }
 }
