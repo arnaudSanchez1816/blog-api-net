@@ -6,19 +6,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace BlogApi.Integration.Repositories;
 
 [Collection(nameof(TestsCollection))]
-public class TagsRepositoryTests
+public class TagsRepositoryTests : IntegrationTestBase
 {
-    private readonly BlogApiFactory _factory;
-
-    public TagsRepositoryTests(BlogApiFactory webAppFactory)
+    public TagsRepositoryTests(BlogApiFactory factory) : base(factory)
     {
-        _factory = webAppFactory;
     }
 
     [Fact]
     public async Task TagsRepository_GetAllTagsById_ReturnsEmptyWhenThereIsNoTags()
     {
-        await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+        await using AsyncServiceScope scope = Factory.Services.CreateAsyncScope();
         ITagsRepository tagsRepository = scope.ServiceProvider.GetRequiredService<ITagsRepository>();
 
         List<Tag> result = await tagsRepository.GetAllTagsById([Guid.NewGuid()]);
