@@ -1,4 +1,5 @@
 using BlogApi.Data;
+using EntityFramework.Exceptions.PostgreSQL;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Installers;
@@ -9,7 +10,7 @@ public static class DbInstaller
     {
         services.AddDbContext<DataContext>(options =>
         {
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")).UseExceptionProcessor();
             options.UseSnakeCaseNamingConvention();
         });
 
