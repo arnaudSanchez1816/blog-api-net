@@ -32,6 +32,7 @@ public class TagsController : ControllerBase
     /// <summary>
     /// Get all tags
     /// </summary>
+    /// <response code="200"></response>
     /// <returns>A list of all tags in the application</returns>
     [HttpGet(ApiRoutes.Tags.GetAll)]
     public async Task<ActionResult<GetTagsResponse>> GetAllTags()
@@ -49,6 +50,13 @@ public class TagsController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// </summary>
+    /// <param name="slug"></param>
+    /// <response code="200"></response>
+    /// <response code="400">Invalid slug</response>
+    /// <response code="404"></response>
+    /// <returns></returns>
     [HttpGet(ApiRoutes.Tags.GetBySlug)]
     public async Task<ActionResult<TagResponse>> GetBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
@@ -63,6 +71,12 @@ public class TagsController : ControllerBase
         return Ok(tag.ToTagResponse());
     }
 
+    /// <summary>
+    /// </summary>
+    /// <param name="id"></param>
+    /// <response code="200"></response>
+    /// <response code="404"></response>
+    /// <returns></returns>
     [HttpGet(ApiRoutes.Tags.GetById)]
     public async Task<ActionResult<TagResponse>> GetById([FromRoute] Guid id)
     {
@@ -75,6 +89,12 @@ public class TagsController : ControllerBase
         return Ok(tag.ToTagResponse());
     }
 
+    /// <summary>
+    /// </summary>
+    /// <param name="request"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <returns></returns>
     [HttpPost(ApiRoutes.Tags.Create)]
     public async Task<ActionResult<TagResponse>> Create([FromBody] CreateTagRequest request)
     {
@@ -84,6 +104,14 @@ public class TagsController : ControllerBase
         return CreatedAtAction(nameof(GetBySlug), new { slug = newTag.Slug }, newTag.ToTagResponse());
     }
 
+    /// <summary>
+    /// </summary>
+    /// <param name="slug"></param>
+    /// <param name="request"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <response code="404"></response>
+    /// <returns></returns>
     [HttpPut(ApiRoutes.Tags.UpdateBySlug)]
     public async Task<ActionResult<TagResponse>> UpdateBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
@@ -102,6 +130,13 @@ public class TagsController : ControllerBase
         return Ok(tag.ToTagResponse());
     }
 
+    /// <summary>
+    /// </summary>
+    /// <param name="slug"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <response code="404"></response>
+    /// <returns></returns>
     [HttpDelete(ApiRoutes.Tags.DeleteBySlug)]
     public async Task<ActionResult<TagResponse>> DeleteBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
