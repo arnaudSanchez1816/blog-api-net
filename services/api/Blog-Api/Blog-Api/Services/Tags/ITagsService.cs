@@ -11,7 +11,7 @@ public interface ITagsService
     public Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs);
     public Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs);
 
-    public Task<bool> AddTag(Tag tag);
-    public Task<bool> DeleteTag(Tag tag);
-    public Task<bool> UpdateTag(Tag tag);
+    public Task<Tag> CreateTag(Tag tag);
+    public Task DeleteTag(Tag tag);
+    public Task UpdateTag(Tag tag);
 }

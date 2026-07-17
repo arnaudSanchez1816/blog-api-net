@@ -7,12 +7,10 @@ namespace BlogApi.Repositories.Tags;
 public class TagsRepository : ITagsRepository
 {
     private readonly DataContext _context;
-    private readonly ILogger<TagsRepository> _logger;
 
-    public TagsRepository(DataContext context, ILogger<TagsRepository> logger)
+    public TagsRepository(DataContext context)
     {
         _context = context;
-        _logger = logger;
     }
 
     public async Task<List<Tag>> GetAllTags()
@@ -45,45 +43,21 @@ public class TagsRepository : ITagsRepository
         return await _context.Tags.Where(x => slugs.Contains(x.Slug) || ids.Contains(x.Id)).ToListAsync();
     }
 
-    public async Task<bool> AddTag(Tag newTag)
+    public async Task AddTag(Tag newTag)
     {
-        try
-        {
-            _context.Tags.Add(newTag);
-            return await _context.SaveChangesAsync() > 0;
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to add tag {tag}", newTag);
-            return false;
-        }
+        _context.Tags.Add(newTag);
+        await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> UpdateTag(Tag tagToUpdate)
+    public async Task UpdateTag(Tag tagToUpdate)
     {
-        try
-        {
-            _context.Tags.Update(tagToUpdate);
-            return await _context.SaveChangesAsync() > 0;
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to update tag {tag}", tagToUpdate);
-            return false;
-        }
+        _context.Tags.Update(tagToUpdate);
+        await _context.SaveChangesAsync();
     }
 
-    public async Task<bool> DeleteTag(Tag tagToDelete)
+    public async Task DeleteTag(Tag tagToDelete)
     {
-        try
-        {
-            _context.Tags.Remove(tagToDelete);
-            return await _context.SaveChangesAsync() > 0;
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to delete tag {tag}", tagToDelete);
-            return false;
-        }
+        _context.Tags.Remove(tagToDelete);
+        await _context.SaveChangesAsync();
     }
 }

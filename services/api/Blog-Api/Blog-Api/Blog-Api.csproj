@@ -27,6 +27,7 @@
 		<PackageReference Include="Microsoft.OpenApi" Version="2.10.0"/>
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
 		<PackageReference Include="Scalar.AspNetCore" Version="2.16.11"/>
+		<PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Mvc" Version="2.0.0"/>
 	</ItemGroup>
 
 	<ItemGroup>

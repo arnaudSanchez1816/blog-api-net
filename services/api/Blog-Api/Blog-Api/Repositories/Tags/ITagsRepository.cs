@@ -12,7 +12,7 @@ public interface ITagsRepository
 
     public Task<List<Tag>> GetAllTagsByIdOrSlug(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs);
 
-    public Task<bool> AddTag(Tag newTag);
-    public Task<bool> UpdateTag(Tag tagToUpdate);
-    public Task<bool> DeleteTag(Tag tagToDelete);
+    public Task AddTag(Tag newTag);
+    public Task UpdateTag(Tag tagToUpdate);
+    public Task DeleteTag(Tag tagToDelete);
 }

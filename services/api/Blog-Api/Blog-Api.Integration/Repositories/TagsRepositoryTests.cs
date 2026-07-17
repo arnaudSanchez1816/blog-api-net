@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using BlogApi.Domain;
 using BlogApi.Repositories.Tags;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Integration.Repositories;
 
@@ -28,16 +29,14 @@ public class TagsRepositoryTests : IntegrationTestBase
             Name = "Tag name",
             Slug = "tag-slug"
         };
-        bool result = await _tagsRepository.AddTag(tag);
-        result.Should().BeTrue();
+        await _tagsRepository.AddTag(tag);
 
         // Act
         tag.Name = "Updated tag name";
         tag.Slug = "updated-slug";
-        result = await _tagsRepository.UpdateTag(tag);
+        await _tagsRepository.UpdateTag(tag);
 
         // Assert
-        result.Should().BeTrue();
         Tag? foundTag = await _tagsRepository.GetTagBySlug("updated-slug");
         foundTag.Should().NotBeNull();
         foundTag.Name.Should().Be("Updated tag name");
@@ -61,10 +60,9 @@ public class TagsRepositoryTests : IntegrationTestBase
         tagToUpdate.Should().NotBeNull();
         tagToUpdate.Name = "C# Programming";
         tagToUpdate.Slug = "csharp-programming";
-        bool result = await _tagsRepository.UpdateTag(tagToUpdate);
+        await _tagsRepository.UpdateTag(tagToUpdate);
 
         // Assert
-        result.Should().BeTrue();
         Tag? aspTag = await _tagsRepository.GetTagBySlug("asp");
         aspTag.Should().NotBeNull();
         aspTag.Name.Should().Be("Asp Net core");
@@ -72,7 +70,7 @@ public class TagsRepositoryTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateTag_WithNonExistentId_ReturnsFalse()
+    public async Task UpdateTag_WithNonExistentId_ShouldThrow()
     {
         // Arrange
         Tag nonExistentTag = new Tag
@@ -83,10 +81,10 @@ public class TagsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        bool result = await _tagsRepository.UpdateTag(nonExistentTag);
+        Func<Task> act = async () => await _tagsRepository.UpdateTag(nonExistentTag);
 
         // Assert
-        result.Should().BeFalse();
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 
     [Fact]
@@ -102,10 +100,9 @@ public class TagsRepositoryTests : IntegrationTestBase
         tagToUpdate.Should().NotBeNull();
         tagToUpdate.Name = "Dotnet Programming";
         tagToUpdate.Slug = "dotnet-programming";
-        bool result = await _tagsRepository.UpdateTag(tagToUpdate);
+        await _tagsRepository.UpdateTag(tagToUpdate);
 
         // Assert
-        result.Should().BeTrue();
         Tag? foundTag = await _tagsRepository.GetTagById(tagId);
         foundTag.Should().NotBeNull();
         foundTag.Name.Should().Be("Dotnet Programming");
@@ -126,10 +123,9 @@ public class TagsRepositoryTests : IntegrationTestBase
         tagToUpdate.Should().NotBeNull();
         tagToUpdate.Name = "C# Programming";
         tagToUpdate.Slug = "csharp-programming";
-        bool result = await _tagsRepository.UpdateTag(tagToUpdate);
+        await _tagsRepository.UpdateTag(tagToUpdate);
 
         // Assert
-        result.Should().BeTrue();
         Tag? aspTag = await _tagsRepository.GetTagBySlug("asp");
         aspTag.Should().NotBeNull();
         aspTag.Name.Should().Be("Asp Net core");
@@ -147,10 +143,9 @@ public class TagsRepositoryTests : IntegrationTestBase
         Tag? tagToUpdate = await _tagsRepository.GetTagBySlug("csharp");
         tagToUpdate.Should().NotBeNull();
         tagToUpdate.Name = "C# Programming Language";
-        bool result = await _tagsRepository.UpdateTag(tagToUpdate);
+        await _tagsRepository.UpdateTag(tagToUpdate);
 
         // Assert
-        result.Should().BeTrue();
         Tag? foundTag = await _tagsRepository.GetTagBySlug("csharp");
         foundTag.Should().NotBeNull();
         foundTag.Name.Should().Be("C# Programming Language");
@@ -169,10 +164,9 @@ public class TagsRepositoryTests : IntegrationTestBase
         Tag? tagToUpdate = await _tagsRepository.GetTagById(tagId);
         tagToUpdate.Should().NotBeNull();
         tagToUpdate.Name = "Dotnet Programming Language";
-        bool result = await _tagsRepository.UpdateTag(tagToUpdate);
+        await _tagsRepository.UpdateTag(tagToUpdate);
 
         // Assert
-        result.Should().BeTrue();
         Tag? foundTag = await _tagsRepository.GetTagById(tagId);
         foundTag.Should().NotBeNull();
         foundTag.Name.Should().Be("Dotnet Programming Language");
@@ -339,9 +333,8 @@ public class TagsRepositoryTests : IntegrationTestBase
         Tag tag = new Tag { Name = "Tag to delete", Slug = "tag-to-delete" };
         await _tagsRepository.AddTag(tag);
 
-        bool deleted = await _tagsRepository.DeleteTag(tag);
+        await _tagsRepository.DeleteTag(tag);
 
-        deleted.Should().BeTrue();
         Tag? tagDeleted = await _tagsRepository.GetTagBySlug(tag.Slug);
         tagDeleted.Should().BeNull();
     }
@@ -351,9 +344,9 @@ public class TagsRepositoryTests : IntegrationTestBase
     {
         Tag tag = new Tag { Name = "Tag", Slug = "tag", Id = Guid.NewGuid() };
 
-        bool deleted = await _tagsRepository.DeleteTag(tag);
+        Func<Task> act = async () => await _tagsRepository.DeleteTag(tag);
 
-        deleted.Should().BeFalse();
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 
     [Fact]
@@ -361,9 +354,8 @@ public class TagsRepositoryTests : IntegrationTestBase
     {
         Tag tag = new Tag { Name = "Tag", Slug = "tag" };
 
-        bool added = await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag);
 
-        added.Should().BeTrue();
         Tag? tagAdded = await _tagsRepository.GetTagBySlug(tag.Slug);
         tagAdded.Should().NotBeNull();
         tagAdded.Name.Should().Be(tag.Name);
@@ -379,8 +371,8 @@ public class TagsRepositoryTests : IntegrationTestBase
 
         Tag newTag = new Tag { Name = "Duplicate tag", Slug = "tag" };
 
-        bool added = await _tagsRepository.AddTag(newTag);
+        Func<Task> act = async () => await _tagsRepository.AddTag(newTag);
 
-        added.Should().BeFalse();
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 }

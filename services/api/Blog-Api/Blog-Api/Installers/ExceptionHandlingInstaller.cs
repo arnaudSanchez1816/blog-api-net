@@ -19,7 +19,7 @@ public static class ExceptionHandlingInstaller
                 context.ProblemDetails.Extensions.TryAdd("traceId", activity?.Id);
             };
         });
-        services.AddExceptionHandler<ValidationExceptionHandler>();
+        // services.AddExceptionHandler<ValidationExceptionHandler>();
         services.AddExceptionHandler<GlobalExceptionHandler>();
 
         return services;

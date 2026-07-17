@@ -42,18 +42,19 @@ public class TagsService : ITagsService
         return await _tagsRepository.GetAllTagsByIdOrSlug(ids, slugs);
     }
 
-    public async Task<bool> AddTag(Tag tag)
+    public async Task DeleteTag(Tag tag)
     {
-        return await _tagsRepository.AddTag(tag);
+        await _tagsRepository.DeleteTag(tag);
     }
 
-    public async Task<bool> DeleteTag(Tag tag)
+    public async Task UpdateTag(Tag tag)
     {
-        return await _tagsRepository.DeleteTag(tag);
+        await _tagsRepository.UpdateTag(tag);
     }
 
-    public async Task<bool> UpdateTag(Tag tag)
+    public async Task<Tag> CreateTag(Tag tag)
     {
-        return await _tagsRepository.UpdateTag(tag);
+        await _tagsRepository.AddTag(tag);
+        return tag;
     }
 }
