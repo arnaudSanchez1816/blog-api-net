@@ -19,32 +19,27 @@ public record PostResponse
     public required string Slug { get; init; }
 
     /// <summary>
+    /// Description of the post.
+    /// </summary>
+    public required string Description { get; init; }
+
+    /// <summary>
     /// Content of the post. In a Markdown format.
     /// </summary>
     public required string Body { get; init; }
 
+    /// <summary>
+    /// Date of the publication of the post. Is null when a post is unpublished.
+    /// </summary>
+    public required DateTimeOffset? PublishedAt { get; init; }
+
+    /// <summary>
+    /// Details of the post author.
+    /// </summary>
+    public required PostAuthorResponse Author { get; init; }
+
+    /// <summary>
+    /// Tags of the post.
+    /// </summary>
     public required ICollection<TagResponse> Tags { get; init; }
-
-    public PostResponse()
-    {
-    }
-
-    public PostResponse(Guid id, string title, string slug, string body, ICollection<TagResponse> tags)
-    {
-        Id = id;
-        Title = title;
-        Slug = slug;
-        Body = body;
-        Tags = tags;
-    }
-
-    public void Deconstruct(out Guid id, out string title, out string slug, out string body,
-        out ICollection<TagResponse> tags)
-    {
-        id = Id;
-        title = Title;
-        slug = Slug;
-        body = Body;
-        tags = Tags;
-    }
 }

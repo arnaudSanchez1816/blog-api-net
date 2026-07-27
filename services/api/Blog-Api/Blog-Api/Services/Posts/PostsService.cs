@@ -16,7 +16,17 @@ public class PostsService : IPostsService
 
     public async Task<Post?> GetPostBySlug(string slug)
     {
-        return await _dataContext.Posts.AsNoTracking().SingleOrDefaultAsync(x => x.Slug == slug);
+        return await _dataContext.Posts.AsNoTracking()
+            .Include(x => x.Author)
+            .SingleOrDefaultAsync(x => x.Slug == slug);
+    }
+
+    public async Task<Post?> GetPostBySlugWithTags(string slug)
+    {
+        return await _dataContext.Posts.AsNoTracking()
+            .Include(x => x.Author)
+            .Include(x => x.Tags)
+            .SingleOrDefaultAsync(x => x.Slug == slug);
     }
 
     public async Task<string> GenerateUniqueSlugAsync(string title)

@@ -3,6 +3,7 @@ using System.Net.Mime;
 using Asp.Versioning;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
+using BlogApi.Mapping;
 using BlogApi.Routes.V1;
 using BlogApi.Services.Posts;
 using BlogApi.Utils;
@@ -24,17 +25,26 @@ public class PostsController : ControllerBase
         _postsService = postsService;
     }
 
+    /// <summary>
+    /// Get a post by its slug.
+    /// </summary>
+    /// <param name="slug"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <response code="404"></response>
+    /// <returns></returns>
     [HttpGet(ApiRoutes.Posts.GetBySlug, Name = "GetPostBySlug")]
     public async Task<ActionResult<PostResponse>> GetBySlug(
-        [FromRoute] [RegularExpression(SlugGenerator.Pattern)] string slug)
+        [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
+        string slug)
     {
-        Post? post = await _postsService.GetPostBySlug(slug);
+        Post? post = await _postsService.GetPostBySlugWithTags(slug);
 
         if (post is null)
         {
             return NotFound();
         }
 
-        return Ok(new PostResponse(post.Id, post.Title, post.Slug, post.Body));
+        return Ok(post.ToPostResponse());
     }
 }
