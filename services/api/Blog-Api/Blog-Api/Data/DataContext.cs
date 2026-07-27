@@ -28,6 +28,7 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
             post.Property(p => p.Title).HasMaxLength(300);
             post.Property(p => p.Slug).HasMaxLength(220);
             post.HasIndex(p => p.Slug).IsUnique();
+            post.HasMany(p => p.Tags).WithMany(); // Unidirectional many to many
         });
     }
 
@@ -44,6 +45,7 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
             user.Ignore(u => u.PhoneNumberConfirmed);
             user.Ignore(u => u.SecurityStamp);
             user.Ignore(u => u.TwoFactorEnabled);
+            user.HasMany(u => u.Posts).WithOne(p => p.User);
         });
     }
 }
