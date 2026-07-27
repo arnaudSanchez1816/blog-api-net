@@ -49,6 +49,13 @@ public class PostsController : ControllerBase
         return Ok(post.ToPostResponse());
     }
 
+    /// <summary>
+    /// Create a new post with the given title.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <response code="201"></response>
+    /// <response code="400"></response>
+    /// <returns></returns>
     [HttpPost(ApiRoutes.Posts.Create)]
     public async Task<ActionResult<PostResponse>> CreatePost([FromBody] CreatePostRequest request)
     {
