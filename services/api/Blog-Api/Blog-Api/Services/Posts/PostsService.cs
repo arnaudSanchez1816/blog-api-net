@@ -1,42 +1,40 @@
-using BlogApi.Data;
 using BlogApi.Domain;
+using BlogApi.Repositories.Posts;
 using BlogApi.Utils;
-using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services.Posts;
 
 public class PostsService : IPostsService
 {
-    private readonly DataContext _dataContext;
+    private readonly IPostsRepository _postsRepository;
 
-    public PostsService(DataContext dataContext)
+    public PostsService(IPostsRepository postsRepository)
     {
-        _dataContext = dataContext;
+        _postsRepository = postsRepository;
     }
 
     public async Task<Post?> GetPostBySlug(string slug)
     {
-        return await _dataContext.Posts.AsNoTracking()
-            .Include(x => x.Author)
-            .SingleOrDefaultAsync(x => x.Slug == slug);
+        return await _postsRepository.GetPostBySlug(slug);
     }
 
     public async Task<Post?> GetPostBySlugWithTags(string slug)
     {
-        return await _dataContext.Posts.AsNoTracking()
-            .Include(x => x.Author)
-            .Include(x => x.Tags)
-            .SingleOrDefaultAsync(x => x.Slug == slug);
+        return await _postsRepository.GetPostBySlugWithTags(slug);
+    }
+
+    public async Task<Post> CreatePost(Post post)
+    {
+        await _postsRepository.AddPost(post);
+        return post;
     }
 
     public async Task<string> GenerateUniqueSlugAsync(string title)
     {
         string baseSlug = SlugGenerator.Generate(title);
 
-        List<string> takenSlugs = await _dataContext.Posts
-            .Where(p => p.Slug == baseSlug || EF.Functions.Like(p.Slug, baseSlug + "-%"))
-            .Select(p => p.Slug)
-            .ToListAsync();
+        IReadOnlyCollection<Post> matchingPosts = await _postsRepository.GetPostsStartingWithSlug(baseSlug);
+        List<string> takenSlugs = matchingPosts.Select(p => p.Slug).ToList();
 
         if (takenSlugs.Count == 0)
         {

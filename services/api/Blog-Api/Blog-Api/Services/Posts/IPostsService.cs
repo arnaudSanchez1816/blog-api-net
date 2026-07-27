@@ -6,5 +6,6 @@ public interface IPostsService
 {
     public Task<Post?> GetPostBySlug(string slug);
     public Task<Post?> GetPostBySlugWithTags(string slug);
+    public Task<Post> CreatePost(Post post);
     public Task<string> GenerateUniqueSlugAsync(string title);
 }
