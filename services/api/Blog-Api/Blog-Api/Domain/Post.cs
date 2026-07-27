@@ -19,10 +19,10 @@ public class Post : BaseEntity
 
     public DateTimeOffset? PublishedAt { get; set; }
 
-    public required Guid UserId { get; set; }
+    public required Guid AuthorId { get; set; }
 
-    [ForeignKey(nameof(UserId))]
-    public BlogUser User { get; set; } = null!;
+    [ForeignKey(nameof(AuthorId))]
+    public BlogUser Author { get; set; } = null!;
 
     public ICollection<Tag> Tags { get; } = new List<Tag>();
 }

@@ -45,7 +45,7 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
             user.Ignore(u => u.PhoneNumberConfirmed);
             user.Ignore(u => u.SecurityStamp);
             user.Ignore(u => u.TwoFactorEnabled);
-            user.HasMany(u => u.Posts).WithOne(p => p.User);
+            user.HasMany(u => u.Posts).WithOne(p => p.Author);
         });
     }
 }

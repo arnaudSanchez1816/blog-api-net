@@ -11,6 +11,13 @@ namespace BlogApi.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.AddColumn<Guid>(
+                name: "author_id",
+                table: "posts",
+                type: "uuid",
+                nullable: false,
+                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+
             migrationBuilder.AddColumn<string>(
                 name: "description",
                 table: "posts",
@@ -30,13 +37,6 @@ namespace BlogApi.Migrations
                 type: "integer",
                 nullable: false,
                 defaultValue: 0);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "user_id",
-                table: "posts",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
 
             migrationBuilder.CreateTable(
                 name: "post_tag",
@@ -63,9 +63,9 @@ namespace BlogApi.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_posts_user_id",
+                name: "ix_posts_author_id",
                 table: "posts",
-                column: "user_id");
+                column: "author_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_post_tag_tags_id",
@@ -73,9 +73,9 @@ namespace BlogApi.Migrations
                 column: "tags_id");
 
             migrationBuilder.AddForeignKey(
-                name: "fk_posts_users_user_id",
+                name: "fk_posts_users_author_id",
                 table: "posts",
-                column: "user_id",
+                column: "author_id",
                 principalTable: "AspNetUsers",
                 principalColumn: "id",
                 onDelete: ReferentialAction.Cascade);
@@ -85,14 +85,18 @@ namespace BlogApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "fk_posts_users_user_id",
+                name: "fk_posts_users_author_id",
                 table: "posts");
 
             migrationBuilder.DropTable(
                 name: "post_tag");
 
             migrationBuilder.DropIndex(
-                name: "ix_posts_user_id",
+                name: "ix_posts_author_id",
+                table: "posts");
+
+            migrationBuilder.DropColumn(
+                name: "author_id",
                 table: "posts");
 
             migrationBuilder.DropColumn(
@@ -105,10 +109,6 @@ namespace BlogApi.Migrations
 
             migrationBuilder.DropColumn(
                 name: "reading_time",
-                table: "posts");
-
-            migrationBuilder.DropColumn(
-                name: "user_id",
                 table: "posts");
         }
     }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BlogApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20260727205042_AddPostDetails")]
+    [Migration("20260727225730_AddPostDetails")]
     partial class AddPostDetails
     {
         /// <inheritdoc />
@@ -114,6 +114,10 @@ namespace BlogApi.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_id");
+
                     b.Property<string>("Body")
                         .IsRequired()
                         .HasColumnType("text")
@@ -144,19 +148,15 @@ namespace BlogApi.Migrations
                         .HasColumnType("character varying(300)")
                         .HasColumnName("title");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
                     b.HasKey("Id")
                         .HasName("pk_posts");
+
+                    b.HasIndex("AuthorId")
+                        .HasDatabaseName("ix_posts_author_id");
 
                     b.HasIndex("Slug")
                         .IsUnique()
                         .HasDatabaseName("ix_posts_slug");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_posts_user_id");
 
                     b.ToTable("posts", (string)null);
                 });
@@ -341,14 +341,14 @@ namespace BlogApi.Migrations
 
             modelBuilder.Entity("BlogApi.Domain.Post", b =>
                 {
-                    b.HasOne("BlogApi.Domain.BlogUser", "User")
+                    b.HasOne("BlogApi.Domain.BlogUser", "Author")
                         .WithMany("Posts")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_posts_users_user_id");
+                        .HasConstraintName("fk_posts_users_author_id");
 
-                    b.Navigation("User");
+                    b.Navigation("Author");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
