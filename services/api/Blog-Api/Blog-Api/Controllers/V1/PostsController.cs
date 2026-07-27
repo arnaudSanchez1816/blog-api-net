@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 using Asp.Versioning;
+using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
 using BlogApi.Mapping;
@@ -46,5 +47,21 @@ public class PostsController : ControllerBase
         }
 
         return Ok(post.ToPostResponse());
+    }
+
+    [HttpPost(ApiRoutes.Posts.Create)]
+    public async Task<ActionResult<PostResponse>> CreatePost([FromBody] CreatePostRequest request)
+    {
+        string postSlug = await _postsService.GenerateUniqueSlugAsync(request.Title);
+
+        Post newPost = new Post
+        {
+            Title = request.Title,
+            Slug = postSlug,
+            AuthorId = Guid.NewGuid() // TODO : replace with authenticated user id
+        };
+        newPost = await _postsService.CreatePost(newPost);
+
+        return CreatedAtAction(nameof(GetBySlug), new { slug = newPost.Slug }, newPost.ToPostResponse());
     }
 }
