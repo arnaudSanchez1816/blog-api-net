@@ -15,14 +15,14 @@ public class PostsRepository : IPostsRepository
 
     public async Task<Post?> GetPostBySlug(string slug)
     {
-        return await _context.Posts.AsNoTracking()
+        return await _context.Posts
             .Include(x => x.Author)
             .SingleOrDefaultAsync(x => x.Slug == slug);
     }
 
     public async Task<Post?> GetPostBySlugWithTags(string slug)
     {
-        return await _context.Posts.AsNoTracking()
+        return await _context.Posts
             .Include(x => x.Author)
             .Include(x => x.Tags)
             .SingleOrDefaultAsync(x => x.Slug == slug);
