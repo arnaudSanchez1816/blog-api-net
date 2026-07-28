@@ -2,7 +2,7 @@ using BlogApi.Contracts.V1.Requests;
 using BlogApi.Domain;
 using FluentValidation;
 
-namespace BlogApi.Validation.Validators;
+namespace BlogApi.Validation.Validators.Posts;
 
 public class CreatePostRequestValidator : AbstractValidator<CreatePostRequest>
 {
@@ -10,8 +10,8 @@ public class CreatePostRequestValidator : AbstractValidator<CreatePostRequest>
     {
         RuleFor(x => x.Title)
             .NotEmpty()
-            .WithMessage("Post title cannot be empty or blank.")
+            .WithMessage(PostsValidationConstants.TitleNotEmptyMessage)
             .MaximumLength(Post.TitleMaxLength)
-            .WithMessage($"Post title are limited to {Post.TitleMaxLength} characters maximum.");
+            .WithMessage(PostsValidationConstants.TitleMaxLengthMessage);
     }
 }
