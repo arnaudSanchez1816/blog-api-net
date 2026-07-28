@@ -85,7 +85,15 @@ public class PostsController : ControllerBase
         string slug,
         [FromBody] UpdatePostRequest request)
     {
-        return Ok();
+        Post? post = await _postsService.GetPostBySlugWithTags(slug);
+        if (post is null)
+        {
+            return NotFound();
+        }
+
+        await _postsService.UpdatePost(post, request);
+
+        return Ok(post.ToPostResponse());
     }
 
     /// <summary>

@@ -1,5 +1,7 @@
+using BlogApi.Contracts.V1.Requests;
 using BlogApi.Domain;
 using BlogApi.Repositories.Posts;
+using BlogApi.Services.Tags;
 using BlogApi.Utils;
 
 namespace BlogApi.Services.Posts;
@@ -7,10 +9,12 @@ namespace BlogApi.Services.Posts;
 public class PostsService : IPostsService
 {
     private readonly IPostsRepository _postsRepository;
+    private readonly ITagsService _tagsService;
 
-    public PostsService(IPostsRepository postsRepository)
+    public PostsService(IPostsRepository postsRepository, ITagsService tagsService)
     {
         _postsRepository = postsRepository;
+        _tagsService = tagsService;
     }
 
     public async Task<Post?> GetPostBySlug(string slug)
@@ -29,9 +33,39 @@ public class PostsService : IPostsService
         return post;
     }
 
-    public Task UpdatePost(Post post)
+    public async Task UpdatePost(Post post, UpdatePostRequest updatePostDto)
     {
-        throw new NotImplementedException();
+        string? body = updatePostDto.Body;
+        if (body is not null)
+        {
+            // Todo : sanitize body
+            post.Body = body;
+            // Todo : parse description plain text from markdown body
+            post.Description = body.Substring(0, Math.Min(body.Length, 50));
+            // Todo : estimate reading time
+            post.ReadingTime = 1;
+        }
+
+        string? title = updatePostDto.Title;
+        if (title is not null)
+        {
+            // Todo : sanitize body
+            post.Title = title;
+        }
+
+        IReadOnlyCollection<string>? tagSlugs = updatePostDto.Tags;
+        if (tagSlugs is not null)
+        {
+            // Replace tags
+            List<Tag> tags = await _tagsService.GetAllTags(tagSlugs);
+            post.Tags.Clear();
+            foreach (Tag tag in tags)
+            {
+                post.Tags.Add(tag);
+            }
+        }
+
+        await _postsRepository.UpdatePost(post);
     }
 
     public async Task DeletePost(Post post)
