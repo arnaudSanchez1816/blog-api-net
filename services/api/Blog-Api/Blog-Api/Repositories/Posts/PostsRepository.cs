@@ -39,4 +39,10 @@ public class PostsRepository : IPostsRepository
         _context.Posts.Add(post);
         await _context.SaveChangesAsync();
     }
+
+    public async Task DeletePost(Post post)
+    {
+        _context.Posts.Remove(post);
+        await _context.SaveChangesAsync();
+    }
 }

@@ -29,6 +29,16 @@ public class PostsService : IPostsService
         return post;
     }
 
+    public Task UpdatePost(Post post)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task DeletePost(Post post)
+    {
+        await _postsRepository.DeletePost(post);
+    }
+
     public async Task<string> GenerateUniqueSlugAsync(string title)
     {
         string baseSlug = SlugGenerator.Generate(title);

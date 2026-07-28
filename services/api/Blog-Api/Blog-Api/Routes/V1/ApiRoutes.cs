@@ -12,6 +12,8 @@ public static class ApiRoutes
         public const string GetAll = "";
         public const string GetBySlug = "{slug}";
         public const string Create = "";
+        public const string UpdateBySlug = "{slug}";
+        public const string DeleteBySlug = "{slug}";
     }
 
     public static class Tags
