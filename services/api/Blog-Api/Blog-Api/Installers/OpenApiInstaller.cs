@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BlogApi.Options;
+using BlogApi.Transformers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
@@ -14,6 +15,8 @@ public static class OpenApiInstaller
     {
         services.AddOpenApi("v1", options =>
         {
+            options.AddSchemaTransformer<AllowedValuesSchemaTransformer>();
+
             // Add Bearer security scheme 
             options.AddDocumentTransformer((document, context, _) =>
             {
@@ -60,6 +63,21 @@ public static class OpenApiInstaller
                     {
                         openApiParameter.Name = JsonNamingPolicy.CamelCase.ConvertName(openApiParameter.Name);
                     }
+                }
+
+                return Task.CompletedTask;
+            });
+
+            // GetPostsRequest.IncludeUnpublished is only ever bound via the "unpublished" query
+            // parameter declared explicitly on the action; the "includeUnpublished" entry below is a
+            // dead duplicate produced by complex-type FromQuery expansion.
+            options.AddOperationTransformer((operation, context, _) =>
+            {
+                IOpenApiParameter? deadParameter = operation.Parameters?.FirstOrDefault(parameter =>
+                    string.Equals(parameter.Name, "includeUnpublished", StringComparison.Ordinal));
+                if (deadParameter is not null)
+                {
+                    operation.Parameters!.Remove(deadParameter);
                 }
 
                 return Task.CompletedTask;
