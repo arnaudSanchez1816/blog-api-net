@@ -27,6 +27,29 @@ public class PostsController : ControllerBase
     }
 
     /// <summary>
+    /// Get a paginated list of posts.
+    /// </summary>
+    /// <param name="request"></param>
+    /// <param name="includeUnpublished"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <returns></returns>
+    [HttpGet(ApiRoutes.Posts.GetAll)]
+    public async Task<IActionResult> GetPosts(
+        [FromQuery] GetPostsRequest request,
+        [FromQuery(Name = "unpublished")] bool includeUnpublished)
+    {
+        // overwrite IncludeUnpublished with query param "unpublished" thus ignoring any value set in a includeUnpublished query param
+        // IncludeUnpublished is stripped from OpenApi document with custom transformer
+        request = request with
+        {
+            IncludeUnpublished = includeUnpublished
+        };
+
+        return Ok(request);
+    }
+
+    /// <summary>
     /// Get a post by its slug.
     /// </summary>
     /// <param name="slug"></param>
