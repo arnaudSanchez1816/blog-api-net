@@ -1,3 +1,5 @@
+using BlogApi.Contracts.V1.Requests;
+using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Data;
 using BlogApi.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +13,27 @@ public class PostsRepository : IPostsRepository
     public PostsRepository(DataContext context)
     {
         _context = context;
+    }
+
+    public async Task<List<Post>> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
+    {
+        IQueryable<Post> postsQuery = _context.Posts.AsQueryable();
+
+        // Use default filters if none are provided
+        filter ??= new GetPostsFilterQuery();
+        // Filters
+        postsQuery = ApplyGetPostsFilters(filter, postsQuery);
+
+        if (pagination is null)
+        {
+            return await postsQuery.ToListAsync();
+        }
+
+        // Pagination
+        (int pageNumber, int pageSize) = pagination;
+        int skip = (pageNumber - 1) * pageSize;
+
+        return await postsQuery.Skip(skip).Take(pageSize).ToListAsync();
     }
 
     public async Task<Post?> GetPostBySlug(string slug)
@@ -50,5 +73,37 @@ public class PostsRepository : IPostsRepository
     {
         _context.Posts.Remove(post);
         await _context.SaveChangesAsync();
+    }
+
+    private static IQueryable<Post> ApplyGetPostsFilters(GetPostsFilterQuery filter, IQueryable<Post> postsQuery)
+    {
+        (string q, PostSortOption sortBy, IReadOnlyCollection<string>? tags, bool includeUnpublished) = filter;
+
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            postsQuery = postsQuery.Where(p => p.Title == q || EF.Functions.ILike(p.Title, $"%{q}%"));
+        }
+
+        if (!includeUnpublished)
+        {
+            postsQuery = postsQuery.Where(p => p.PublishedAt != null);
+        }
+
+        if (tags != null && tags.Count > 0)
+        {
+            postsQuery = postsQuery.Where(p => p.Tags.Any(t => tags.Contains(t.Slug)));
+        }
+
+        postsQuery = sortBy switch
+        {
+            PostSortOption.IdAscending => postsQuery.OrderBy(p => p.Id),
+            PostSortOption.IdDescending => postsQuery.OrderByDescending(p => p.Id),
+            PostSortOption.PublishedAtAscending => postsQuery.OrderBy(p => p.PublishedAt).ThenBy(p => p.Id),
+            PostSortOption.PublishedAtDescending => postsQuery.OrderByDescending(p => p.PublishedAt)
+                .ThenBy(p => p.Id),
+            _ => throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, "Unsupported sort value")
+        };
+
+        return postsQuery;
     }
 }

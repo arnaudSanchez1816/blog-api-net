@@ -1,4 +1,6 @@
 using AwesomeAssertions;
+using BlogApi.Contracts.V1.Requests;
+using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Data;
 using BlogApi.Domain;
 using BlogApi.Repositories.Posts;
@@ -429,5 +431,764 @@ public class PostsRepositoryTests : IntegrationTestBase
 
         // Assert
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsMatchingPost_WhenQMatchesTitleCaseInsensitivePartial()
+    {
+        // Arrange
+        Post matching = new Post
+        {
+            Title = "Introduction to Dotnet",
+            Slug = "introduction-to-dotnet",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post nonMatching = new Post
+        {
+            Title = "Cooking recipes",
+            Slug = "cooking-recipes",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        await _postsRepository.AddPost(matching);
+        await _postsRepository.AddPost(nonMatching);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "dotNET" };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.Should().Contain(p => p.Slug == "introduction-to-dotnet");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsMultiplePosts_WhenMultipleTitlesMatchQ()
+    {
+        // Arrange
+        Post first = new Post
+        {
+            Title = "Dotnet basics",
+            Slug = "dotnet-basics",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post second = new Post
+        {
+            Title = "Advanced Dotnet",
+            Slug = "advanced-dotnet",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        Post nonMatching = new Post
+        {
+            Title = "Cooking recipes",
+            Slug = "cooking-recipes",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        await _postsRepository.AddPost(first);
+        await _postsRepository.AddPost(second);
+        await _postsRepository.AddPost(nonMatching);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "dotnet" };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(p => p.Slug == "dotnet-basics");
+        result.Should().Contain(p => p.Slug == "advanced-dotnet");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsEmpty_WhenNoTitlesMatchQ()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Dotnet basics",
+            Slug = "dotnet-basics",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        await _postsRepository.AddPost(post);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "nonexistent" };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_WhenQIsEmptyString()
+    {
+        // Arrange
+        Post first = new Post
+        {
+            Title = "Dotnet basics",
+            Slug = "dotnet-basics",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post second = new Post
+        {
+            Title = "Cooking recipes",
+            Slug = "cooking-recipes",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(first);
+        await _postsRepository.AddPost(second);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "" };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_WhenQIsWhitespaceOnly()
+    {
+        // Arrange: whitespace-only Q is caught by string.IsNullOrWhiteSpace, so it is a no-op.
+        Post post1 = new Post
+        {
+            Title = "Dot net core",
+            Slug = "dot-net-core",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post post2 = new Post
+        {
+            Title = "Dot net core basics",
+            Slug = "dot-net-core-basics",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(post1);
+        await _postsRepository.AddPost(post2);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "   " };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsOnlyPublishedPosts_WhenIncludeUnpublishedIsFalse()
+    {
+        // Arrange
+        Post published = new Post
+        {
+            Title = "Published post",
+            Slug = "published-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post draft = new Post
+        {
+            Title = "Draft post",
+            Slug = "draft-post",
+            AuthorId = _author.Id,
+            PublishedAt = null
+        };
+        await _postsRepository.AddPost(published);
+        await _postsRepository.AddPost(draft);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = false };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.Should().Contain(p => p.Slug == "published-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsPublishedAndDraftPosts_WhenIncludeUnpublishedIsTrue()
+    {
+        // Arrange
+        Post published = new Post
+        {
+            Title = "Published post",
+            Slug = "published-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post draft = new Post
+        {
+            Title = "Draft post",
+            Slug = "draft-post",
+            AuthorId = _author.Id,
+            PublishedAt = null
+        };
+        await _postsRepository.AddPost(published);
+        await _postsRepository.AddPost(draft);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = true };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(p => p.Slug == "published-post");
+        result.Should().Contain(p => p.Slug == "draft-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsEmpty_WhenOnlyDraftsExistAndIncludeUnpublishedIsFalse()
+    {
+        // Arrange
+        Post draft = new Post
+        {
+            Title = "Draft post",
+            Slug = "draft-post",
+            AuthorId = _author.Id,
+            PublishedAt = null
+        };
+        await _postsRepository.AddPost(draft);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = false };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsMatchingPost_WhenFilteringBySingleTagSlug()
+    {
+        // Arrange
+        Tag dotnetTag = new Tag { Name = "Dotnet", Slug = "dotnet" };
+        Tag dockerTag = new Tag { Name = "Docker", Slug = "docker" };
+        _context.Tags.AddRange(dotnetTag, dockerTag);
+        await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        Post postWithDotnetTag = new Post
+        {
+            Title = "Dotnet post",
+            Slug = "dotnet-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        postWithDotnetTag.Tags.Add(dotnetTag);
+
+        Post postWithDockerTag = new Post
+        {
+            Title = "Docker post",
+            Slug = "docker-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        postWithDockerTag.Tags.Add(dockerTag);
+
+        await _postsRepository.AddPost(postWithDotnetTag);
+        await _postsRepository.AddPost(postWithDockerTag);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["dotnet"] };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.Should().Contain(p => p.Slug == "dotnet-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_MatchingAnyOfMultipleTagSlugs()
+    {
+        // Arrange
+        Tag dotnetTag = new Tag { Name = "Dotnet", Slug = "dotnet" };
+        Tag dockerTag = new Tag { Name = "Docker", Slug = "docker" };
+        Tag cookingTag = new Tag { Name = "Cooking", Slug = "cooking" };
+        _context.Tags.AddRange(dotnetTag, dockerTag, cookingTag);
+        await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        Post postWithDotnetTag = new Post
+        {
+            Title = "Dotnet post",
+            Slug = "dotnet-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        postWithDotnetTag.Tags.Add(dotnetTag);
+
+        Post postWithDockerTag = new Post
+        {
+            Title = "Docker post",
+            Slug = "docker-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        postWithDockerTag.Tags.Add(dockerTag);
+
+        Post postWithCookingTag = new Post
+        {
+            Title = "Cooking post",
+            Slug = "cooking-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        postWithCookingTag.Tags.Add(cookingTag);
+
+        await _postsRepository.AddPost(postWithDotnetTag);
+        await _postsRepository.AddPost(postWithDockerTag);
+        await _postsRepository.AddPost(postWithCookingTag);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["dotnet", "docker"] };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(p => p.Slug == "dotnet-post");
+        result.Should().Contain(p => p.Slug == "docker-post");
+        result.Should().NotContain(p => p.Slug == "cooking-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsEmpty_WhenNoPostHasGivenTagSlug()
+    {
+        // Arrange
+        Tag dotnetTag = new Tag { Name = "Dotnet", Slug = "dotnet" };
+        _context.Tags.Add(dotnetTag);
+        await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        Post post = new Post
+        {
+            Title = "Dotnet post",
+            Slug = "dotnet-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        post.Tags.Add(dotnetTag);
+        await _postsRepository.AddPost(post);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["nonexistent-tag"] };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_WhenTagsIsNull()
+    {
+        // Arrange
+        Post first = new Post
+        {
+            Title = "First post",
+            Slug = "first-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post second = new Post
+        {
+            Title = "Second post",
+            Slug = "second-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(first);
+        await _postsRepository.AddPost(second);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = null };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_WhenTagsIsEmptyCollection()
+    {
+        // Arrange
+        Post first = new Post
+        {
+            Title = "First post",
+            Slug = "first-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post second = new Post
+        {
+            Title = "Second post",
+            Slug = "second-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(first);
+        await _postsRepository.AddPost(second);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = [] };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetPosts_OrdersByIdAscending_WhenSortByIsIdAscending()
+    {
+        // Arrange
+        Post first = new Post
+        {
+            Title = "First post",
+            Slug = "first-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post second = new Post
+        {
+            Title = "Second post",
+            Slug = "second-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(first);
+        await _postsRepository.AddPost(second);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery
+        {
+            SortBy = PostSortOption.IdAscending,
+            IncludeUnpublished = true
+        };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().BeInAscendingOrder(p => p.Id);
+    }
+
+    [Fact]
+    public async Task GetPosts_OrdersByIdDescending_WhenSortByIsIdDescending()
+    {
+        // Arrange
+        Post first = new Post
+        {
+            Title = "First post",
+            Slug = "first-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post second = new Post
+        {
+            Title = "Second post",
+            Slug = "second-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(first);
+        await _postsRepository.AddPost(second);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery
+        {
+            SortBy = PostSortOption.IdDescending,
+            IncludeUnpublished = true
+        };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().BeInDescendingOrder(p => p.Id);
+    }
+
+    [Fact]
+    public async Task GetPosts_OrdersByPublishedAtAscending_WhenSortByIsPublishedAtAscending()
+    {
+        // Arrange
+        DateTimeOffset sharedPublishedAt = DateTimeOffset.UtcNow.AddDays(-5);
+        Post earliest = new Post
+        {
+            Title = "Earliest post",
+            Slug = "earliest-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-10)
+        };
+        Post tiedFirst = new Post
+        {
+            Title = "Tied first post",
+            Slug = "tied-first-post",
+            AuthorId = _author.Id,
+            PublishedAt = sharedPublishedAt
+        };
+        Post tiedSecond = new Post
+        {
+            Title = "Tied second post",
+            Slug = "tied-second-post",
+            AuthorId = _author.Id,
+            PublishedAt = sharedPublishedAt
+        };
+        await _postsRepository.AddPost(earliest);
+        await _postsRepository.AddPost(tiedFirst);
+        await _postsRepository.AddPost(tiedSecond);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { SortBy = PostSortOption.PublishedAtAscending };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(3);
+        result[0].Slug.Should().Be("earliest-post");
+        // Tied PublishedAt values should be tiebroken by Id ascending
+        Guid firstTiedId = tiedFirst.Id.CompareTo(tiedSecond.Id) <= 0 ? tiedFirst.Id : tiedSecond.Id;
+        result[1].Id.Should().Be(firstTiedId);
+    }
+
+    [Fact]
+    public async Task GetPosts_OrdersByPublishedAtDescending_WhenSortByIsPublishedAtDescending()
+    {
+        // Arrange
+        DateTimeOffset sharedPublishedAt = DateTimeOffset.UtcNow.AddDays(-5);
+        Post latest = new Post
+        {
+            Title = "Latest post",
+            Slug = "latest-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post tiedFirst = new Post
+        {
+            Title = "Tied first post",
+            Slug = "tied-first-post",
+            AuthorId = _author.Id,
+            PublishedAt = sharedPublishedAt
+        };
+        Post tiedSecond = new Post
+        {
+            Title = "Tied second post",
+            Slug = "tied-second-post",
+            AuthorId = _author.Id,
+            PublishedAt = sharedPublishedAt
+        };
+        await _postsRepository.AddPost(latest);
+        await _postsRepository.AddPost(tiedFirst);
+        await _postsRepository.AddPost(tiedSecond);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { SortBy = PostSortOption.PublishedAtDescending };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(3);
+        result[0].Slug.Should().Be("latest-post");
+        // Tied PublishedAt values should still be tiebroken by Id ascending (ThenBy, not ThenByDescending)
+        Guid firstTiedId = tiedFirst.Id.CompareTo(tiedSecond.Id) <= 0 ? tiedFirst.Id : tiedSecond.Id;
+        result[1].Id.Should().Be(firstTiedId);
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllMatchingPosts_WhenPaginationIsNull()
+    {
+        // Arrange
+        for (int i = 0; i < 5; i++)
+            await _postsRepository.AddPost(new Post
+            {
+                Title = $"Post {i}",
+                Slug = $"post-{i}",
+                AuthorId = _author.Id,
+                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+            });
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), null);
+
+        // Assert
+        result.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsPageSizeResultsAtCorrectOffset_WhenPaginated()
+    {
+        // Arrange: 5 posts ordered by PublishedAt descending (default sort), page 2 with page size 2
+        // should skip the 2 most recent posts and return the next 2.
+        for (int i = 0; i < 5; i++)
+            await _postsRepository.AddPost(new Post
+            {
+                Title = $"Post {i}",
+                Slug = $"post-{i}",
+                AuthorId = _author.Id,
+                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+            });
+
+        PaginationQuery pagination = new PaginationQuery(2, 2);
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(p => p.Slug == "post-2");
+        result.Should().Contain(p => p.Slug == "post-3");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsPartialResults_OnLastPage()
+    {
+        // Arrange: 5 posts, page size 2 means page 3 only has 1 remaining result
+        for (int i = 0; i < 5; i++)
+            await _postsRepository.AddPost(new Post
+            {
+                Title = $"Post {i}",
+                Slug = $"post-{i}",
+                AuthorId = _author.Id,
+                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+            });
+
+        PaginationQuery pagination = new PaginationQuery(3, 2);
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.Should().Contain(p => p.Slug == "post-4");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsEmpty_WhenPageIsBeyondLastPage()
+    {
+        // Arrange
+        for (int i = 0; i < 3; i++)
+            await _postsRepository.AddPost(new Post
+            {
+                Title = $"Post {i}",
+                Slug = $"post-{i}",
+                AuthorId = _author.Id,
+                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+            });
+
+        PaginationQuery pagination = new PaginationQuery(3, 2);
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_WhenFilterIsNull()
+    {
+        // Arrange
+        Post published = new Post
+        {
+            Title = "Published post",
+            Slug = "published-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post draft = new Post
+        {
+            Title = "Draft post",
+            Slug = "draft-post",
+            AuthorId = _author.Id,
+            PublishedAt = null
+        };
+        await _postsRepository.AddPost(published);
+        await _postsRepository.AddPost(draft);
+
+        // Act: null filter should default to excluding unpublished, no tag filter, default sort
+        List<Post> result = await _postsRepository.GetPosts(null, null);
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.Should().Contain(p => p.Slug == "published-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_CombinesTagFilterIncludeUnpublishedAndSort_Correctly()
+    {
+        // Arrange
+        Tag dotnetTag = new Tag { Name = "Dotnet", Slug = "dotnet" };
+        Tag dockerTag = new Tag { Name = "Docker", Slug = "docker" };
+        _context.Tags.AddRange(dotnetTag, dockerTag);
+        await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        Post publishedDotnetOlder = new Post
+        {
+            Title = "Older published dotnet post",
+            Slug = "older-published-dotnet-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-10)
+        };
+        publishedDotnetOlder.Tags.Add(dotnetTag);
+
+        Post publishedDotnetNewer = new Post
+        {
+            Title = "Newer published dotnet post",
+            Slug = "newer-published-dotnet-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        publishedDotnetNewer.Tags.Add(dotnetTag);
+
+        Post draftDotnet = new Post
+        {
+            Title = "Draft dotnet post",
+            Slug = "draft-dotnet-post",
+            AuthorId = _author.Id,
+            PublishedAt = null
+        };
+        draftDotnet.Tags.Add(dotnetTag);
+
+        Post publishedDocker = new Post
+        {
+            Title = "Published docker post",
+            Slug = "published-docker-post",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        publishedDocker.Tags.Add(dockerTag);
+
+        await _postsRepository.AddPost(publishedDotnetOlder);
+        await _postsRepository.AddPost(publishedDotnetNewer);
+        await _postsRepository.AddPost(draftDotnet);
+        await _postsRepository.AddPost(publishedDocker);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery
+        {
+            Tags = ["dotnet"],
+            IncludeUnpublished = false,
+            SortBy = PostSortOption.PublishedAtDescending
+        };
+
+        // Act
+        List<Post> result = await _postsRepository.GetPosts(filter, null);
+
+        // Assert
+        result.Should().HaveCount(2);
+        result[0].Slug.Should().Be("newer-published-dotnet-post");
+        result[1].Slug.Should().Be("older-published-dotnet-post");
     }
 }

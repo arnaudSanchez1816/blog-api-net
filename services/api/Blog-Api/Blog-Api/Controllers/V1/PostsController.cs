@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 using Asp.Versioning;
 using BlogApi.Contracts.V1.Requests;
+using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
 using BlogApi.Mapping;
@@ -29,24 +30,27 @@ public class PostsController : ControllerBase
     /// <summary>
     /// Get a paginated list of posts.
     /// </summary>
-    /// <param name="request"></param>
+    /// <param name="filterQuery"></param>
+    /// <param name="paginationQuery"></param>
     /// <param name="includeUnpublished"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Posts.GetAll)]
     public async Task<IActionResult> GetPosts(
-        [FromQuery] GetPostsRequest request,
+        [FromQuery] GetPostsFilterQuery filterQuery,
+        [FromQuery] PaginationQuery paginationQuery,
         [FromQuery(Name = "unpublished")] bool includeUnpublished)
     {
+        // Todo : Set unpublished to false when unauthenticated
         // overwrite IncludeUnpublished with query param "unpublished" thus ignoring any value set in a includeUnpublished query param
         // IncludeUnpublished is stripped from OpenApi document with custom transformer
-        request = request with
+        filterQuery = filterQuery with
         {
             IncludeUnpublished = includeUnpublished
         };
 
-        return Ok(request);
+        return Ok(filterQuery);
     }
 
     /// <summary>

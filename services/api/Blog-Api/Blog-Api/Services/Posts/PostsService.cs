@@ -1,4 +1,5 @@
 using BlogApi.Contracts.V1.Requests;
+using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Domain;
 using BlogApi.Repositories.Posts;
 using BlogApi.Services.Tags;
@@ -15,6 +16,11 @@ public class PostsService : IPostsService
     {
         _postsRepository = postsRepository;
         _tagsService = tagsService;
+    }
+
+    public async Task<List<Post>> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
+    {
+        return await _postsRepository.GetPosts(filter, pagination);
     }
 
     public async Task<Post?> GetPostBySlug(string slug)

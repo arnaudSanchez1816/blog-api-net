@@ -1,9 +1,11 @@
+using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Domain;
 
 namespace BlogApi.Repositories.Posts;
 
 public interface IPostsRepository
 {
+    public Task<List<Post>> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination);
     public Task<Post?> GetPostBySlug(string slug);
     public Task<Post?> GetPostBySlugWithTags(string slug);
     public Task<IReadOnlyCollection<Post>> GetPostsStartingWithSlug(string slug);
