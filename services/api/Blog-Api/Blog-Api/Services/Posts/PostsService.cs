@@ -18,7 +18,7 @@ public class PostsService : IPostsService
         _tagsService = tagsService;
     }
 
-    public async Task<List<Post>> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
+    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
     {
         return await _postsRepository.GetPosts(filter, pagination);
     }

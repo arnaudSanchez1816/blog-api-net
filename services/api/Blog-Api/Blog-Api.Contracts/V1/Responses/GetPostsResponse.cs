@@ -15,15 +15,15 @@ public record GetPostsResponse
     {
     }
 
-    public static GetPostsResponse Create(IReadOnlyCollection<PostResponse> posts, GetPostsFilterQuery filter,
-        PaginationQuery pagination)
+    public static GetPostsResponse Create(IReadOnlyCollection<PostResponse> posts, int totalCount,
+        GetPostsFilterQuery filter, PaginationQuery pagination)
     {
         GetPostsResponse response = new GetPostsResponse
         {
             Posts = posts,
             Metadata = new PagedResponseMetadata
             {
-                Count = posts.Count,
+                Count = totalCount,
                 PageNumber = pagination.PageNumber >= 1 ? pagination.PageNumber : null,
                 PageSize = pagination.PageSize >= 1 ? pagination.PageSize : null,
                 SortBy = filter.SortBy != GetPostsFilterQuery.DefaultSortOption

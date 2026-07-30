@@ -6,6 +6,7 @@ using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
 using BlogApi.Mapping;
+using BlogApi.Repositories.Posts;
 using BlogApi.Routes.V1;
 using BlogApi.Services.Posts;
 using BlogApi.Utils;
@@ -50,10 +51,10 @@ public class PostsController : ControllerBase
             IncludeUnpublished = includeUnpublished
         };
 
-        List<Post> posts = await _postsService.GetPosts(filterQuery, paginationQuery);
-        List<PostResponse> mappedPosts = posts.Select(p => p.ToPostResponse()).ToList();
+        PagedPostsResult result = await _postsService.GetPosts(filterQuery, paginationQuery);
+        List<PostResponse> mappedPosts = result.Posts.Select(p => p.ToPostResponse()).ToList();
 
-        return Ok(GetPostsResponse.Create(mappedPosts, filterQuery, paginationQuery));
+        return Ok(GetPostsResponse.Create(mappedPosts, result.TotalCount, filterQuery, paginationQuery));
     }
 
     /// <summary>

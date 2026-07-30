@@ -457,7 +457,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "dotNET" };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -496,7 +497,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "dotnet" };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -520,7 +522,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "nonexistent" };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -550,7 +553,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "" };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -580,7 +584,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "   " };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -610,7 +615,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = false };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -641,7 +647,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = true };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -665,7 +672,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = false };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -704,7 +712,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["dotnet"] };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -755,7 +764,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["dotnet", "docker"] };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -785,7 +795,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["nonexistent-tag"] };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -815,7 +826,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = null };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -845,7 +857,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = [] };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -879,7 +892,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -914,7 +928,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -954,7 +969,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { SortBy = PostSortOption.PublishedAtAscending };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(3);
@@ -997,7 +1013,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         GetPostsFilterQuery filter = new GetPostsFilterQuery { SortBy = PostSortOption.PublishedAtDescending };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(3);
@@ -1021,7 +1038,8 @@ public class PostsRepositoryTests : IntegrationTestBase
             });
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(5);
@@ -1044,12 +1062,14 @@ public class PostsRepositoryTests : IntegrationTestBase
         PaginationQuery pagination = new PaginationQuery(2, 2);
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
         result.Should().Contain(p => p.Slug == "post-2");
         result.Should().Contain(p => p.Slug == "post-3");
+        pagedResult.TotalCount.Should().Be(5);
     }
 
     [Fact]
@@ -1068,11 +1088,13 @@ public class PostsRepositoryTests : IntegrationTestBase
         PaginationQuery pagination = new PaginationQuery(3, 2);
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
         result.Should().Contain(p => p.Slug == "post-4");
+        pagedResult.TotalCount.Should().Be(5);
     }
 
     [Fact]
@@ -1091,10 +1113,12 @@ public class PostsRepositoryTests : IntegrationTestBase
         PaginationQuery pagination = new PaginationQuery(3, 2);
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
+        pagedResult.TotalCount.Should().Be(3);
     }
 
     [Fact]
@@ -1119,7 +1143,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         await _postsRepository.AddPost(draft);
 
         // Act: null filter should default to excluding unpublished, no tag filter, default sort
-        List<Post> result = await _postsRepository.GetPosts(null, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(null, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -1184,7 +1209,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        List<Post> result = await _postsRepository.GetPosts(filter, null);
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);

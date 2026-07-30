@@ -15,25 +15,29 @@ public class PostsRepository : IPostsRepository
         _context = context;
     }
 
-    public async Task<List<Post>> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
+    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
     {
-        IQueryable<Post> postsQuery = _context.Posts.AsQueryable();
+        IQueryable<Post> postsQuery = _context.Posts.AsQueryable().Include(p => p.Author).Include(p => p.Tags);
 
         // Use default filters if none are provided
         filter ??= new GetPostsFilterQuery();
         // Filters
         postsQuery = ApplyGetPostsFilters(filter, postsQuery);
 
+        int totalCount = await postsQuery.CountAsync();
+
         if (pagination is null)
         {
-            return await postsQuery.ToListAsync();
+            List<Post> allPosts = await postsQuery.ToListAsync();
+            return new PagedPostsResult { Posts = allPosts, TotalCount = totalCount };
         }
 
         // Pagination
         (int pageNumber, int pageSize) = pagination;
         int skip = (pageNumber - 1) * pageSize;
 
-        return await postsQuery.Skip(skip).Take(pageSize).ToListAsync();
+        List<Post> pagedPosts = await postsQuery.Skip(skip).Take(pageSize).ToListAsync();
+        return new PagedPostsResult { Posts = pagedPosts, TotalCount = totalCount };
     }
 
     public async Task<Post?> GetPostBySlug(string slug)

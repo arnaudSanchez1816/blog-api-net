@@ -1,12 +1,13 @@
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Domain;
+using BlogApi.Repositories.Posts;
 
 namespace BlogApi.Services.Posts;
 
 public interface IPostsService
 {
-    public Task<List<Post>> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination);
+    public Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination);
     public Task<Post?> GetPostBySlug(string slug);
     public Task<Post?> GetPostBySlugWithTags(string slug);
     public Task<Post> CreatePost(Post post);
