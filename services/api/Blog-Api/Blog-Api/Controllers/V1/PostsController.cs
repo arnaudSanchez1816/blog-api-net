@@ -50,7 +50,10 @@ public class PostsController : ControllerBase
             IncludeUnpublished = includeUnpublished
         };
 
-        return Ok(filterQuery);
+        List<Post> posts = await _postsService.GetPosts(filterQuery, paginationQuery);
+        List<PostResponse> mappedPosts = posts.Select(p => p.ToPostResponse()).ToList();
+
+        return Ok(GetPostsResponse.Create(mappedPosts, filterQuery, paginationQuery));
     }
 
     /// <summary>

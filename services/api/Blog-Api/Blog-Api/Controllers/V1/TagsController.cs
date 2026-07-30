@@ -42,7 +42,7 @@ public class TagsController : ControllerBase
         GetTagsResponse response = new GetTagsResponse
         {
             Tags = tags.Select(t => t.ToTagResponse()).ToList(),
-            Metadata = new PaginationQueryMetadata
+            Metadata = new PagedResponseMetadata
             {
                 Count = tags.Count
             }

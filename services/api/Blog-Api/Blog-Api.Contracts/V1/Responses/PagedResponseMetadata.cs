@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace BlogApi.Contracts.V1.Requests;
+namespace BlogApi.Contracts.V1.Responses;
 
-public record PaginationQueryMetadata
+public record PagedResponseMetadata
 {
     public long Count { get; init; }
 
