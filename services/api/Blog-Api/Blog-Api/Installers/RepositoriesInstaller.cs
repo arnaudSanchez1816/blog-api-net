@@ -1,3 +1,4 @@
+using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
 using BlogApi.Repositories.Tags;
 
@@ -9,6 +10,7 @@ public static class RepositoriesInstaller
     {
         services.AddScoped<ITagsRepository, TagsRepository>();
         services.AddScoped<IPostsRepository, PostsRepository>();
+        services.AddScoped<ICommentsRepository, CommentsRepository>();
 
         return services;
     }

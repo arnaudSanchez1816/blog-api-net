@@ -9,6 +9,8 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
     public DbSet<Post> Posts { get; set; }
     public DbSet<Tag> Tags { get; set; }
 
+    public DbSet<Comment> Comments { get; set; }
+
     public DataContext(DbContextOptions options) : base(options)
     {
     }
@@ -46,6 +48,14 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
             user.Ignore(u => u.SecurityStamp);
             user.Ignore(u => u.TwoFactorEnabled);
             user.HasMany(u => u.Posts).WithOne(p => p.Author);
+        });
+    }
+
+    private static void ConfigureComment(ModelBuilder builder)
+    {
+        builder.Entity<Comment>(comment =>
+        {
+            comment.HasOne(c => c.Post).WithMany(p => p.Comments);
         });
     }
 }

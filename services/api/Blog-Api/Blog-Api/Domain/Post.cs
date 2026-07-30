@@ -27,5 +27,7 @@ public class Post : BaseEntity
     [ForeignKey(nameof(AuthorId))]
     public BlogUser Author { get; set; } = null!;
 
+    public ICollection<Comment> Comments { get; } = new List<Comment>();
+
     public ICollection<Tag> Tags { get; } = new List<Tag>();
 }
