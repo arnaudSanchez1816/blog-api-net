@@ -3,6 +3,7 @@ using BlogApi.Data;
 using BlogApi.Domain;
 using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Integration.Repositories;
 
@@ -58,8 +59,7 @@ public class CommentsRepositoryTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        _context.Comments.Add(comment);
-        await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment);
 
         Comment? foundComment = await _commentsRepository.GetCommentById(comment.Id);
 
@@ -92,8 +92,8 @@ public class CommentsRepositoryTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow.AddDays(10),
             PostId = _post.Id
         };
-        _context.Comments.AddRange(comment, comment2);
-        await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment2);
 
         List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(_post.Id);
 
@@ -116,5 +116,57 @@ public class CommentsRepositoryTests : IntegrationTestBase
         List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(Guid.NewGuid());
 
         comments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AddComment_Success_WhenCommentDoNotExists()
+    {
+        Comment comment = new Comment
+        {
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        await _commentsRepository.AddComment(comment);
+
+        Comment? commentAdded = await _commentsRepository.GetCommentById(comment.Id);
+        commentAdded.Should().NotBeNull();
+        commentAdded.Should().BeEquivalentTo(comment);
+    }
+
+    [Fact]
+    public async Task DeleteComment_Success_WhenCommentExists()
+    {
+        Comment comment = new Comment
+        {
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+        await _commentsRepository.AddComment(comment);
+
+        await _commentsRepository.DeleteComment(comment);
+
+        Comment? deletedComment = await _commentsRepository.GetCommentById(comment.Id);
+        deletedComment.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteComment_Fail_WhenCommentDoesNotExists()
+    {
+        Comment comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        Func<Task> act = async () => await _commentsRepository.DeleteComment(comment);
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 }

@@ -22,4 +22,22 @@ public class CommentsRepository : ICommentsRepository
     {
         return await _context.Comments.Where(c => c.PostId == postId).ToListAsync();
     }
+
+    public async Task AddComment(Comment comment)
+    {
+        _context.Comments.Add(comment);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateComment(Comment commentToUpdate)
+    {
+        _context.Comments.Update(commentToUpdate);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteComment(Comment commentToDelete)
+    {
+        _context.Comments.Remove(commentToDelete);
+        await _context.SaveChangesAsync();
+    }
 }
