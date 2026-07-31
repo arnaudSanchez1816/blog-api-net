@@ -23,6 +23,12 @@ public class UpdatePostRequestValidator : AbstractValidator<UpdatePostRequest>
             .WithMessage(PostsValidationConstants.TitleMaxLengthMessage)
             .When(x => x.Title is not null);
 
+        // Body
+        RuleFor(x => x.Body)
+            .MaximumLength(PostsValidationConstants.BodyMaxLength)
+            .WithMessage(PostsValidationConstants.BodyMaxLengthMessage)
+            .When(x => x.Body is not null);
+
         // Tags
         RuleFor(x => x.Tags)
             .Must(tags => tags!.Count == tags!.Distinct().Count())

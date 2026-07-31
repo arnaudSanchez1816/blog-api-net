@@ -139,6 +139,37 @@ public class UpdatePostRequestValidatorTests
     }
 
     [Fact]
+    public void Validate_HasError_WhenBodyExceedsMaxLength()
+    {
+        UpdatePostRequest request = new UpdatePostRequest
+        {
+            Title = null,
+            Body = new string('a', PostsValidationConstants.BodyMaxLength + 1),
+            Tags = null
+        };
+
+        TestValidationResult<UpdatePostRequest> result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Body)
+            .WithErrorMessage(PostsValidationConstants.BodyMaxLengthMessage);
+    }
+
+    [Fact]
+    public void Validate_HasNoError_WhenBodyIsAtMaxLength()
+    {
+        UpdatePostRequest request = new UpdatePostRequest
+        {
+            Title = null,
+            Body = new string('a', PostsValidationConstants.BodyMaxLength),
+            Tags = null
+        };
+
+        TestValidationResult<UpdatePostRequest> result = _validator.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Body);
+    }
+
+    [Fact]
     public void Validate_HasNoError_WhenTitleIsNullButAnotherFieldIsSet()
     {
         UpdatePostRequest request = new UpdatePostRequest
