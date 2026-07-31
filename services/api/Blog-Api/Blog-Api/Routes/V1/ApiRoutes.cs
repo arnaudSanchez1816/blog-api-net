@@ -27,4 +27,13 @@ public static class ApiRoutes
         public const string DeleteBySlug = "{slug}";
         public const string UpdateBySlug = "{slug}";
     }
+
+    public static class Comments
+    {
+        public const string Base = $"{ApiRoutes.Base}/comments";
+
+        public const string GetById = "{id}";
+        public const string UpdateById = "{id}";
+        public const string DeleteById = "{id}";
+    }
 }
