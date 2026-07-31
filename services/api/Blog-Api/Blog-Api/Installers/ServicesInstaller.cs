@@ -1,3 +1,4 @@
+using BlogApi.Services;
 using BlogApi.Services.Comments;
 using BlogApi.Services.Posts;
 using BlogApi.Services.Tags;
@@ -11,6 +12,7 @@ public static class ServicesInstaller
         services.AddScoped<IPostsService, PostsService>();
         services.AddScoped<ITagsService, TagsService>();
         services.AddScoped<ICommentsService, CommentsService>();
+        services.AddSingleton<TextService>();
 
         return services;
     }
