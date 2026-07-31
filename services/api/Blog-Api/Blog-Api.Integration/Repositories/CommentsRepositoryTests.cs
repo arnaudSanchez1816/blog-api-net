@@ -137,6 +137,109 @@ public class CommentsRepositoryTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task AddComment_Fail_WhenCommentBodyIsTooLong()
+    {
+        Comment comment = new Comment
+        {
+            Body = new string('a', Comment.BodyMaxLength + 1),
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        Func<Task> act = async () => await _commentsRepository.AddComment(comment);
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task AddComment_Fail_WhenUsernameIsTooLong()
+    {
+        Comment comment = new Comment
+        {
+            Body = "body",
+            Username = new string('a', Comment.UsernameMaxLength + 1),
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        Func<Task> act = async () => await _commentsRepository.AddComment(comment);
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task UpdateComment_Success_WhenCommentExists()
+    {
+        Comment comment = new Comment
+        {
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+        await _commentsRepository.AddComment(comment);
+
+        comment.Body = "Update comment body";
+        await _commentsRepository.UpdateComment(comment);
+
+        Comment? updatedComment = await _commentsRepository.GetCommentById(comment.Id);
+        updatedComment.Should().BeEquivalentTo(comment);
+    }
+
+    [Fact]
+    public async Task UpdateComment_Fail_WhenCommentDoesNotExists()
+    {
+        Comment comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        Func<Task> act = async () => await _commentsRepository.UpdateComment(comment);
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task UpdateComment_Fail_WhenCommentBodyIsTooLong()
+    {
+        Comment comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        comment.Body = new string('a', Comment.BodyMaxLength + 1);
+        Func<Task> act = async () => await _commentsRepository.UpdateComment(comment);
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task UpdateComment_Fail_WhenUsernameIsTooLong()
+    {
+        Comment comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+
+        comment.Username = new string('a', Comment.UsernameMaxLength + 1);
+        Func<Task> act = async () => await _commentsRepository.UpdateComment(comment);
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
     public async Task DeleteComment_Success_WhenCommentExists()
     {
         Comment comment = new Comment

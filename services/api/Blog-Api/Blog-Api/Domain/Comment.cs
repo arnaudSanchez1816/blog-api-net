@@ -6,8 +6,9 @@ namespace BlogApi.Domain;
 public class Comment : BaseEntity
 {
     public const int BodyMaxLength = 3000;
+    public const int UsernameMaxLength = 256;
 
-    [MaxLength(256)]
+    [MaxLength(UsernameMaxLength)]
     public required string Username { get; set; }
 
     [MaxLength(BodyMaxLength)]
