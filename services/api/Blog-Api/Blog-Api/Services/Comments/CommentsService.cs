@@ -24,7 +24,6 @@ public class CommentsService : ICommentsService
 
     public async Task<Comment> CreateComment(string username, string body, Guid postId)
     {
-        // Todo : sanitize text
         Comment newComment = new Comment
         {
             Body = body,
@@ -49,7 +48,6 @@ public class CommentsService : ICommentsService
             return;
         }
 
-        // Todo : sanitize text
         if (username is not null)
         {
             comment.Username = username;
