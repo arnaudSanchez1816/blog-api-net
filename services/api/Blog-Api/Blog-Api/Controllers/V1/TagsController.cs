@@ -123,9 +123,7 @@ public class TagsController : ControllerBase
             return NotFound();
         }
 
-        tag.Name = request.Name ?? tag.Name;
-        tag.Slug = request.Slug ?? tag.Slug;
-        await _tagsService.UpdateTag(tag);
+        await _tagsService.UpdateTag(tag, request.Name, request.Slug);
 
         return Ok(tag.ToTagResponse());
     }

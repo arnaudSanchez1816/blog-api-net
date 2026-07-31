@@ -25,7 +25,7 @@ public class TagsControllerTests : IntegrationTestBase
 
     private HttpClient HttpClient
     {
-        get { return Factory.HttpClient; }
+        get => Factory.HttpClient;
     }
 
     public TagsControllerTests(BlogApiFactory factory) : base(factory)
@@ -103,6 +103,9 @@ public class TagsControllerTests : IntegrationTestBase
             await response.Content.ReadFromJsonAsync<GetTagsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Metadata.Count.Should().Be(2);
+        body.Metadata.PageNumber.Should().BeNull();
+        body.Metadata.PageSize.Should().BeNull();
+        body.Metadata.SortBy.Should().BeNull();
         body.Tags.Should().HaveCount(2);
         body.Tags.Should().Contain(t => t.Slug == tag1.Slug);
         body.Tags.Should().Contain(t => t.Slug == tag2.Slug);
@@ -435,7 +438,7 @@ public class TagsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task UpdateTag_LeavesTagUnchanged_WhenRequestBodyIsEmptyObject()
+    public async Task UpdateTag_Returns400_WhenRequestBodyIsEmptyObject()
     {
         Tag tag = new Tag { Name = "OriginalName", Slug = "tag-slug" };
         await _tagsRepository.AddTag(tag);
@@ -443,16 +446,7 @@ public class TagsControllerTests : IntegrationTestBase
         HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
             new UpdateTagRequest(), TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        HttpResponseMessage followUpResponse = await HttpClient.GetAsync($"api/v1.0/tags/{tag.Slug}",
-            TestContext.Current.CancellationToken);
-        followUpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        TagResponse? followUpBody = await followUpResponse.Content.ReadFromJsonAsync<TagResponse>(
-            TestContext.Current.CancellationToken);
-        followUpBody.Should().NotBeNull();
-        followUpBody.Name.Should().Be(tag.Name);
-        followUpBody.Slug.Should().Be(tag.Slug);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

@@ -47,8 +47,23 @@ public class TagsService : ITagsService
         await _tagsRepository.DeleteTag(tag);
     }
 
-    public async Task UpdateTag(Tag tag)
+    public async Task UpdateTag(Tag tag, string? name, string? slug)
     {
+        if (name is null && slug is null)
+        {
+            return;
+        }
+
+        if (name is not null)
+        {
+            tag.Name = name;
+        }
+
+        if (slug is not null)
+        {
+            tag.Slug = slug;
+        }
+
         await _tagsRepository.UpdateTag(tag);
     }
 

@@ -21,7 +21,7 @@ public static class TagsMappingExtensions
         {
             Id = tag.Id,
             Slug = tag.Slug,
-            Name = tag.Slug
+            Name = tag.Name
         };
     }
 }

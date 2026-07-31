@@ -10,17 +10,41 @@ public class UpdateTagRequestValidatorTests
     private readonly UpdateTagRequestValidator _validator = new UpdateTagRequestValidator();
 
     [Fact]
-    public void Validate_HasError_WhenNameIsNull()
+    public void Validate_Success_WhenOnlySlugIsProvided()
     {
         UpdateTagRequest request = new UpdateTagRequest
         {
-            Name = null,
             Slug = "tag-slug"
         };
 
         TestValidationResult<UpdateTagRequest> result = _validator.TestValidate(request);
 
-        result.ShouldHaveValidationErrorFor(x => x.Name);
+        result.ShouldNotHaveValidationErrorFor(x => x.Name);
+    }
+
+    [Fact]
+    public void Validate_Success_WhenOnlyNameIsProvided()
+    {
+        UpdateTagRequest request = new UpdateTagRequest
+        {
+            Name = "Tag name"
+        };
+
+        TestValidationResult<UpdateTagRequest> result = _validator.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.Slug);
+    }
+
+
+    [Fact]
+    public void Validate_HasError_WhenNeitherNameOrSlugIsProvided()
+    {
+        UpdateTagRequest request = new UpdateTagRequest();
+
+        TestValidationResult<UpdateTagRequest> result = _validator.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(nameof(UpdateTagRequest))
+            .WithErrorMessage(TagsValidationConstants.AtLeastOneFieldMessage);
     }
 
     [Fact]
@@ -50,21 +74,6 @@ public class UpdateTagRequestValidatorTests
 
         result.ShouldHaveValidationErrorFor(x => x.Name)
             .WithErrorMessage(TagsValidationConstants.NameTooLongMessage);
-    }
-
-    [Fact]
-    public void Validate_HasError_WhenSlugIsNull()
-    {
-        UpdateTagRequest request = new UpdateTagRequest
-        {
-            Name = "Tag name",
-            Slug = null
-        };
-
-        TestValidationResult<UpdateTagRequest> result = _validator.TestValidate(request);
-
-        result.ShouldHaveValidationErrorFor(x => x.Slug)
-            .WithErrorMessage(TagsValidationConstants.InvalidSlugMessage);
     }
 
     [Fact]

@@ -13,5 +13,5 @@ public interface ITagsService
 
     public Task<Tag> CreateTag(Tag tag);
     public Task DeleteTag(Tag tag);
-    public Task UpdateTag(Tag tag);
+    public Task UpdateTag(Tag tag, string? name, string? slug);
 }

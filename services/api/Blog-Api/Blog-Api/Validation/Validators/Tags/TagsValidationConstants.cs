@@ -4,6 +4,8 @@ namespace BlogApi.Validation.Validators.Tags;
 
 public static class TagsValidationConstants
 {
+    public const string AtLeastOneFieldMessage = "At least one of Name or Slug must be specified.";
+
     public static readonly string NameTooLongMessage = $"Tag name must be {Tag.TagNameMaxLength} characters maximum.";
 
     public static readonly string InvalidSlugMessage =
