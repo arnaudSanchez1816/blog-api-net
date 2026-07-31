@@ -2,20 +2,28 @@ using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Domain;
 using BlogApi.Repositories.Posts;
+using BlogApi.Services.Markdown;
 using BlogApi.Services.Tags;
+using BlogApi.Services.Text;
 using BlogApi.Utils;
 
 namespace BlogApi.Services.Posts;
 
 public class PostsService : IPostsService
 {
+    private const int DescriptionWordCount = 50;
+    private readonly IMarkdownService _markdownService;
     private readonly IPostsRepository _postsRepository;
     private readonly ITagsService _tagsService;
+    private readonly ITextService _textService;
 
-    public PostsService(IPostsRepository postsRepository, ITagsService tagsService)
+    public PostsService(IPostsRepository postsRepository, ITagsService tagsService, IMarkdownService markdownService,
+        ITextService textService)
     {
         _postsRepository = postsRepository;
         _tagsService = tagsService;
+        _markdownService = markdownService;
+        _textService = textService;
     }
 
     public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
@@ -44,19 +52,18 @@ public class PostsService : IPostsService
         string? body = updatePostDto.Body;
         if (body is not null)
         {
-            // Todo : sanitize body
             post.Body = body;
-            // Todo : parse description plain text from markdown body
-            post.Description = body.Substring(0, Math.Min(body.Length, 50));
-            // Todo : estimate reading time
-            post.ReadingTime = 1;
+
+            string bodyPlainText = _markdownService.MarkdownToPlainText(body);
+            post.Description = _textService.GetFirstWordsSubstring(bodyPlainText, DescriptionWordCount) + "…";
+            post.ReadingTime = _textService.EstimateReadingTime(bodyPlainText);
         }
 
         string? title = updatePostDto.Title;
         if (title is not null)
         {
-            // Todo : sanitize body
             post.Title = title;
+            post.Slug = await GenerateUniqueSlugAsync(title);
         }
 
         IReadOnlyCollection<string>? tagSlugs = updatePostDto.Tags;
@@ -92,6 +99,7 @@ public class PostsService : IPostsService
         }
 
         int nextSuffix = takenSlugs
+            .Where(slug => slug.Length > baseSlug.Length)
             .Select(slug => slug[(baseSlug.Length + 1)..])
             .Where(rest => rest.Length > 0 && rest.All(char.IsDigit))
             .Select(int.Parse)

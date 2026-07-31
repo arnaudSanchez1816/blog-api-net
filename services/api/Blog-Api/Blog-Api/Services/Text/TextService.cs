@@ -1,12 +1,9 @@
 using System.Text.RegularExpressions;
 
-namespace BlogApi.Services;
+namespace BlogApi.Services.Text;
 
-public partial class TextService
+public partial class TextService : ITextService
 {
-    [GeneratedRegex(@"\S+")]
-    private static partial Regex ReadingTimeRegex();
-
     public string GetFirstWordsSubstring(string text, int wordCount)
     {
         wordCount = Math.Max(1, wordCount);
@@ -39,4 +36,7 @@ public partial class TextService
         // 200 words per minute
         return count > 0 ? Math.Max(count / 200, 1) : 1;
     }
+
+    [GeneratedRegex(@"\S+")]
+    private static partial Regex ReadingTimeRegex();
 }

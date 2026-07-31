@@ -1,6 +1,6 @@
 using System.Text;
 using AwesomeAssertions;
-using BlogApi.Services;
+using BlogApi.Services.Text;
 
 namespace BlogApi.Unit.Services;
 
