@@ -100,6 +100,76 @@ public class PostsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdatePost_SetsPublishedAt_WhenIsPublishedIsTrueAndPostIsUnpublished()
+    {
+        Post post = CreatePost();
+        post.PublishedAt = null;
+        DateTimeOffset before = DateTimeOffset.UtcNow;
+
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
+
+        await _postsService.UpdatePost(post, request);
+
+        DateTimeOffset after = DateTimeOffset.UtcNow;
+        post.PublishedAt.Should().NotBeNull();
+        post.PublishedAt!.Value.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+    }
+
+    [Fact]
+    public async Task UpdatePost_ClearsPublishedAt_WhenIsPublishedIsFalseAndPostIsPublished()
+    {
+        Post post = CreatePost();
+        post.PublishedAt = DateTimeOffset.UtcNow;
+
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
+
+        await _postsService.UpdatePost(post, request);
+
+        post.PublishedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesPublishedAtUnchanged_WhenIsPublishedIsTrueAndPostIsAlreadyPublished()
+    {
+        Post post = CreatePost();
+        DateTimeOffset originalPublishedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        post.PublishedAt = originalPublishedAt;
+
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
+
+        await _postsService.UpdatePost(post, request);
+
+        post.PublishedAt.Should().Be(originalPublishedAt);
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesPublishedAtUnchanged_WhenIsPublishedIsFalseAndPostIsAlreadyUnpublished()
+    {
+        Post post = CreatePost();
+        post.PublishedAt = null;
+
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
+
+        await _postsService.UpdatePost(post, request);
+
+        post.PublishedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesPublishedAtUnchanged_WhenIsPublishedIsNotProvided()
+    {
+        Post post = CreatePost();
+        DateTimeOffset originalPublishedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        post.PublishedAt = originalPublishedAt;
+
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = null };
+
+        await _postsService.UpdatePost(post, request);
+
+        post.PublishedAt.Should().Be(originalPublishedAt);
+    }
+
+    [Fact]
     public async Task UpdatePost_UpdatesTitleAndSlug_WhenTitleProvided()
     {
         Post post = CreatePost();

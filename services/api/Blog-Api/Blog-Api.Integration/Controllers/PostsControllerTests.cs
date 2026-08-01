@@ -737,6 +737,78 @@ public class PostsControllerTests : IntegrationTestBase
         body.Tags.Should().Contain(t => t.Slug == "java");
     }
 
+    [Fact]
+    public async Task UpdatePost_PublishesPost_WhenIsPublishedIsTrue()
+    {
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
+        DateTimeOffset before = DateTimeOffset.UtcNow;
+
+        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}", request,
+            TestContext.Current.CancellationToken);
+
+        DateTimeOffset after = DateTimeOffset.UtcNow;
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.PublishedAt.Should().NotBeNull();
+        body.PublishedAt!.Value.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+    }
+
+    [Fact]
+    public async Task UpdatePost_HidesPost_WhenIsPublishedIsFalse()
+    {
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
+
+        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}", request,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.PublishedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesPublishedAtUnchanged_WhenIsPublishedIsNotProvided()
+    {
+        DateTimeOffset originalPublishedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = _author.Id,
+            PublishedAt = originalPublishedAt
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
+
+        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}", request,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.PublishedAt.Should().BeCloseTo(originalPublishedAt, TimeSpan.FromMilliseconds(1));
+    }
+
     // ---- GetPostCommentsBySlug ----
 
     [Fact]

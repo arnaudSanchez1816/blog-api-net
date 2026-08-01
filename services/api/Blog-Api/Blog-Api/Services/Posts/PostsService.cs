@@ -86,6 +86,20 @@ public class PostsService : IPostsService
             }
         }
 
+        bool? isPublished = updatePostDto.IsPublished;
+        bool postIsAlreadyPublished = post.PublishedAt != null;
+        if (isPublished is not null && isPublished != postIsAlreadyPublished)
+        {
+            if (isPublished is true)
+            {
+                post.PublishedAt = DateTimeOffset.UtcNow;
+            }
+            else
+            {
+                post.PublishedAt = null;
+            }
+        }
+
         await _postsRepository.UpdatePost(post);
     }
 

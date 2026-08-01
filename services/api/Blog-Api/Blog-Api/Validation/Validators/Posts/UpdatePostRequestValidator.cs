@@ -11,7 +11,7 @@ public class UpdatePostRequestValidator : AbstractValidator<UpdatePostRequest>
     {
         // One of not null
         RuleFor(x => x)
-            .Must(x => x.Title is not null || x.Body is not null || x.Tags is not null)
+            .Must(x => x.Title is not null || x.Body is not null || x.Tags is not null || x.IsPublished is not null)
             .WithMessage(PostsValidationConstants.AtLeastOneFieldMessage)
             .WithName(nameof(UpdatePostRequest));
 

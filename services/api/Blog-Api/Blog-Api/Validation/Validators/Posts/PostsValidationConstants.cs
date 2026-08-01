@@ -9,7 +9,7 @@ public static class PostsValidationConstants
     public const string TitleNotEmptyMessage = "Post title cannot be empty or blank.";
 
     public const string AtLeastOneFieldMessage =
-        "At least one of Title, Body or Tags must be provided.";
+        "At least one of Title, Body, Tags or IsPublished must be provided.";
 
     public const string TagsMustBeUniqueMessage =
         "Each tag must be unique.";

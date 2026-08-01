@@ -17,7 +17,8 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = null,
-            Tags = null
+            Tags = null,
+            IsPublished = null
         };
 
         TestValidationResult<UpdatePostRequest> result = _validator.TestValidate(request);
@@ -33,6 +34,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = null,
+            IsPublished = null,
             Tags = ["tag-a"]
         };
 
@@ -48,6 +50,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = null,
+            IsPublished = null,
             Tags = ["tag-a", "tag-b"]
         };
 
@@ -65,6 +68,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = null,
+            IsPublished = null,
             Tags = [tagSlug]
         };
 
@@ -97,6 +101,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = null,
+            IsPublished = null,
             Tags = ["tag-1", "tag-1"]
         };
 
@@ -113,6 +118,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = string.Empty,
             Body = null,
+            IsPublished = null,
             Tags = null
         };
 
@@ -129,6 +135,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = new string('a', Post.TitleMaxLength + 1),
             Body = null,
+            IsPublished = null,
             Tags = null
         };
 
@@ -145,6 +152,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = new string('a', PostsValidationConstants.BodyMaxLength + 1),
+            IsPublished = null,
             Tags = null
         };
 
@@ -161,6 +169,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = new string('a', PostsValidationConstants.BodyMaxLength),
+            IsPublished = null,
             Tags = null
         };
 
@@ -176,6 +185,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = null,
             Body = "Some body",
+            IsPublished = null,
             Tags = null
         };
 
@@ -191,6 +201,7 @@ public class UpdatePostRequestValidatorTests
         {
             Title = "A valid title",
             Body = "A valid body",
+            IsPublished = false,
             Tags = ["tag-a", "tag-b"]
         };
 

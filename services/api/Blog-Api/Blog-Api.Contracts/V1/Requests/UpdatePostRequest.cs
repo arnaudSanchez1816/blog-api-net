@@ -5,4 +5,5 @@ public record UpdatePostRequest
     public string? Title { get; init; }
     public string? Body { get; init; }
     public IReadOnlyCollection<string>? Tags { get; init; }
+    public bool? IsPublished { get; init; }
 }
