@@ -149,4 +149,51 @@ public class PostsController : ControllerBase
 
         return Ok(post.ToPostResponse());
     }
+
+    /// <summary>
+    /// Get the comments of a given post.
+    /// </summary>
+    /// <param name="slug"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <response code="404"></response>
+    /// <returns></returns>
+    [HttpGet(ApiRoutes.Posts.GetCommentsBySlug)]
+    public async Task<ActionResult<GetPostCommentsResponse>> GetPostCommentsBySlug(
+        [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
+        string slug)
+    {
+        Post? post = await _postsService.GetPostBySlugWithComments(slug);
+        if (post is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(post.ToGetPostCommentsResponse());
+    }
+
+    /// <summary>
+    /// Create a comment for the given post.
+    /// </summary>
+    /// <param name="slug"></param>
+    /// <param name="request"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <response code="404"></response>
+    /// <returns></returns>
+    [HttpPost(ApiRoutes.Posts.CreateCommentBySlug)]
+    public async Task<ActionResult<CommentResponse>> CreatePostComment(
+        [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
+        string slug, [FromBody] CreatePostCommentRequest request)
+    {
+        Post? post = await _postsService.GetPostBySlug(slug);
+        if (post is null)
+        {
+            return NotFound();
+        }
+
+        Comment comment = await _postsService.CreateCommentForPost(post, request.Username, request.Body);
+
+        return Ok(comment.ToCommentResponse());
+    }
 }

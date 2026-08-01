@@ -10,8 +10,10 @@ public interface IPostsService
     public Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination);
     public Task<Post?> GetPostBySlug(string slug);
     public Task<Post?> GetPostBySlugWithTags(string slug);
+    public Task<Post?> GetPostBySlugWithComments(string slug);
     public Task<Post> CreatePost(Post post);
     public Task UpdatePost(Post post, UpdatePostRequest updatePostDto);
     public Task DeletePost(Post post);
     public Task<string> GenerateUniqueSlugAsync(string title);
+    public Task<Comment> CreateCommentForPost(Post post, string username, string body);
 }

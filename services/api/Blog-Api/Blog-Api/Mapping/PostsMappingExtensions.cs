@@ -19,4 +19,17 @@ public static class PostsMappingExtensions
             Tags = post.Tags.Select(x => x.ToTagResponse()).ToList()
         };
     }
+
+    public static GetPostCommentsResponse ToGetPostCommentsResponse(this Post post)
+    {
+        List<CommentResponse> comments = post.Comments.Select(c => c.ToCommentResponse()).ToList();
+        return new GetPostCommentsResponse
+        {
+            Comments = comments,
+            Metadata = new PagedResponseMetadata
+            {
+                Count = comments.Count
+            }
+        };
+    }
 }

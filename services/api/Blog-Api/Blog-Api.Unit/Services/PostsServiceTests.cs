@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Domain;
 using BlogApi.Repositories.Posts;
+using BlogApi.Services.Comments;
 using BlogApi.Services.Markdown;
 using BlogApi.Services.Posts;
 using BlogApi.Services.Tags;
@@ -13,6 +14,7 @@ namespace BlogApi.Unit.Services;
 
 public class PostsServiceTests : IDisposable
 {
+    private readonly Mock<ICommentsService> _commentsService;
     private readonly Mock<IMarkdownService> _markdownService;
     private readonly Mock<IPostsRepository> _postsRepository;
     private readonly PostsService _postsService;
@@ -25,8 +27,9 @@ public class PostsServiceTests : IDisposable
         _tagsService = new Mock<ITagsService>();
         _markdownService = new Mock<IMarkdownService>();
         _textService = new Mock<ITextService>();
+        _commentsService = new Mock<ICommentsService>();
         _postsService = new PostsService(_postsRepository.Object, _tagsService.Object, _markdownService.Object,
-            _textService.Object);
+            _textService.Object, _commentsService.Object);
 
         _postsRepository.Setup(x => x.GetPostsStartingWithSlug(It.IsAny<string>()))
             .ReturnsAsync(new List<Post>());
@@ -312,5 +315,27 @@ public class PostsServiceTests : IDisposable
         string slug = await _postsService.GenerateUniqueSlugAsync(title);
 
         slug.Should().Be($"{baseSlug}-2");
+    }
+
+    [Fact]
+    public async Task CreateCommentForPost_ReturnsComment_WhenCreated()
+    {
+        Post post = CreatePost();
+        const string username = "user";
+        const string body = "comment body";
+        Comment expectedComment = new Comment
+        {
+            Username = username,
+            Body = body,
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = post.Id
+        };
+
+        _commentsService.Setup(x => x.CreateComment(username, body, post.Id)).ReturnsAsync(expectedComment);
+
+        Comment comment = await _postsService.CreateCommentForPost(post, username, body);
+
+        comment.Should().Be(expectedComment);
+        _commentsService.Verify(x => x.CreateComment(username, body, post.Id), Times.Once);
     }
 }

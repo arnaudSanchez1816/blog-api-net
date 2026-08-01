@@ -14,6 +14,9 @@ public static class ApiRoutes
         public const string Create = "";
         public const string UpdateBySlug = "{slug}";
         public const string DeleteBySlug = "{slug}";
+
+        public const string GetCommentsBySlug = "{slug}/comments";
+        public const string CreateCommentBySlug = "{slug}/comments";
     }
 
     public static class Tags

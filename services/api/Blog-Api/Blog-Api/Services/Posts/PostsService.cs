@@ -2,6 +2,7 @@ using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Domain;
 using BlogApi.Repositories.Posts;
+using BlogApi.Services.Comments;
 using BlogApi.Services.Markdown;
 using BlogApi.Services.Tags;
 using BlogApi.Services.Text;
@@ -12,18 +13,20 @@ namespace BlogApi.Services.Posts;
 public class PostsService : IPostsService
 {
     private const int DescriptionWordCount = 50;
+    private readonly ICommentsService _commentsService;
     private readonly IMarkdownService _markdownService;
     private readonly IPostsRepository _postsRepository;
     private readonly ITagsService _tagsService;
     private readonly ITextService _textService;
 
     public PostsService(IPostsRepository postsRepository, ITagsService tagsService, IMarkdownService markdownService,
-        ITextService textService)
+        ITextService textService, ICommentsService commentsService)
     {
         _postsRepository = postsRepository;
         _tagsService = tagsService;
         _markdownService = markdownService;
         _textService = textService;
+        _commentsService = commentsService;
     }
 
     public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
@@ -39,6 +42,11 @@ public class PostsService : IPostsService
     public async Task<Post?> GetPostBySlugWithTags(string slug)
     {
         return await _postsRepository.GetPostBySlugWithTags(slug);
+    }
+
+    public async Task<Post?> GetPostBySlugWithComments(string slug)
+    {
+        return await _postsRepository.GetPostBySlugWithComments(slug);
     }
 
     public async Task<Post> CreatePost(Post post)
@@ -107,5 +115,10 @@ public class PostsService : IPostsService
             .Max() + 1;
 
         return $"{baseSlug}-{nextSuffix}";
+    }
+
+    public async Task<Comment> CreateCommentForPost(Post post, string username, string body)
+    {
+        return await _commentsService.CreateComment(username, body, post.Id);
     }
 }

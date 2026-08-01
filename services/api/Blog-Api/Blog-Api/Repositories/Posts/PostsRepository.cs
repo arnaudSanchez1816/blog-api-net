@@ -55,6 +55,13 @@ public class PostsRepository : IPostsRepository
             .SingleOrDefaultAsync(x => x.Slug == slug);
     }
 
+    public async Task<Post?> GetPostBySlugWithComments(string slug)
+    {
+        return await _context.Posts.Include(x => x.Author)
+            .Include(x => x.Comments)
+            .SingleOrDefaultAsync(x => x.Slug == slug);
+    }
+
     public async Task<IReadOnlyCollection<Post>> GetPostsStartingWithSlug(string slug)
     {
         return await _context.Posts
