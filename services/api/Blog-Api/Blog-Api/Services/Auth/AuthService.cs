@@ -1,5 +1,5 @@
 using BlogApi.Domain;
-using BlogApi.Services.Jwt;
+using BlogApi.Services.Tokens;
 using Microsoft.AspNetCore.Identity;
 
 namespace BlogApi.Services.Auth;
@@ -7,13 +7,13 @@ namespace BlogApi.Services.Auth;
 public class AuthService : IAuthService
 {
     private const string InvalidEmailOrPasswordMessage = "Invalid e-mail or password.";
-    private readonly ITokenService _tokenService;
+    private readonly ITokensService _tokensService;
     private readonly UserManager<BlogUser> _userManager;
 
-    public AuthService(UserManager<BlogUser> userManager, ITokenService tokenService)
+    public AuthService(UserManager<BlogUser> userManager, ITokensService tokensService)
     {
         _userManager = userManager;
-        _tokenService = tokenService;
+        _tokensService = tokensService;
     }
 
     public async Task<AuthenticationResult> Login(string email, string password)
@@ -38,7 +38,7 @@ public class AuthService : IAuthService
             };
         }
 
-        string accessToken = _tokenService.GenerateAccessToken(user);
+        string accessToken = _tokensService.GenerateAccessToken(user);
         return new AuthenticationResult
         {
             Success = true,
@@ -75,7 +75,7 @@ public class AuthService : IAuthService
             };
         }
 
-        string accessToken = _tokenService.GenerateAccessToken(newUser);
+        string accessToken = _tokensService.GenerateAccessToken(newUser);
         return new AuthenticationResult
         {
             Success = true,

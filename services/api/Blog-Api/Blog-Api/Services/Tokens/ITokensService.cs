@@ -1,8 +1,8 @@
 using BlogApi.Domain;
 
-namespace BlogApi.Services.Jwt;
+namespace BlogApi.Services.Tokens;
 
-public interface ITokenService
+public interface ITokensService
 {
     public string GenerateAccessToken(BlogUser user);
 

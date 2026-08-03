@@ -8,14 +8,14 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace BlogApi.Services.Jwt;
+namespace BlogApi.Services.Tokens;
 
-public class TokenService : ITokenService
+public class TokensService : ITokensService
 {
     private readonly IOptions<AppAuthenticationOptions> _authOptions;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
 
-    public TokenService(IOptions<AppAuthenticationOptions> authOptions,
+    public TokensService(IOptions<AppAuthenticationOptions> authOptions,
         IRefreshTokensRepository refreshTokensRepository)
     {
         _authOptions = authOptions;
