@@ -15,4 +15,7 @@ public class AppAuthenticationOptions
 
     [Required]
     public required Uri JwtAudienceUri { get; init; }
+
+    public TimeSpan RefreshTokensExpirationBuffer { get; init; } = TimeSpan.FromDays(7);
+    public TimeSpan RefreshTokensCleanupInterval { get; init; } = TimeSpan.FromHours(24);
 }

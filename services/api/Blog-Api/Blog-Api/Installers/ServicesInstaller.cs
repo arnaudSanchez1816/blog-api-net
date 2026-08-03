@@ -22,4 +22,10 @@ public static class ServicesInstaller
 
         return services;
     }
+
+    public static IServiceCollection InstallBackgroundServices(this IServiceCollection services)
+    {
+        services.AddHostedService<RefreshTokensCleanupService>();
+        return services;
+    }
 }

@@ -8,6 +8,7 @@ builder.Services.InstallDatabase(builder.Configuration);
 builder.Services.InstallIdentity(builder.Configuration);
 builder.Services.InstallOpenApi(builder.Configuration);
 builder.Services.InstallDomainServices();
+builder.Services.InstallBackgroundServices();
 builder.Services.InstallRepositories();
 builder.Services.InstallFluentValidation();
 builder.Services.InstallExceptionHandlers();
