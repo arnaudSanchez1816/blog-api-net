@@ -39,4 +39,21 @@ public static class ApiRoutes
         public const string UpdateById = "{id}";
         public const string DeleteById = "{id}";
     }
+
+    public static class Auth
+    {
+        public const string Base = $"{ApiRoutes.Base}/auth";
+
+        public const string Login = "login";
+        public const string Logout = "logout";
+        public const string GetAccessToken = "token";
+    }
+
+    public static class Users
+    {
+        public const string Base = $"{ApiRoutes.Base}/users";
+
+        public const string GetCurrentUser = "me";
+        public const string GetCurrentUserPosts = "me/posts";
+    }
 }
