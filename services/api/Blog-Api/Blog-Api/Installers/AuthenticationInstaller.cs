@@ -1,5 +1,7 @@
 using System.Text;
+using BlogApi.Authentication;
 using BlogApi.Options;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -24,7 +26,10 @@ public static class AuthenticationInstaller
                 $"Valid {AppAuthenticationOptions.ConfigurationSection} section is required.");
         }
 
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(x =>
+        AuthenticationBuilder authenticationBuilder =
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
+
+        authenticationBuilder.AddJwtBearer(x =>
         {
             x.TokenValidationParameters = new TokenValidationParameters
             {
@@ -39,6 +44,11 @@ public static class AuthenticationInstaller
             };
             x.SaveToken = true;
         });
+        authenticationBuilder.AddScheme<AuthenticationSchemeOptions, RefreshTokenAuthenticationHandler>(
+            RefreshTokenAuthDefaults.RefreshTokenScheme,
+            "Refresh Token Authentication", _ =>
+            {
+            });
 
         return services;
     }
