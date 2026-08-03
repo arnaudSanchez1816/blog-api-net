@@ -8,4 +8,8 @@ public interface ITokensService
     public string GenerateAccessToken(BlogUser user, IReadOnlyCollection<Claim>? additionalClaims = null);
 
     public Task<RefreshToken> GenerateRefreshToken(BlogUser user);
+
+    public Task<RefreshToken?> GetRefreshToken(string token);
+    public Task UseRefreshToken(RefreshToken token);
+    public Task RevokeRefreshToken(RefreshToken token);
 }

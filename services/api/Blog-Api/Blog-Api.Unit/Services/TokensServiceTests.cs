@@ -262,4 +262,28 @@ public class TokensServiceTests : IDisposable
 
         _refreshTokensRepository.Verify(x => x.AddToken(refreshToken), Times.Once);
     }
+
+    [Fact]
+    public async Task UseRefreshToken_SetToken_AsUsed()
+    {
+        BlogUser user = CreateUser();
+        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+
+        await _tokensService.UseRefreshToken(refreshToken);
+
+        refreshToken.Used.Should().BeTrue();
+        _refreshTokensRepository.Verify(x => x.UpdateToken(refreshToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task RevokeRefreshToken_SetToken_AsInvalidated()
+    {
+        BlogUser user = CreateUser();
+        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+
+        await _tokensService.RevokeRefreshToken(refreshToken);
+
+        refreshToken.Invalidated.Should().BeTrue();
+        _refreshTokensRepository.Verify(x => x.UpdateToken(refreshToken), Times.Once);
+    }
 }

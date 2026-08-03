@@ -12,21 +12,20 @@ namespace BlogApi.Services.Tokens;
 
 public class TokensService : ITokensService
 {
-    private readonly IOptions<AppAuthenticationOptions> _authOptions;
+    private readonly AppAuthenticationOptions _authOptions;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
 
     public TokensService(IOptions<AppAuthenticationOptions> authOptions,
         IRefreshTokensRepository refreshTokensRepository)
     {
-        _authOptions = authOptions;
+        _authOptions = authOptions.Value;
         _refreshTokensRepository = refreshTokensRepository;
     }
 
     public string GenerateAccessToken(BlogUser user, IReadOnlyCollection<Claim>? additionalClaims = null)
     {
-        AppAuthenticationOptions authenticationOptions = _authOptions.Value;
         JsonWebTokenHandler tokenHandler = new JsonWebTokenHandler();
-        byte[] key = Encoding.UTF8.GetBytes(authenticationOptions.JwtAccessSecret);
+        byte[] key = Encoding.UTF8.GetBytes(_authOptions.JwtAccessSecret);
 
         List<Claim> claims =
         [
@@ -45,8 +44,8 @@ public class TokensService : ITokensService
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(60),
-            Issuer = authenticationOptions.JwtIssuerUri.ToString(),
-            Audience = authenticationOptions.JwtAudienceUri.ToString(),
+            Issuer = _authOptions.JwtIssuerUri.ToString(),
+            Audience = _authOptions.JwtAudienceUri.ToString(),
             SigningCredentials =
                 new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
         };
@@ -70,5 +69,22 @@ public class TokensService : ITokensService
         await _refreshTokensRepository.AddToken(refreshToken);
 
         return refreshToken;
+    }
+
+    public async Task<RefreshToken?> GetRefreshToken(string token)
+    {
+        return await _refreshTokensRepository.GetToken(token);
+    }
+
+    public async Task UseRefreshToken(RefreshToken token)
+    {
+        token.Used = true;
+        await _refreshTokensRepository.UpdateToken(token);
+    }
+
+    public async Task RevokeRefreshToken(RefreshToken token)
+    {
+        token.Invalidated = true;
+        await _refreshTokensRepository.UpdateToken(token);
     }
 }
