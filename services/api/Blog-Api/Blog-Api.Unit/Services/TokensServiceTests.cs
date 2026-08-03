@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using AwesomeAssertions;
 using AwesomeAssertions.Extensions;
@@ -148,6 +149,28 @@ public class TokensServiceTests : IDisposable
         string secondJti = handler.ReadJsonWebToken(secondToken).GetClaim(JwtRegisteredClaimNames.Jti).Value;
 
         firstJti.Should().NotBe(secondJti);
+    }
+
+    [Fact]
+    public void GenerateAccessToken_ContainsCustomClaims_WhenAdditionalClaimsAreProvided()
+    {
+        BlogUser user = CreateUser();
+        JsonWebTokenHandler handler = new JsonWebTokenHandler();
+
+        const string phoneNumber = "0123456789";
+        const string country = "France";
+        List<Claim> customClaims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Country, country),
+            new Claim(ClaimTypes.HomePhone, phoneNumber)
+        };
+        string firstToken = _tokensService.GenerateAccessToken(user, customClaims);
+
+        string countryClaim = handler.ReadJsonWebToken(firstToken).GetClaim(ClaimTypes.Country).Value;
+        string phoneClaim = handler.ReadJsonWebToken(firstToken).GetClaim(ClaimTypes.HomePhone).Value;
+
+        countryClaim.Should().Be(country);
+        phoneClaim.Should().Be(phoneNumber);
     }
 
     [Fact]

@@ -22,7 +22,7 @@ public class TokensService : ITokensService
         _refreshTokensRepository = refreshTokensRepository;
     }
 
-    public string GenerateAccessToken(BlogUser user)
+    public string GenerateAccessToken(BlogUser user, IReadOnlyCollection<Claim>? additionalClaims = null)
     {
         AppAuthenticationOptions authenticationOptions = _authOptions.Value;
         JsonWebTokenHandler tokenHandler = new JsonWebTokenHandler();
@@ -36,6 +36,10 @@ public class TokensService : ITokensService
             new Claim(JwtRegisteredClaimNames.Name, user.UserName!),
             new Claim(JwtRegisteredClaimNames.Nickname, user.DisplayName!)
         ];
+        if (additionalClaims is not null)
+        {
+            claims.AddRange(additionalClaims);
+        }
 
         SecurityTokenDescriptor jwtDescriptor = new SecurityTokenDescriptor
         {
