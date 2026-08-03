@@ -8,8 +8,8 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
 {
     public DbSet<Post> Posts { get; set; }
     public DbSet<Tag> Tags { get; set; }
-
     public DbSet<Comment> Comments { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     public DataContext(DbContextOptions options) : base(options)
     {
@@ -21,6 +21,7 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
 
         ConfigureUser(builder);
         ConfigurePost(builder);
+        ConfigureComment(builder);
     }
 
     private static void ConfigurePost(ModelBuilder builder)
