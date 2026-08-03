@@ -42,6 +42,11 @@ public class AuthService : IAuthService
         return await GenerateAuthenticationResultForUser(user);
     }
 
+    public async Task Logout(RefreshToken token)
+    {
+        await _tokensService.RevokeRefreshToken(token);
+    }
+
     public async Task<AuthenticationResult> Register(string username, string email, string password)
     {
         BlogUser? user = await _userManager.FindByEmailAsync(email);

@@ -228,4 +228,14 @@ public class AuthServiceTests : IDisposable
         result.RefreshToken.Should().Be("refresh-token-value");
         _tokensService.Verify(x => x.UseRefreshToken(refreshToken), Times.Once);
     }
+
+    [Fact]
+    public async Task Logout_ShouldRevokeToken_WhenCalled()
+    {
+        RefreshToken refreshToken = MakeRefreshToken(Guid.NewGuid());
+
+        await _authService.Logout(refreshToken);
+
+        _tokensService.Verify(x => x.RevokeRefreshToken(refreshToken), Times.Once);
+    }
 }
