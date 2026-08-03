@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using BlogApi.Domain;
 using BlogApi.Services.Tokens;
 using Microsoft.AspNetCore.Identity;
@@ -38,12 +39,7 @@ public class AuthService : IAuthService
             };
         }
 
-        string accessToken = _tokensService.GenerateAccessToken(user);
-        return new AuthenticationResult
-        {
-            Success = true,
-            AccessToken = accessToken
-        };
+        return await GenerateAuthenticationResultForUser(user);
     }
 
     public async Task<AuthenticationResult> Register(string username, string email, string password)
@@ -75,11 +71,71 @@ public class AuthService : IAuthService
             };
         }
 
-        string accessToken = _tokensService.GenerateAccessToken(newUser);
+        return await GenerateAuthenticationResultForUser(newUser);
+    }
+
+    public async Task<AuthenticationResult> RefreshTokens(ClaimsPrincipal principal, RefreshToken refreshToken)
+    {
+        BlogUser? user = await _userManager.GetUserAsync(principal);
+        if (user is null)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                Errors = ["User does not exists"]
+            };
+        }
+
+        if (refreshToken.Used)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                Errors = ["Refresh token was already used."]
+            };
+        }
+
+        if (refreshToken.IsExpired)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                Errors = ["Refresh token is expired."]
+            };
+        }
+
+        if (refreshToken.Invalidated)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                Errors = ["Refresh token has been revoked."]
+            };
+        }
+
+        await _tokensService.UseRefreshToken(refreshToken);
+
+        return await GenerateAuthenticationResultForUser(user);
+    }
+
+    private async Task<AuthenticationResult> GenerateAuthenticationResultForUser(BlogUser user)
+    {
+        IList<Claim> userClaims = await _userManager.GetClaimsAsync(user);
+        List<Claim> customClaims = new List<Claim>(userClaims);
+        IList<string> userRoles = await _userManager.GetRolesAsync(user);
+        foreach (string role in userRoles)
+        {
+            customClaims.Add(new Claim("roles", role));
+        }
+
+        string accessToken = _tokensService.GenerateAccessToken(user, customClaims);
+        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+
         return new AuthenticationResult
         {
             Success = true,
-            AccessToken = accessToken
+            AccessToken = accessToken,
+            RefreshToken = refreshToken.Token
         };
     }
 }
