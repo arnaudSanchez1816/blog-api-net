@@ -1,6 +1,8 @@
 using System.Text.Json;
+using BlogApi.Authentication;
 using BlogApi.Options;
 using BlogApi.Transformers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
@@ -9,46 +11,71 @@ namespace BlogApi.Installers;
 
 public static class OpenApiInstaller
 {
-    private const string BearerJwtScheme = "Bearer";
-
     public static IServiceCollection InstallOpenApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOpenApi("v1", options =>
         {
             options.AddSchemaTransformer<AllowedValuesSchemaTransformer>();
 
-            // Add Bearer security scheme 
+            // Add security schemes 
             options.AddDocumentTransformer((document, context, _) =>
             {
                 document.Components ??= new OpenApiComponents();
                 document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
                 {
-                    [BearerJwtScheme] = new OpenApiSecurityScheme
+                    [JwtBearerDefaults.AuthenticationScheme] = new OpenApiSecurityScheme
                     {
                         Type = SecuritySchemeType.Http,
-                        Scheme = BearerJwtScheme,
+                        Scheme = JwtBearerDefaults.AuthenticationScheme,
                         BearerFormat = "JWT",
                         Description = "JWT authorization header using the Bearer scheme."
+                    },
+                    [RefreshTokenAuthDefaults.RefreshTokenScheme] = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.ApiKey,
+                        In = ParameterLocation.Cookie,
+                        Name = RefreshTokenAuthDefaults.RefreshTokenCookie,
+                        Scheme = RefreshTokenAuthDefaults.RefreshTokenScheme,
+                        Description = "Refresh token in a HttpOnly cookie."
                     }
                 };
 
                 return Task.CompletedTask;
             });
 
-            // Mark endpoints with authorize attribute as secured with Bearer scheme
+            // Mark endpoints with authorize attribute as secured
             options.AddOperationTransformer((operation, context, _) =>
             {
-                bool isAuthorizeEndpoint = context.Description.ActionDescriptor.EndpointMetadata
-                    .OfType<AuthorizeAttribute>().Any();
-                if (isAuthorizeEndpoint)
+                List<AuthorizeAttribute> authorizeAttributes = context.Description.ActionDescriptor
+                    .EndpointMetadata
+                    .OfType<AuthorizeAttribute>().ToList();
+                if (authorizeAttributes.Count > 0)
                 {
-                    operation.Security =
-                    [
-                        new OpenApiSecurityRequirement
+                    operation.Security = [];
+
+                    if (authorizeAttributes.Any(att =>
+                            string.IsNullOrEmpty(att.AuthenticationSchemes) ||
+                            att.AuthenticationSchemes.Contains(JwtBearerDefaults.AuthenticationScheme)))
+                    {
+                        // Jwt bearer auth
+                        operation.Security.Add(new OpenApiSecurityRequirement
                         {
-                            [new OpenApiSecuritySchemeReference(BearerJwtScheme, context.Document)] = []
-                        }
-                    ];
+                            [new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme, context.Document)] =
+                                []
+                        });
+                    }
+
+                    if (authorizeAttributes.Any(att =>
+                            !string.IsNullOrEmpty(att.AuthenticationSchemes) &&
+                            att.AuthenticationSchemes.Contains(RefreshTokenAuthDefaults.RefreshTokenScheme)))
+                    {
+                        // Refresh token auth
+                        operation.Security.Add(new OpenApiSecurityRequirement
+                        {
+                            [new OpenApiSecuritySchemeReference(RefreshTokenAuthDefaults.RefreshTokenScheme, context.Document)] =
+                                []
+                        });
+                    }
                 }
 
                 return Task.CompletedTask;
@@ -106,10 +133,11 @@ public static class OpenApiInstaller
             x.Title = options.Title;
             x.OpenApiRoutePattern = options.JsonRoute;
             x.WithClassicLayout();
-            x.AddPreferredSecuritySchemes(BearerJwtScheme);
+            x.AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme);
             if (defaultBearerToken != null)
             {
-                x.AddHttpAuthentication(BearerJwtScheme, auth => auth.Token = defaultBearerToken);
+                x.AddHttpAuthentication(JwtBearerDefaults.AuthenticationScheme,
+                    auth => auth.Token = defaultBearerToken);
             }
         });
 

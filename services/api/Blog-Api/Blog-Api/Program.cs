@@ -1,4 +1,5 @@
 using BlogApi.Installers;
+using BlogApi.Seeding;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -22,10 +23,10 @@ if (app.Environment.IsDevelopment())
     await app.DoDatabaseMigration();
 }
 
-await app.DoDatabaseSeeding();
+DatabaseSeedingResult databaseSeedingResult = await app.DoDatabaseSeeding();
 
 app.InstallExceptionHandlers();
-app.InstallScalar();
+app.InstallScalar(databaseSeedingResult.DevAccessToken);
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
