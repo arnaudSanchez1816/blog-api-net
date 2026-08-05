@@ -47,7 +47,7 @@ public class AuthService : IAuthService
         await _tokensService.RevokeRefreshToken(token);
     }
 
-    public async Task<AuthenticationResult> Register(string username, string email, string password)
+    public async Task<AuthenticationResult> Register(string displayName, string email, string password)
     {
         BlogUser? user = await _userManager.FindByEmailAsync(email);
         if (user is not null)
@@ -61,8 +61,8 @@ public class AuthService : IAuthService
 
         BlogUser newUser = new BlogUser
         {
-            UserName = username,
-            DisplayName = username,
+            UserName = email,
+            DisplayName = displayName,
             Email = email
         };
 

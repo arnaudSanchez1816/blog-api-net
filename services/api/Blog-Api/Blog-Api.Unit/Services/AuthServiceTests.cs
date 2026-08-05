@@ -151,7 +151,7 @@ public class AuthServiceTests : IDisposable
     {
         _userManager.Setup(x => x.FindByEmailAsync("newuser@example.com")).ReturnsAsync((BlogUser?)null);
         _userManager.Setup(x => x.CreateAsync(
-                It.Is<BlogUser>(u => u.UserName == "newuser" && u.Email == "newuser@example.com" &&
+                It.Is<BlogUser>(u => u.UserName == "newuser@example.com" && u.Email == "newuser@example.com" &&
                                      u.DisplayName == "newuser"), "password"))
             .ReturnsAsync(IdentityResult.Success);
 
