@@ -28,11 +28,6 @@ public class PostsControllerTests : IntegrationTestBase
     private IPostsRepository _postsRepository = null!;
     private ITagsRepository _tagsRepository = null!;
 
-    private HttpClient HttpClient
-    {
-        get => Factory.HttpClient;
-    }
-
     public PostsControllerTests(BlogApiFactory factory) : base(factory)
     {
     }

@@ -18,11 +18,6 @@ public class CommentsControllerTests : IntegrationTestBase
     private Post _post = null!;
     private IPostsRepository _postsRepository = null!;
 
-    private HttpClient HttpClient
-    {
-        get => Factory.HttpClient;
-    }
-
     public CommentsControllerTests(BlogApiFactory factory) : base(factory)
     {
     }

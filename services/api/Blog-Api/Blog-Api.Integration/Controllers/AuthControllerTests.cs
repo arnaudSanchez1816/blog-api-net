@@ -25,11 +25,6 @@ public class AuthControllerTests : IntegrationTestBase
     private LinkGenerator _linkGenerator;
     private ITokensService _tokensService;
 
-    private HttpClient HttpClient
-    {
-        get => Factory.HttpClient;
-    }
-
     public AuthControllerTests(BlogApiFactory factory) : base(factory)
     {
     }

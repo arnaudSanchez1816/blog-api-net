@@ -8,6 +8,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     protected BlogApiFactory Factory { get; }
 
+    protected HttpClient HttpClient
+    {
+        get => Factory.HttpClient;
+    }
+
     public IntegrationTestBase(BlogApiFactory factory)
     {
         Factory = factory;
