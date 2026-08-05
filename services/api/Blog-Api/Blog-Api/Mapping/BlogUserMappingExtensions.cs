@@ -13,4 +13,14 @@ public static class BlogUserMappingExtensions
             Name = user.DisplayName
         };
     }
+
+    public static UserResponse ToUserResponse(this BlogUser user)
+    {
+        return new UserResponse
+        {
+            Id = user.Id,
+            Email = user.Email!,
+            Name = user.DisplayName
+        };
+    }
 }
