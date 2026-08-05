@@ -11,10 +11,6 @@ public record GetPostsResponse
 
     public required PagedResponseMetadata Metadata { get; init; }
 
-    private GetPostsResponse()
-    {
-    }
-
     public static GetPostsResponse Create(IReadOnlyCollection<PostResponse> posts, int totalCount,
         GetPostsFilterQuery filter, PaginationQuery pagination)
     {

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json.Serialization;
 using AwesomeAssertions;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Responses;
@@ -146,8 +145,8 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().BeEmpty();
         body.Metadata.Count.Should().Be(0);
@@ -171,8 +170,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?pageNumber=1&pageSize=10", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(1);
         body.Posts.Should().Contain(p => p.Slug == post.Slug && p.Title == post.Title);
@@ -186,8 +185,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Metadata.SortBy.Should().BeNull();
     }
@@ -199,8 +198,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?sortBy=id", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Metadata.SortBy.Should().Be("id");
     }
@@ -254,8 +253,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?tags=java", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(1);
         body.Posts.Should().Contain(p => p.Slug == "java-post");
@@ -287,8 +286,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync($"api/v1.0/posts?author={author2.Id}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(1);
         body.Posts.Should().Contain(p => p.Slug == "docker-post");
@@ -310,8 +309,8 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(5);
         body.Metadata.Count.Should().Be(15);
@@ -335,8 +334,8 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(5);
         body.Metadata.PageNumber.Should().Be(1);
@@ -349,8 +348,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?pageSize=-30", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Metadata.PageSize.Should().Be(1);
     }
@@ -362,8 +361,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?pageSize=999", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Metadata.PageSize.Should().Be(50);
     }
@@ -382,8 +381,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().BeEmpty();
     }
@@ -402,8 +401,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?unpublished=false", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().BeEmpty();
     }
@@ -424,8 +423,8 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts?unpublished=true", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostsEnvelope? body =
-            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        GetPostsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(1);
         body.Posts.Should().Contain(p => p.Slug == "draft-post");
@@ -1072,17 +1071,5 @@ public class PostsControllerTests : IntegrationTestBase
             request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    // GetPostsResponse only exposes a private constructor + static factory (Create), which
-    // System.Text.Json's reflection-based deserializer cannot use. That's fine for production
-    // (the type is only ever serialized, never deserialized server-side) but means we can't
-    // deserialize directly into it here. This mirrors the wire shape instead.
-    private record PostsEnvelope
-    {
-        [JsonPropertyName("results")]
-        public required List<PostResponse> Posts { get; init; }
-
-        public required PagedResponseMetadata Metadata { get; init; }
     }
 }
