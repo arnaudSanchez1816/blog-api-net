@@ -88,7 +88,8 @@ public class PostsRepository : IPostsRepository
 
     private static IQueryable<Post> ApplyGetPostsFilters(GetPostsFilterQuery filter, IQueryable<Post> postsQuery)
     {
-        (string q, PostSortOption sortBy, IReadOnlyCollection<string>? tags, bool includeUnpublished) = filter;
+        (string q, PostSortOption sortBy, IReadOnlyCollection<string>? tags, bool includeUnpublished, Guid? authorId) =
+            filter;
 
         if (!string.IsNullOrWhiteSpace(q))
         {
@@ -103,6 +104,11 @@ public class PostsRepository : IPostsRepository
         if (tags != null && tags.Count > 0)
         {
             postsQuery = postsQuery.Where(p => p.Tags.Any(t => tags.Contains(t.Slug)));
+        }
+
+        if (authorId is not null)
+        {
+            postsQuery = postsQuery.Where(p => p.AuthorId == authorId);
         }
 
         postsQuery = sortBy switch

@@ -14,12 +14,15 @@ public record GetPostsFilterQuery
 
     public bool IncludeUnpublished { get; init; } = false;
 
+    public Guid? Author { get; init; }
+
     public void Deconstruct(out string q, out PostSortOption sortBy, out IReadOnlyCollection<string>? tags,
-        out bool includeUnpublished)
+        out bool includeUnpublished, out Guid? authorId)
     {
         q = Q;
         sortBy = SortBy;
         tags = Tags;
         includeUnpublished = IncludeUnpublished;
+        authorId = Author;
     }
 }

@@ -23,8 +23,8 @@ public class PostsControllerTests : IntegrationTestBase
     private static readonly string CommentUsernameOverMaxLength = new string('a', Comment.UsernameMaxLength + 1);
 
     private BlogUser _author = null!;
-    private DataContext _context = null!;
     private ICommentsRepository _commentsRepository = null!;
+    private DataContext _context = null!;
     private IPostsRepository _postsRepository = null!;
     private ITagsRepository _tagsRepository = null!;
 
@@ -44,14 +44,20 @@ public class PostsControllerTests : IntegrationTestBase
         _commentsRepository = GetRequiredService<ICommentsRepository>();
         _context = GetRequiredService<DataContext>();
 
-        _author = new BlogUser
+        _author = await CreateUser("author@email.com", "Author name");
+    }
+
+    private async Task<BlogUser> CreateUser(string email, string name)
+    {
+        BlogUser user = new BlogUser
         {
-            UserName = "author@example.com",
-            Email = "author@example.com",
-            DisplayName = "Author Name"
+            UserName = email,
+            Email = email,
+            DisplayName = name
         };
-        _context.Users.Add(_author);
+        _context.Users.Add(user);
         await _context.SaveChangesAsync();
+        return user;
     }
 
     // ---- GetBySlug ----
@@ -192,7 +198,7 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetPosts_MetadataSortByIsWireToken_WhenNonDefaultSortByGiven()
+    public async Task GetPosts_MetadataSortBy_IsSortByGivenInQuery()
     {
         HttpResponseMessage response =
             await HttpClient.GetAsync("api/v1.0/posts?sortBy=id", TestContext.Current.CancellationToken);
@@ -258,6 +264,39 @@ public class PostsControllerTests : IntegrationTestBase
         body.Should().NotBeNull();
         body.Posts.Should().HaveCount(1);
         body.Posts.Should().Contain(p => p.Slug == "java-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_BindsAuthorQueryParam_WhenFilteringByAuthor()
+    {
+        BlogUser author1 = _author;
+        BlogUser author2 = await CreateUser("author2@email.com", "Author2 name");
+        Post postWithAuthor1 = new Post
+        {
+            Title = "Java post",
+            Slug = "java-post",
+            AuthorId = author1.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        Post postWithAuthor2 = new Post
+        {
+            Title = "Docker post",
+            Slug = "docker-post",
+            AuthorId = author2.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(postWithAuthor1);
+        await _postsRepository.AddPost(postWithAuthor2);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts?author={author2.Id}", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostsEnvelope? body =
+            await response.Content.ReadFromJsonAsync<PostsEnvelope>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Posts.Should().HaveCount(1);
+        body.Posts.Should().Contain(p => p.Slug == "docker-post");
     }
 
     [Fact]

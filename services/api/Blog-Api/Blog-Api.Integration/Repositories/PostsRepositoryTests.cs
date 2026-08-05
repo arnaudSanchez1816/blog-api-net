@@ -24,14 +24,20 @@ public class PostsRepositoryTests : IntegrationTestBase
         _postsRepository = GetRequiredService<IPostsRepository>();
         _context = GetRequiredService<DataContext>();
 
-        _author = new BlogUser
+        _author = await CreateUser("author@example.com", "Author name");
+    }
+
+    private async Task<BlogUser> CreateUser(string email, string name)
+    {
+        BlogUser user = new BlogUser
         {
-            UserName = "author@example.com",
-            Email = "author@example.com",
-            DisplayName = "Author Name"
+            UserName = email,
+            Email = email,
+            DisplayName = name
         };
-        _context.Users.Add(_author);
+        _context.Users.Add(user);
         await _context.SaveChangesAsync();
+        return user;
     }
 
     [Fact]
@@ -582,6 +588,73 @@ public class PostsRepositoryTests : IntegrationTestBase
         await _postsRepository.AddPost(post2);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "   " };
+
+        // Act
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
+
+        // Assert
+        result.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllMatchingPosts_WhenGivenAuthorId()
+    {
+        // Arrange
+        BlogUser author1 = _author;
+        BlogUser author2 = await CreateUser("author2@email.com", "Author2 name");
+        Post postWithAuthor1 = new Post
+        {
+            Title = "Dotnet post",
+            Slug = "dotnet-post",
+            AuthorId = author1.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        Post postWithAuthor2 = new Post
+        {
+            Title = "Docker post",
+            Slug = "docker-post",
+            AuthorId = author2.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(postWithAuthor1);
+        await _postsRepository.AddPost(postWithAuthor2);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Author = author1.Id };
+
+        // Act
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
+        List<Post> result = pagedResult.Posts;
+
+        // Assert
+        result.Should().HaveCount(1);
+        result.Should().Contain(p => p.Slug == "dotnet-post");
+    }
+
+    [Fact]
+    public async Task GetPosts_ReturnsAllPosts_WhenAuthorIdIsNull()
+    {
+        // Arrange
+        BlogUser author1 = _author;
+        BlogUser author2 = await CreateUser("author2@email.com", "Author2 name");
+        Post postWithAuthor1 = new Post
+        {
+            Title = "Dotnet post",
+            Slug = "dotnet-post",
+            AuthorId = author1.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        Post postWithAuthor2 = new Post
+        {
+            Title = "Docker post",
+            Slug = "docker-post",
+            AuthorId = author2.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(postWithAuthor1);
+        await _postsRepository.AddPost(postWithAuthor2);
+
+        GetPostsFilterQuery filter = new GetPostsFilterQuery { Author = null };
 
         // Act
         PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null);
@@ -1152,9 +1225,10 @@ public class PostsRepositoryTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetPosts_CombinesTagFilterIncludeUnpublishedAndSort_Correctly()
+    public async Task GetPosts_CombinesTagFilterIncludeUnpublishedAndSortAndAuthor_Correctly()
     {
         // Arrange
+        BlogUser author2 = await CreateUser("author2@email.com", "Author2 Name");
         Tag dotnetTag = new Tag { Name = "Dotnet", Slug = "dotnet" };
         Tag dockerTag = new Tag { Name = "Docker", Slug = "docker" };
         _context.Tags.AddRange(dotnetTag, dockerTag);
@@ -1165,18 +1239,27 @@ public class PostsRepositoryTests : IntegrationTestBase
             Title = "Older published dotnet post",
             Slug = "older-published-dotnet-post",
             AuthorId = _author.Id,
-            PublishedAt = DateTimeOffset.UtcNow.AddDays(-10)
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-10),
+            Tags = { dotnetTag }
         };
-        publishedDotnetOlder.Tags.Add(dotnetTag);
 
         Post publishedDotnetNewer = new Post
         {
             Title = "Newer published dotnet post",
             Slug = "newer-published-dotnet-post",
             AuthorId = _author.Id,
-            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1),
+            Tags = { dotnetTag }
         };
-        publishedDotnetNewer.Tags.Add(dotnetTag);
+
+        Post author2DotnetPost = new Post
+        {
+            Title = "Author2 published dotnet post",
+            Slug = "author2-published-dotnet-post",
+            AuthorId = author2.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1),
+            Tags = { dotnetTag }
+        };
 
         Post draftDotnet = new Post
         {
@@ -1198,6 +1281,7 @@ public class PostsRepositoryTests : IntegrationTestBase
 
         await _postsRepository.AddPost(publishedDotnetOlder);
         await _postsRepository.AddPost(publishedDotnetNewer);
+        await _postsRepository.AddPost(author2DotnetPost);
         await _postsRepository.AddPost(draftDotnet);
         await _postsRepository.AddPost(publishedDocker);
 
@@ -1205,7 +1289,8 @@ public class PostsRepositoryTests : IntegrationTestBase
         {
             Tags = ["dotnet"],
             IncludeUnpublished = false,
-            SortBy = PostSortOption.PublishedAtDescending
+            SortBy = PostSortOption.PublishedAtDescending,
+            Author = _author.Id
         };
 
         // Act
