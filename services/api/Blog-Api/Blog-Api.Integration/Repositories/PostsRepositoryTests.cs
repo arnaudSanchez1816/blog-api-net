@@ -3,6 +3,7 @@ using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Data;
 using BlogApi.Domain;
+using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,7 @@ namespace BlogApi.Integration.Repositories;
 public class PostsRepositoryTests : IntegrationTestBase
 {
     private BlogUser _author = null!;
+    private ICommentsRepository _commentsRepository = null!;
     private DataContext _context = null!;
     private IPostsRepository _postsRepository = null!;
 
@@ -22,6 +24,7 @@ public class PostsRepositoryTests : IntegrationTestBase
     protected override async Task OnInitializeAsync()
     {
         _postsRepository = GetRequiredService<IPostsRepository>();
+        _commentsRepository = GetRequiredService<ICommentsRepository>();
         _context = GetRequiredService<DataContext>();
 
         _author = await CreateUser("author@example.com", "Author name");
@@ -39,6 +42,113 @@ public class PostsRepositoryTests : IntegrationTestBase
         await _context.SaveChangesAsync();
         return user;
     }
+
+    private async Task AddCommentsToPost(Guid postId, int count)
+    {
+        for (int i = 0; i < count; i++)
+            await _commentsRepository.AddComment(new Comment
+            {
+                Username = $"commenter-{i}",
+                Body = "Comment body",
+                CreatedAt = DateTimeOffset.UtcNow,
+                PostId = postId
+            });
+    }
+
+    #region GetPostBySlugWithComments
+
+    [Fact]
+    public async Task GetPostBySlugWithComments_ReturnsPostWithNoComments_WhenPostHasNoComments()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments-loaded",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        // Act
+        Post? foundPost = await _postsRepository.GetPostBySlugWithComments(post.Slug);
+
+        // Assert
+        foundPost.Should().NotBeNull();
+        foundPost.Comments.Should().HaveCount(0);
+    }
+
+    [Fact]
+    public async Task GetPostBySlugWithComments_ReturnsPostWithComments_WithCommentsSortedInAscendingCreationDate()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments-loaded",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+        Comment firstComment = new Comment
+        {
+            Body = "comment b",
+            Username = "C author",
+            PostId = post.Id,
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-10)
+        };
+        await _commentsRepository.AddComment(firstComment);
+        Comment secondComment = new Comment
+        {
+            Body = "comment body 2",
+            Username = "Author",
+            PostId = post.Id,
+            CreatedAt = DateTimeOffset.UtcNow.AddDays(-5)
+        };
+        await _commentsRepository.AddComment(secondComment);
+        Comment lastComment = new Comment
+        {
+            Body = "comment body 3",
+            Username = "Author",
+            PostId = post.Id,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        await _commentsRepository.AddComment(lastComment);
+
+        // Act
+        Post? foundPost = await _postsRepository.GetPostBySlugWithComments(post.Slug);
+
+        // Assert
+        foundPost.Should().NotBeNull();
+        foundPost.Comments.Should().HaveCount(3);
+        foundPost.Comments.Should().ContainInConsecutiveOrder(firstComment, secondComment, lastComment);
+    }
+
+
+    [Fact]
+    public async Task GetPostBySlugWithComments_ReturnsCorrectCommentsCount_WhenPostHasComments()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments-loaded",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+        await AddCommentsToPost(post.Id, 4);
+
+        // Act
+        Post? foundPost = await _postsRepository.GetPostBySlugWithComments(post.Slug);
+
+        // Assert
+        foundPost.Should().NotBeNull();
+        foundPost.CommentsCount.Should().Be(4);
+        foundPost.Comments.Should().HaveCount(4);
+    }
+
+    #endregion
+
+
+    #region AddPost
 
     [Fact]
     public async Task AddPost_Success_WhenPostDoesNotExist()
@@ -88,6 +198,10 @@ public class PostsRepositoryTests : IntegrationTestBase
         await act.Should().ThrowAsync<DbUpdateException>();
     }
 
+    #endregion
+
+    #region DeletePost
+
     [Fact]
     public async Task DeletePost_Success_WhenPostExists()
     {
@@ -126,6 +240,10 @@ public class PostsRepositoryTests : IntegrationTestBase
         // Assert
         await act.Should().ThrowAsync<DbUpdateException>();
     }
+
+    #endregion
+
+    #region UpdatePost
 
     [Fact]
     public async Task UpdatePost_UpdatesScalarFields_WhenPostExists()
@@ -274,6 +392,10 @@ public class PostsRepositoryTests : IntegrationTestBase
         updatedPost.Tags.Should().BeEmpty();
     }
 
+    #endregion
+
+    #region GetPostBySlug
+
     [Fact]
     public async Task GetPostBySlug_ReturnsPost_WhenPostExists()
     {
@@ -305,6 +427,52 @@ public class PostsRepositoryTests : IntegrationTestBase
 
         // Assert
         foundPost.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetPostBySlug_ReturnsCorrectCommentsCount_WhenPostHasComments()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+        await AddCommentsToPost(post.Id, 3);
+
+        // Act
+        Post? foundPost = await _postsRepository.GetPostBySlug(post.Slug);
+
+        // Assert
+        foundPost.Should().NotBeNull();
+        foundPost.CommentsCount.Should().Be(3);
+    }
+
+    #endregion
+
+    #region GetPostBySlugWithTags
+
+    [Fact]
+    public async Task GetPostBySlugWithTags_ReturnsCorrectCommentsCount_WhenPostHasComments()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments-and-tags",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+        await AddCommentsToPost(post.Id, 2);
+
+        // Act
+        Post? foundPost = await _postsRepository.GetPostBySlugWithTags(post.Slug);
+
+        // Assert
+        foundPost.Should().NotBeNull();
+        foundPost.CommentsCount.Should().Be(2);
     }
 
     [Fact]
@@ -366,78 +534,10 @@ public class PostsRepositoryTests : IntegrationTestBase
         foundPost.Should().BeNull();
     }
 
-    [Fact]
-    public async Task GetPostsStartingWithSlug_ReturnsExactMatchAndSuffixedMatches_ExcludesNonMatching()
-    {
-        // Arrange
-        Post exactMatch = new Post
-        {
-            Title = "Post title",
-            Slug = "post-title",
-            AuthorId = _author.Id
-        };
-        Post suffixedMatch = new Post
-        {
-            Title = "Post title",
-            Slug = "post-title-2",
-            AuthorId = _author.Id
-        };
-        Post nonMatching = new Post
-        {
-            Title = "Other post",
-            Slug = "other-post",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(exactMatch);
-        await _postsRepository.AddPost(suffixedMatch);
-        await _postsRepository.AddPost(nonMatching);
+    #endregion
 
-        // Act
-        IReadOnlyCollection<Post> result = await _postsRepository.GetPostsStartingWithSlug("post-title");
 
-        // Assert
-        result.Should().HaveCount(2);
-        result.Should().Contain(p => p.Slug == "post-title");
-        result.Should().Contain(p => p.Slug == "post-title-2");
-        result.Should().NotContain(p => p.Slug == "other-post");
-    }
-
-    [Fact]
-    public async Task GetPostsStartingWithSlug_DoesNotMatchUnrelatedSlugWithSamePrefix()
-    {
-        // Arrange
-        Post post = new Post
-        {
-            Title = "Post title",
-            Slug = "post-title-extra",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-
-        // Act
-        IReadOnlyCollection<Post> result = await _postsRepository.GetPostsStartingWithSlug("post-titl");
-
-        // Assert
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetPostsStartingWithSlug_ReturnsEmpty_WhenNoMatchesFound()
-    {
-        // Arrange
-        await _postsRepository.AddPost(new Post
-        {
-            Title = "Post title",
-            Slug = "post-title",
-            AuthorId = _author.Id
-        });
-
-        // Act
-        IReadOnlyCollection<Post> result = await _postsRepository.GetPostsStartingWithSlug("non-existent");
-
-        // Assert
-        result.Should().BeEmpty();
-    }
+    #region GetPosts
 
     [Fact]
     public async Task GetPosts_ReturnsMatchingPost_WhenQMatchesTitleCaseInsensitivePartial()
@@ -1302,4 +1402,115 @@ public class PostsRepositoryTests : IntegrationTestBase
         result[0].Slug.Should().Be("newer-published-dotnet-post");
         result[1].Slug.Should().Be("older-published-dotnet-post");
     }
+
+    [Fact]
+    public async Task GetPosts_ReturnsCorrectCommentsCountPerPost_WhenPostsHaveDifferentCommentCounts()
+    {
+        // Arrange
+        Post postWithTwoComments = new Post
+        {
+            Title = "Post with two comments",
+            Slug = "post-with-two-comments",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+        Post postWithNoComments = new Post
+        {
+            Title = "Post with no comments",
+            Slug = "post-with-no-comments",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
+        };
+        await _postsRepository.AddPost(postWithTwoComments);
+        await _postsRepository.AddPost(postWithNoComments);
+        await AddCommentsToPost(postWithTwoComments.Id, 2);
+
+        // Act
+        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), null);
+        List<Post> result = pagedResult.Posts;
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(p => p.Slug == "post-with-two-comments" && p.CommentsCount == 2);
+        result.Should().Contain(p => p.Slug == "post-with-no-comments" && p.CommentsCount == 0);
+    }
+
+    #endregion
+
+    #region GetSlugsStartingWithSlug
+
+    [Fact]
+    public async Task GetSlugsStartingWithSlug_ReturnsExactMatchAndSuffixedMatches_ExcludesNonMatching()
+    {
+        // Arrange
+        Post exactMatch = new Post
+        {
+            Title = "Post title",
+            Slug = "post-title",
+            AuthorId = _author.Id
+        };
+        Post suffixedMatch = new Post
+        {
+            Title = "Post title",
+            Slug = "post-title-2",
+            AuthorId = _author.Id
+        };
+        Post nonMatching = new Post
+        {
+            Title = "Other post",
+            Slug = "other-post",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(exactMatch);
+        await _postsRepository.AddPost(suffixedMatch);
+        await _postsRepository.AddPost(nonMatching);
+
+        // Act
+        IReadOnlyCollection<string> result = await _postsRepository.GetSlugsStartingWithSlug("post-title");
+
+        // Assert
+        result.Should().HaveCount(2);
+        result.Should().Contain(p => p == "post-title");
+        result.Should().Contain(p => p == "post-title-2");
+        result.Should().NotContain(p => p == "other-post");
+    }
+
+    [Fact]
+    public async Task GetSlugsStartingWithSlug_DoesNotMatchUnrelatedSlugWithSamePrefix()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Post title",
+            Slug = "post-title-extra",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        // Act
+        IReadOnlyCollection<string> result = await _postsRepository.GetSlugsStartingWithSlug("post-titl");
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetSlugsStartingWithSlug_ReturnsEmpty_WhenNoMatchesFound()
+    {
+        // Arrange
+        await _postsRepository.AddPost(new Post
+        {
+            Title = "Post title",
+            Slug = "post-title",
+            AuthorId = _author.Id
+        });
+
+        // Act
+        IReadOnlyCollection<string> result = await _postsRepository.GetSlugsStartingWithSlug("non-existent");
+
+        // Assert
+        result.Should().BeEmpty();
+    }
+
+    #endregion
 }

@@ -29,6 +29,11 @@ public record PostResponse
     public required string Body { get; init; }
 
     /// <summary>
+    /// Total number of comments for this post.
+    /// </summary>
+    public required int CommentsCount { get; init; }
+
+    /// <summary>
     /// Date of the publication of the post. Is null when a post is unpublished.
     /// </summary>
     public required DateTimeOffset? PublishedAt { get; init; }

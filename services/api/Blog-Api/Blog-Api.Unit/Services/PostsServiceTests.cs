@@ -28,11 +28,14 @@ public class PostsServiceTests : IDisposable
         _markdownService = new Mock<IMarkdownService>();
         _textService = new Mock<ITextService>();
         _commentsService = new Mock<ICommentsService>();
-        _postsService = new PostsService(_postsRepository.Object, _tagsService.Object, _markdownService.Object,
-            _textService.Object, _commentsService.Object);
+        _postsService = new PostsService(_postsRepository.Object,
+            _tagsService.Object,
+            _markdownService.Object,
+            _textService.Object,
+            _commentsService.Object);
 
-        _postsRepository.Setup(x => x.GetPostsStartingWithSlug(It.IsAny<string>()))
-            .ReturnsAsync(new List<Post>());
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(It.IsAny<string>()))
+            .ReturnsAsync(new List<string>());
     }
 
     public void Dispose()
@@ -206,21 +209,12 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetPostsStartingWithSlug(baseSlug)).ReturnsAsync(new List<Post>
-        {
-            new Post
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+            .ReturnsAsync(new List<string>
             {
-                Title = title,
-                Slug = $"{baseSlug}-1",
-                AuthorId = Guid.NewGuid()
-            },
-            new Post
-            {
-                Title = title,
-                Slug = $"{baseSlug}-2",
-                AuthorId = Guid.NewGuid()
-            }
-        });
+                $"{baseSlug}-1",
+                $"{baseSlug}-2"
+            });
 
         UpdatePostRequest request = new UpdatePostRequest { Title = title };
 
@@ -236,15 +230,11 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetPostsStartingWithSlug(baseSlug)).ReturnsAsync(new List<Post>
-        {
-            new Post
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+            .ReturnsAsync(new List<string>
             {
-                Title = title,
-                Slug = baseSlug,
-                AuthorId = Guid.NewGuid()
-            }
-        });
+                baseSlug
+            });
 
         UpdatePostRequest request = new UpdatePostRequest { Title = title };
 
@@ -318,15 +308,11 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetPostsStartingWithSlug(baseSlug)).ReturnsAsync(new List<Post>
-        {
-            new Post
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+            .ReturnsAsync(new List<string>
             {
-                Title = title,
-                Slug = baseSlug,
-                AuthorId = Guid.NewGuid()
-            }
-        });
+                baseSlug
+            });
 
         string slug = await _postsService.GenerateUniqueSlugAsync(title);
 
@@ -339,21 +325,12 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetPostsStartingWithSlug(baseSlug)).ReturnsAsync(new List<Post>
-        {
-            new Post
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+            .ReturnsAsync(new List<string>
             {
-                Title = title,
-                Slug = $"{baseSlug}-1",
-                AuthorId = Guid.NewGuid()
-            },
-            new Post
-            {
-                Title = title,
-                Slug = $"{baseSlug}-5",
-                AuthorId = Guid.NewGuid()
-            }
-        });
+                $"{baseSlug}-1",
+                $"{baseSlug}-5"
+            });
 
         string slug = await _postsService.GenerateUniqueSlugAsync(title);
 
@@ -366,21 +343,12 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetPostsStartingWithSlug(baseSlug)).ReturnsAsync(new List<Post>
-        {
-            new Post
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+            .ReturnsAsync(new List<string>
             {
-                Title = title,
-                Slug = $"{baseSlug}-abc",
-                AuthorId = Guid.NewGuid()
-            },
-            new Post
-            {
-                Title = title,
-                Slug = $"{baseSlug}-1",
-                AuthorId = Guid.NewGuid()
-            }
-        });
+                $"{baseSlug}-abc",
+                $"{baseSlug}-1"
+            });
 
         string slug = await _postsService.GenerateUniqueSlugAsync(title);
 

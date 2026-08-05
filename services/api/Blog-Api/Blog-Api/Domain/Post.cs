@@ -30,4 +30,7 @@ public class Post : BaseEntity
     public ICollection<Comment> Comments { get; } = new List<Comment>();
 
     public ICollection<Tag> Tags { get; } = new List<Tag>();
+
+    [NotMapped]
+    public int CommentsCount { get; set; }
 }

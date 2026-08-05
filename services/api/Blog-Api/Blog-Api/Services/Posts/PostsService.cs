@@ -112,8 +112,7 @@ public class PostsService : IPostsService
     {
         string baseSlug = SlugGenerator.Generate(title);
 
-        IReadOnlyCollection<Post> matchingPosts = await _postsRepository.GetPostsStartingWithSlug(baseSlug);
-        List<string> takenSlugs = matchingPosts.Select(p => p.Slug).ToList();
+        IReadOnlyCollection<string> takenSlugs = await _postsRepository.GetSlugsStartingWithSlug(baseSlug);
 
         if (takenSlugs.Count == 0)
         {
