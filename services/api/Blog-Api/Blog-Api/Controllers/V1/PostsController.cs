@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 using Asp.Versioning;
+using BlogApi.Authorization;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Contracts.V1.Responses;
@@ -10,6 +11,8 @@ using BlogApi.Repositories.Posts;
 using BlogApi.Routes.V1;
 using BlogApi.Services.Posts;
 using BlogApi.Utils;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,13 +25,16 @@ namespace BlogApi.Controllers.V1;
 [Produces(MediaTypeNames.Application.Json)]
 public class PostsController : ControllerBase
 {
+    private readonly IAuthenticationService _authenticationService;
     private readonly IAuthorizationService _authorizationService;
     private readonly IPostsService _postsService;
 
-    public PostsController(IPostsService postsService, IAuthorizationService authorizationService)
+    public PostsController(IPostsService postsService, IAuthorizationService authorizationService,
+        IAuthenticationService authenticationService)
     {
         _postsService = postsService;
         _authorizationService = authorizationService;
+        _authenticationService = authenticationService;
     }
 
     /// <summary>
@@ -46,12 +52,22 @@ public class PostsController : ControllerBase
         [FromQuery] PaginationQuery paginationQuery,
         [FromQuery(Name = "unpublished")] bool includeUnpublished)
     {
-        // Todo : Set unpublished to false when unauthenticated
-        // overwrite IncludeUnpublished with query param "unpublished" thus ignoring any value set in a includeUnpublished query param
-        // IncludeUnpublished is stripped from OpenApi document with custom transformer
+        // Check that a user is authenticated and if it can read unpublished posts.
+        AuthenticateResult authenticateResult =
+            await _authenticationService.AuthenticateAsync(HttpContext, JwtBearerDefaults.AuthenticationScheme);
+        bool canReadDraftPosts = false;
+        if (authenticateResult.Succeeded)
+        {
+            AuthorizationResult authorizationResult = await _authorizationService.AuthorizeAsync(
+                authenticateResult.Principal!,
+                Permissions.ToPermissionPolicy(Permissions.Posts.ReadUnpublished));
+            canReadDraftPosts = authorizationResult.Succeeded;
+        }
+
+        // Only allows viewing unpublished posts if authenticated and can read unpublished posts
         filterQuery = filterQuery with
         {
-            IncludeUnpublished = includeUnpublished
+            IncludeUnpublished = canReadDraftPosts && includeUnpublished
         };
 
         PagedPostsResult result = await _postsService.GetPosts(filterQuery, paginationQuery);
