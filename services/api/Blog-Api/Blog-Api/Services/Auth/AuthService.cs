@@ -141,9 +141,12 @@ public class AuthService : IAuthService
         {
             customClaims.Add(new Claim("roles", role));
             BlogRole? blogRole = await _roleManager.FindByNameAsync(role);
-            IList<Claim> roleClaims =
-                await _roleManager.GetClaimsAsync(blogRole ?? throw new InvalidOperationException("Role is null"));
-            customClaims.AddRange(roleClaims);
+            if (blogRole is not null)
+            {
+                IList<Claim> roleClaims =
+                    await _roleManager.GetClaimsAsync(blogRole);
+                customClaims.AddRange(roleClaims);
+            }
         }
 
         string accessToken = _tokensService.GenerateAccessToken(user, customClaims);
