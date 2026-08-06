@@ -21,10 +21,10 @@ builder.Services.AddControllers();
 WebApplication app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
-    await app.DoDatabaseMigration();
+    await app.MigrateDatabase();
 }
 
-DatabaseSeedingResult databaseSeedingResult = await app.DoDatabaseSeeding();
+DatabaseSeedingResult databaseSeedingResult = await app.SeedDatabase();
 
 app.InstallExceptionHandlers();
 app.InstallScalar(databaseSeedingResult.DevAccessToken);

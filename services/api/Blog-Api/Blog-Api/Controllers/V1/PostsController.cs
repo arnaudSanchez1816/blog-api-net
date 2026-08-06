@@ -10,6 +10,7 @@ using BlogApi.Repositories.Posts;
 using BlogApi.Routes.V1;
 using BlogApi.Services.Posts;
 using BlogApi.Utils;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Controllers.V1;
@@ -21,11 +22,13 @@ namespace BlogApi.Controllers.V1;
 [Produces(MediaTypeNames.Application.Json)]
 public class PostsController : ControllerBase
 {
+    private readonly IAuthorizationService _authorizationService;
     private readonly IPostsService _postsService;
 
-    public PostsController(IPostsService postsService)
+    public PostsController(IPostsService postsService, IAuthorizationService authorizationService)
     {
         _postsService = postsService;
+        _authorizationService = authorizationService;
     }
 
     /// <summary>
@@ -135,6 +138,7 @@ public class PostsController : ControllerBase
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpDelete(ApiRoutes.Posts.DeleteBySlug)]
+    //[Authorize]
     public async Task<ActionResult<PostResponse>> DeletePost(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug)
@@ -144,6 +148,14 @@ public class PostsController : ControllerBase
         {
             return NotFound();
         }
+
+        // AuthorizationResult authorizationResult = await _authorizationService.AuthorizeAsync(User,
+        //     post,
+        //     Permissions.ToPermissionPolicy(Permissions.Posts.Delete));
+        // if (!authorizationResult.Succeeded)
+        // {
+        //     return Forbid();
+        // }
 
         await _postsService.DeletePost(post);
 

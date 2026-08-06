@@ -94,6 +94,8 @@ public class TagsController : ControllerBase
     /// <param name="request"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <returns></returns>
     [HttpPost(ApiRoutes.Tags.Create)]
     public async Task<ActionResult<TagResponse>> Create([FromBody] CreateTagRequest request)
