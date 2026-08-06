@@ -12,6 +12,7 @@ public static class Roles
         [
             // Posts
             Authorization.Permissions.Posts.Read,
+            Authorization.Permissions.Posts.ReadUnpublished,
             Authorization.Permissions.Posts.Create,
             Authorization.Permissions.Posts.Update,
             Authorization.Permissions.Posts.Delete,
