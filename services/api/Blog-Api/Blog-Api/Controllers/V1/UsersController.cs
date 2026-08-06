@@ -50,6 +50,15 @@ public class UsersController : ControllerBase
         return Ok(user.ToUserResponse());
     }
 
+    /// <summary>
+    /// Returns posts created by the user.
+    /// </summary>
+    /// <param name="filterQuery"></param>
+    /// <param name="paginationQuery"></param>
+    /// <response code="200"></response>
+    /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <returns></returns>
     [HttpGet(ApiRoutes.Users.GetCurrentUserPosts)]
     [Authorize]
     public async Task<ActionResult<GetPostsResponse>> GetCurrentUserPosts(
