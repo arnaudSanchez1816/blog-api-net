@@ -9,7 +9,8 @@ public interface IAuthService
 
     public Task Logout(RefreshToken refreshToken);
 
-    public Task<AuthenticationResult> Register(string displayName, string email, string password);
+    public Task<AuthenticationResult> Register(string displayName, string email, string password,
+        IReadOnlyCollection<string>? roles = null);
 
     public Task<AuthenticationResult> RefreshTokens(ClaimsPrincipal principal, RefreshToken refreshToken);
 }

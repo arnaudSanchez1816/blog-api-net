@@ -8,13 +8,16 @@ namespace BlogApi.Services.Auth;
 public class AuthService : IAuthService
 {
     private const string InvalidEmailOrPasswordMessage = "Invalid e-mail or password.";
+    private readonly RoleManager<BlogRole> _roleManager;
     private readonly ITokensService _tokensService;
     private readonly UserManager<BlogUser> _userManager;
 
-    public AuthService(UserManager<BlogUser> userManager, ITokensService tokensService)
+    public AuthService(UserManager<BlogUser> userManager, ITokensService tokensService,
+        RoleManager<BlogRole> roleManager)
     {
         _userManager = userManager;
         _tokensService = tokensService;
+        _roleManager = roleManager;
     }
 
     public async Task<AuthenticationResult> Login(string email, string password)
@@ -45,38 +48,6 @@ public class AuthService : IAuthService
     public async Task Logout(RefreshToken token)
     {
         await _tokensService.RevokeRefreshToken(token);
-    }
-
-    public async Task<AuthenticationResult> Register(string displayName, string email, string password)
-    {
-        BlogUser? user = await _userManager.FindByEmailAsync(email);
-        if (user is not null)
-        {
-            return new AuthenticationResult
-            {
-                Success = false,
-                Errors = ["User with this email already exists."]
-            };
-        }
-
-        BlogUser newUser = new BlogUser
-        {
-            UserName = email,
-            DisplayName = displayName,
-            Email = email
-        };
-
-        IdentityResult result = await _userManager.CreateAsync(newUser, password);
-        if (!result.Succeeded)
-        {
-            return new AuthenticationResult
-            {
-                Success = false,
-                Errors = result.Errors.Select(e => e.Description).ToList()
-            };
-        }
-
-        return await GenerateAuthenticationResultForUser(newUser);
     }
 
     public async Task<AuthenticationResult> RefreshTokens(ClaimsPrincipal principal, RefreshToken refreshToken)
@@ -123,6 +94,44 @@ public class AuthService : IAuthService
         return await GenerateAuthenticationResultForUser(user);
     }
 
+    public async Task<AuthenticationResult> Register(string displayName, string email, string password,
+        IReadOnlyCollection<string>? roles = null)
+    {
+        BlogUser? user = await _userManager.FindByEmailAsync(email);
+        if (user is not null)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                Errors = ["User with this email already exists."]
+            };
+        }
+
+        BlogUser newUser = new BlogUser
+        {
+            UserName = email,
+            DisplayName = displayName,
+            Email = email
+        };
+
+        IdentityResult result = await _userManager.CreateAsync(newUser, password);
+        if (!result.Succeeded)
+        {
+            return new AuthenticationResult
+            {
+                Success = false,
+                Errors = result.Errors.Select(e => e.Description).ToList()
+            };
+        }
+
+        if (roles is not null)
+        {
+            await _userManager.AddToRolesAsync(newUser, roles);
+        }
+
+        return await GenerateAuthenticationResultForUser(newUser);
+    }
+
     private async Task<AuthenticationResult> GenerateAuthenticationResultForUser(BlogUser user)
     {
         IList<Claim> userClaims = await _userManager.GetClaimsAsync(user);
@@ -131,6 +140,10 @@ public class AuthService : IAuthService
         foreach (string role in userRoles)
         {
             customClaims.Add(new Claim("roles", role));
+            BlogRole? blogRole = await _roleManager.FindByNameAsync(role);
+            IList<Claim> roleClaims =
+                await _roleManager.GetClaimsAsync(blogRole ?? throw new InvalidOperationException("Role is null"));
+            customClaims.AddRange(roleClaims);
         }
 
         string accessToken = _tokensService.GenerateAccessToken(user, customClaims);

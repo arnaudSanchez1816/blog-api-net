@@ -11,16 +11,31 @@ namespace BlogApi.Unit.Services;
 public class AuthServiceTests : IDisposable
 {
     private readonly IAuthService _authService;
+    private readonly Mock<RoleManager<BlogRole>> _roleManager;
     private readonly Mock<ITokensService> _tokensService;
     private readonly Mock<UserManager<BlogUser>> _userManager;
 
     public AuthServiceTests()
     {
         Mock<IUserStore<BlogUser>> userStore = new Mock<IUserStore<BlogUser>>();
-        _userManager = new Mock<UserManager<BlogUser>>(userStore.Object, null!, null!, null!, null!, null!, null!,
-            null!, null!);
+        _userManager = new Mock<UserManager<BlogUser>>(userStore.Object,
+            null!,
+            null!,
+            null!,
+            null!,
+            null!,
+            null!,
+            null!,
+            null!);
         _userManager.Setup(x => x.GetClaimsAsync(It.IsAny<BlogUser>())).ReturnsAsync(new List<Claim>());
         _userManager.Setup(x => x.GetRolesAsync(It.IsAny<BlogUser>())).ReturnsAsync(new List<string>());
+
+        Mock<IRoleStore<BlogRole>> roleStore = new Mock<IRoleStore<BlogRole>>();
+        _roleManager = new Mock<RoleManager<BlogRole>>(roleStore.Object, null!, null!, null!, null!);
+        _roleManager.Setup(x => x.FindByNameAsync(It.IsAny<string>()))
+            .ReturnsAsync(new BlogRole());
+        _roleManager.Setup(x => x.GetClaimsAsync(It.IsAny<BlogRole>()))
+            .ReturnsAsync(new List<Claim>());
 
         _tokensService = new Mock<ITokensService>();
         _tokensService.Setup(x => x.GenerateAccessToken(It.IsAny<BlogUser>(), It.IsAny<IReadOnlyCollection<Claim>>()))
@@ -28,13 +43,14 @@ public class AuthServiceTests : IDisposable
         _tokensService.Setup(x => x.GenerateRefreshToken(It.IsAny<BlogUser>()))
             .ReturnsAsync((BlogUser user) => MakeRefreshToken(user.Id));
 
-        _authService = new AuthService(_userManager.Object, _tokensService.Object);
+        _authService = new AuthService(_userManager.Object, _tokensService.Object, _roleManager.Object);
     }
 
     public void Dispose()
     {
         _userManager.Reset();
         _tokensService.Reset();
+        _roleManager.Reset();
     }
 
     private static BlogUser MakeUser(string email = "user@example.com")
@@ -114,9 +130,10 @@ public class AuthServiceTests : IDisposable
         await _authService.Login(user.Email!, "password");
 
         _tokensService.Verify(x => x.GenerateAccessToken(user,
-            It.Is<IReadOnlyCollection<Claim>>(claims =>
-                claims.Any(c => c.Type == "roles" && c.Value == "Admin") &&
-                claims.Any(c => c.Type == "roles" && c.Value == "Editor"))), Times.Once);
+                It.Is<IReadOnlyCollection<Claim>>(claims =>
+                    claims.Any(c => c.Type == "roles" && c.Value == "Admin") &&
+                    claims.Any(c => c.Type == "roles" && c.Value == "Editor"))),
+            Times.Once);
     }
 
     [Fact]
@@ -152,7 +169,8 @@ public class AuthServiceTests : IDisposable
         _userManager.Setup(x => x.FindByEmailAsync("newuser@example.com")).ReturnsAsync((BlogUser?)null);
         _userManager.Setup(x => x.CreateAsync(
                 It.Is<BlogUser>(u => u.UserName == "newuser@example.com" && u.Email == "newuser@example.com" &&
-                                     u.DisplayName == "newuser"), "password"))
+                                     u.DisplayName == "newuser"),
+                "password"))
             .ReturnsAsync(IdentityResult.Success);
 
         AuthenticationResult result = await _authService.Register("newuser", "newuser@example.com", "password");
@@ -160,6 +178,31 @@ public class AuthServiceTests : IDisposable
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
         result.RefreshToken.Should().Be("refresh-token-value");
+    }
+
+    [Fact]
+    public async Task Register_AssignRolesToUser_WhenRolesAreProvided()
+    {
+        const string displayName = "newuser";
+        const string email = "newuser@example.com";
+        _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync((BlogUser?)null);
+        _userManager.Setup(x => x.CreateAsync(
+                It.Is<BlogUser>(u => u.UserName == email && u.Email == email &&
+                                     u.DisplayName == displayName),
+                "password"))
+            .ReturnsAsync(IdentityResult.Success);
+
+        List<string> userRoles = ["Admin"];
+        AuthenticationResult result =
+            await _authService.Register(displayName, email, "password", userRoles);
+
+
+        result.Success.Should().BeTrue();
+        _userManager.Verify(x => x.AddToRolesAsync(It.Is<BlogUser>(u =>
+                    u.UserName == email && u.Email == email &&
+                    u.DisplayName == displayName),
+                userRoles),
+            Times.Once);
     }
 
     [Fact]
