@@ -15,6 +15,7 @@ builder.Services.InstallFluentValidation();
 builder.Services.InstallExceptionHandlers();
 builder.Services.InstallCustomModelBinders();
 builder.Services.InstallAuthentication(builder.Configuration);
+builder.Services.InstallAuthorization();
 builder.Services.AddControllers();
 
 WebApplication app = builder.Build();
