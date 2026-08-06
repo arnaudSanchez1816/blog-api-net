@@ -206,6 +206,30 @@ public class AuthServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Register_DoesNotAssignRoles_WhenRolesAreNotProvided()
+    {
+        const string displayName = "newuser";
+        const string email = "newuser@example.com";
+        _userManager.Setup(x => x.FindByEmailAsync(email)).ReturnsAsync((BlogUser?)null);
+        _userManager.Setup(x => x.CreateAsync(
+                It.Is<BlogUser>(u => u.UserName == email && u.Email == email &&
+                                     u.DisplayName == displayName),
+                "password"))
+            .ReturnsAsync(IdentityResult.Success);
+
+        AuthenticationResult result =
+            await _authService.Register(displayName, email, "password");
+
+
+        result.Success.Should().BeTrue();
+        _userManager.Verify(x => x.AddToRolesAsync(It.Is<BlogUser>(u =>
+                    u.UserName == email && u.Email == email &&
+                    u.DisplayName == displayName),
+                It.IsAny<IEnumerable<string>>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task RefreshTokens_ReturnsFailure_WhenUserDoesNotExist()
     {
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync((BlogUser?)null);
