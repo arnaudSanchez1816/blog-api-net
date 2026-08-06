@@ -41,7 +41,7 @@ public class PostsController : ControllerBase
     /// <response code="400"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Posts.GetAll)]
-    public async Task<IActionResult> GetPosts(
+    public async Task<ActionResult<GetPostsResponse>> GetPosts(
         [FromQuery] GetPostsFilterQuery filterQuery,
         [FromQuery] PaginationQuery paginationQuery,
         [FromQuery(Name = "unpublished")] bool includeUnpublished)
