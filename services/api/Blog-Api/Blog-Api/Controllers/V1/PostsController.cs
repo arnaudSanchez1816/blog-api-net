@@ -235,6 +235,27 @@ public class PostsController : ControllerBase
             return NotFound();
         }
 
+        if (!post.IsPublished)
+        {
+            AuthenticateResult authResult =
+                await _authenticationService.AuthenticateAsync(HttpContext, JwtBearerDefaults.AuthenticationScheme);
+            if (!authResult.Succeeded)
+            {
+                return NotFound();
+            }
+
+            AuthorizationResult permissionCheck = await _authorizationService.AuthorizeAsync(authResult.Principal,
+                post,
+                [
+                    new PermissionRequirement(Permissions.Posts.Read),
+                    new PermissionRequirement(Permissions.Comments.Read)
+                ]);
+            if (!permissionCheck.Succeeded)
+            {
+                return NotFound();
+            }
+        }
+
         return Ok(post.ToGetPostCommentsResponse());
     }
 

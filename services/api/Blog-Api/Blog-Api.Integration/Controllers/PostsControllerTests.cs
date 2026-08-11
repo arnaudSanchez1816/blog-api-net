@@ -56,93 +56,6 @@ public class PostsControllerTests : IntegrationTestBase
         return user;
     }
 
-    // ---- GetPostCommentsBySlug ----
-
-    [Fact]
-    public async Task GetPostCommentsBySlug_ReturnsEmptyList_WhenPostHasNoComments()
-    {
-        Post post = new Post
-        {
-            Title = "Post without comments",
-            Slug = "post-without-comments",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-
-        HttpResponseMessage response =
-            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        GetPostCommentsResponse? body =
-            await response.Content.ReadFromJsonAsync<GetPostCommentsResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Comments.Should().BeEmpty();
-        body.Metadata.Count.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task GetPostCommentsBySlug_ReturnsComments_WhenPostHasComments()
-    {
-        Post post = new Post
-        {
-            Title = "Post with comments",
-            Slug = "post-with-comments",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-
-        Comment comment1 = new Comment
-        {
-            Username = "commenter-one",
-            Body = "First comment body",
-            CreatedAt = DateTimeOffset.UtcNow,
-            PostId = post.Id
-        };
-        Comment comment2 = new Comment
-        {
-            Username = "commenter-two",
-            Body = "Second comment body",
-            CreatedAt = DateTimeOffset.UtcNow,
-            PostId = post.Id
-        };
-        await _commentsRepository.AddComment(comment1);
-        await _commentsRepository.AddComment(comment2);
-
-        HttpResponseMessage response =
-            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        GetPostCommentsResponse? body =
-            await response.Content.ReadFromJsonAsync<GetPostCommentsResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Comments.Should().HaveCount(2);
-        body.Metadata.Count.Should().Be(2);
-        body.Comments.Should()
-            .Contain(c =>
-                c.Username == comment1.Username && c.Body == comment1.Body && c.PostId == post.Id);
-        body.Comments.Should()
-            .Contain(c =>
-                c.Username == comment2.Username && c.Body == comment2.Body && c.PostId == post.Id);
-    }
-
-    [Fact]
-    public async Task GetPostCommentsBySlug_Returns404_WhenSlugDoesNotExist()
-    {
-        HttpResponseMessage response = await HttpClient.GetAsync("api/v1.0/posts/does-not-exist/comments",
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task GetPostCommentsBySlug_Returns400_WhenSlugIsInvalid()
-    {
-        HttpResponseMessage response = await HttpClient.GetAsync($"api/v1.0/posts/{InvalidSlug}/comments",
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     // ---- CreatePostComment ----
 
     [Fact]
@@ -296,6 +209,208 @@ public class PostsControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    #region GetPostCommentsBySlug
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_ReturnsEmptyList_WhenPostHasNoComments()
+    {
+        Post post = new Post
+        {
+            Title = "Post without comments",
+            Slug = "post-without-comments",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        GetPostCommentsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostCommentsResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Comments.Should().BeEmpty();
+        body.Metadata.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_ReturnsComments_WhenPostHasComments()
+    {
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
+        };
+        await _postsRepository.AddPost(post);
+
+        Comment comment1 = new Comment
+        {
+            Username = "commenter-one",
+            Body = "First comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = post.Id
+        };
+        Comment comment2 = new Comment
+        {
+            Username = "commenter-two",
+            Body = "Second comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = post.Id
+        };
+        await _commentsRepository.AddComment(comment1);
+        await _commentsRepository.AddComment(comment2);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        GetPostCommentsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostCommentsResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Comments.Should().HaveCount(2);
+        body.Metadata.Count.Should().Be(2);
+        body.Comments.Should()
+            .Contain(c =>
+                c.Username == comment1.Username && c.Body == comment1.Body && c.PostId == post.Id);
+        body.Comments.Should()
+            .Contain(c =>
+                c.Username == comment2.Username && c.Body == comment2.Body && c.PostId == post.Id);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_Returns404_WhenSlugDoesNotExist()
+    {
+        HttpResponseMessage response = await HttpClient.GetAsync("api/v1.0/posts/does-not-exist/comments",
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_Returns400_WhenSlugIsInvalid()
+    {
+        HttpResponseMessage response = await HttpClient.GetAsync($"api/v1.0/posts/{InvalidSlug}/comments",
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_Returns404_WhenPostIsNotPublished()
+    {
+        Post post = new Post
+        {
+            Title = "Post without comments",
+            Slug = "post-without-comments",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_Returns404_WhenPostIsNotPublishedAndNotOwnerOrReadPermission()
+    {
+        (BlogUser _, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Post post = new Post
+        {
+            Title = "Post without comments",
+            Slug = "post-without-comments",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_ReturnsComments_WhenPostIsUnpublishedAndUserIsOwner()
+    {
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments",
+            AuthorId = user.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
+        };
+        await _postsRepository.AddPost(post);
+
+        Comment comment1 = new Comment
+        {
+            Username = "commenter-one",
+            Body = "First comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = post.Id
+        };
+        await _commentsRepository.AddComment(comment1);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        GetPostCommentsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostCommentsResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Comments.Should().HaveCount(1);
+        body.Metadata.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetPostCommentsBySlug_ReturnsComments_WhenPostIsUnpublishedAndUserHasPermissions()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Comments.Read]);
+
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
+        };
+        await _postsRepository.AddPost(post);
+
+        Comment comment1 = new Comment
+        {
+            Username = "commenter-one",
+            Body = "First comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = post.Id
+        };
+        await _commentsRepository.AddComment(comment1);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        GetPostCommentsResponse? body =
+            await response.Content.ReadFromJsonAsync<GetPostCommentsResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Comments.Should().HaveCount(1);
+        body.Metadata.Count.Should().Be(1);
+    }
+
+    #endregion
 
     #region DeletePost
 
