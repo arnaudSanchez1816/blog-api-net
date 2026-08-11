@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 using Asp.Versioning;
+using BlogApi.Authorization;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
@@ -33,8 +34,10 @@ public class TagsController : ControllerBase
     /// Get all tags
     /// </summary>
     /// <response code="200"></response>
+    /// <response code="403"></response>
     /// <returns>A list of all tags in the application</returns>
     [HttpGet(ApiRoutes.Tags.GetAll)]
+    [HasPermission(Permissions.Tags.Read)]
     public async Task<ActionResult<GetTagsResponse>> GetAllTags()
     {
         List<Tag> tags = await _tagsService.GetAllTags();
@@ -55,9 +58,11 @@ public class TagsController : ControllerBase
     /// <param name="slug"></param>
     /// <response code="200"></response>
     /// <response code="400">Invalid slug</response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Tags.GetBySlug)]
+    [HasPermission(Permissions.Tags.Read)]
     public async Task<ActionResult<TagResponse>> GetBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug)
@@ -75,9 +80,11 @@ public class TagsController : ControllerBase
     /// </summary>
     /// <param name="id"></param>
     /// <response code="200"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Tags.GetById)]
+    [HasPermission(Permissions.Tags.Read)]
     public async Task<ActionResult<TagResponse>> GetById([FromRoute] Guid id)
     {
         Tag? tag = await _tagsService.GetTag(id);
@@ -98,6 +105,7 @@ public class TagsController : ControllerBase
     /// <response code="403"></response>
     /// <returns></returns>
     [HttpPost(ApiRoutes.Tags.Create)]
+    [HasPermission(Permissions.Tags.Create)]
     public async Task<ActionResult<TagResponse>> Create([FromBody] CreateTagRequest request)
     {
         Tag newTag = request.ToTag();
@@ -112,9 +120,12 @@ public class TagsController : ControllerBase
     /// <param name="request"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpPut(ApiRoutes.Tags.UpdateBySlug)]
+    [HasPermission(Permissions.Tags.Update)]
     public async Task<ActionResult<TagResponse>> UpdateBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug, [FromBody] UpdateTagRequest request)
@@ -135,9 +146,12 @@ public class TagsController : ControllerBase
     /// <param name="slug"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpDelete(ApiRoutes.Tags.DeleteBySlug)]
+    [HasPermission(Permissions.Tags.Delete)]
     public async Task<ActionResult<TagResponse>> DeleteBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug)
