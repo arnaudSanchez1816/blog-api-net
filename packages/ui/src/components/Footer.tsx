@@ -28,7 +28,7 @@ export default function Footer({ children }: FooterProps) {
                     <span className="md:hidden">-</span>
                     <Link
                         className="text-sm md:flex md:gap-1"
-                        href="https://github.com/arnaudSanchez1816/blog-api"
+                        href="https://github.com/arnaudSanchez1816/blog-api-net"
                         color="foreground"
                         underline="hover"
                     >

@@ -12,11 +12,12 @@ export default function FooterContent() {
                 <div>
                     <p>
                         This blog was made as a personal project to practice API
-                        design. It includes a RESTful API, a front-end app and a
-                        custom CMS.
+                        design and as a capstone project for my web developper
+                        training. It includes a RESTful API, a front-end app and
+                        a CMS app.
                     </p>
                     <p className="mt-4">
-                        This project is built with Express, Postgres, Prisma,
+                        This project is built with ASP.NET Core, Postgres,
                         React, Tailwind and HeroUI.
                     </p>
                     <Link
