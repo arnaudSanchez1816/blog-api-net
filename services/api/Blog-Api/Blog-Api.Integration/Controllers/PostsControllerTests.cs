@@ -56,7 +56,7 @@ public class PostsControllerTests : IntegrationTestBase
         return user;
     }
 
-    // ---- CreatePostComment ----
+    #region CreatePostComment
 
     [Fact]
     public async Task CreatePostComment_ReturnsCreatedComment_WhenGivenValidRequest()
@@ -65,7 +65,8 @@ public class PostsControllerTests : IntegrationTestBase
         {
             Title = "Post to comment on",
             Slug = "post-to-comment-on",
-            AuthorId = _author.Id
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
@@ -91,7 +92,8 @@ public class PostsControllerTests : IntegrationTestBase
         {
             Title = "Post to comment on",
             Slug = "post-to-comment-on-persisted",
-            AuthorId = _author.Id
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
@@ -123,6 +125,48 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task CreatePostComment_Returns404_WhenPostIsUnpublished()
+    {
+        Post post = new Post
+        {
+            Title = "Post to comment on",
+            Slug = "post-to-comment-on",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+        CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
+
+        HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
+            request,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task CreatePostComment_Returns403_WhenUserHasNoCreatePermission()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
+        Post post = new Post
+        {
+            Title = "Post to comment on",
+            Slug = "post-to-comment-on",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+        CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
+
+        HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync(
+            $"api/v1.0/posts/{post.Slug}/comments",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
     public async Task CreatePostComment_Returns400_WhenSlugIsInvalid()
     {
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
@@ -141,7 +185,8 @@ public class PostsControllerTests : IntegrationTestBase
         {
             Title = "Post to comment on",
             Slug = "post-to-comment-on-missing-body",
-            AuthorId = _author.Id
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
 
@@ -159,7 +204,8 @@ public class PostsControllerTests : IntegrationTestBase
         {
             Title = "Post to comment on",
             Slug = "post-to-comment-on-missing-username",
-            AuthorId = _author.Id
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
 
@@ -177,7 +223,8 @@ public class PostsControllerTests : IntegrationTestBase
         {
             Title = "Post to comment on",
             Slug = "post-to-comment-on-body-too-long",
-            AuthorId = _author.Id
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
         CreatePostCommentRequest request =
@@ -197,7 +244,8 @@ public class PostsControllerTests : IntegrationTestBase
         {
             Title = "Post to comment on",
             Slug = "post-to-comment-on-username-too-long",
-            AuthorId = _author.Id
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
         CreatePostCommentRequest request =
@@ -209,6 +257,8 @@ public class PostsControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    #endregion
 
     #region GetPostCommentsBySlug
 

@@ -266,15 +266,17 @@ public class PostsController : ControllerBase
     /// <param name="request"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpPost(ApiRoutes.Posts.CreateCommentBySlug)]
+    [HasPermission(Permissions.Comments.Create)]
     public async Task<ActionResult<CommentResponse>> CreatePostComment(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug, [FromBody] CreatePostCommentRequest request)
     {
         Post? post = await _postsService.GetPostBySlug(slug);
-        if (post is null)
+        if (post is null || !post.IsPublished)
         {
             return NotFound();
         }
