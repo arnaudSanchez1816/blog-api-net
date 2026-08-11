@@ -152,6 +152,8 @@ public class PostsController : ControllerBase
     /// </summary>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpPut(ApiRoutes.Posts.UpdateBySlug)]
@@ -160,10 +162,25 @@ public class PostsController : ControllerBase
         string slug,
         [FromBody] UpdatePostRequest request)
     {
+        AuthenticateResult authenticateResult =
+            await _authenticationService.AuthenticateAsync(HttpContext, JwtBearerDefaults.AuthenticationScheme);
+        if (!authenticateResult.Succeeded)
+        {
+            return Unauthorized();
+        }
+
         Post? post = await _postsService.GetPostBySlugWithTags(slug);
         if (post is null)
         {
             return NotFound();
+        }
+
+        AuthorizationResult permissionCheck = await _authorizationService.AuthorizeAsync(authenticateResult.Principal,
+            post,
+            Permissions.ToPermissionPolicy(Permissions.Posts.Update));
+        if (!permissionCheck.Succeeded)
+        {
+            return Forbid();
         }
 
         await _postsService.UpdatePost(post, request);

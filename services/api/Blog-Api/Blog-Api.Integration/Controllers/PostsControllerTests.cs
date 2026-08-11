@@ -102,304 +102,6 @@ public class PostsControllerTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    // ---- UpdatePost ----
-
-    [Fact]
-    public async Task UpdatePost_ReturnsUpdatedPost_WhenGivenValidData()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            Body = "Original Body",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title", Body = "Updated Body" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Id.Should().Be(post.Id);
-        body.Title.Should().Be("Updated Title");
-        body.Body.Should().Be("Updated Body");
-    }
-
-    [Fact]
-    public async Task UpdatePost_Returns404_WhenSlugDoesNotExist()
-    {
-        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync("api/v1.0/posts/does-not-exist",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task UpdatePost_Returns400_WhenSlugParamIsInvalid()
-    {
-        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{InvalidSlug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task UpdatePost_Returns400_WhenRequestBodyIsEmptyObject()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            new UpdatePostRequest(),
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task UpdatePost_Returns400_WhenTitleIsTooLong()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { Title = TitleOverMaxLength };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task UpdatePost_Returns400_WhenTagsContainInvalidSlug()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { Tags = ["java", "not@ValidSlug!"] };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task UpdatePost_ReplacesTags_WhenTagsAreGiven()
-    {
-        Tag tag1 = new Tag { Name = "Java", Slug = "java" };
-        Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
-        Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(tag1);
-        await _tagsRepository.AddTag(tag2);
-        await _tagsRepository.AddTag(tag3);
-
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id
-        };
-        post.Tags.Add(tag1);
-        await _postsRepository.AddPost(post);
-
-        UpdatePostRequest request = new UpdatePostRequest { Tags = ["spring", "docker"] };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Tags.Should().HaveCount(2);
-        body.Tags.Should().Contain(t => t.Slug == "spring");
-        body.Tags.Should().Contain(t => t.Slug == "docker");
-        body.Tags.Should().NotContain(t => t.Slug == "java");
-    }
-
-    [Fact]
-    public async Task UpdatePost_LeavesBodyUnchanged_WhenOnlyTitleIsGiven()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            Body = "Original Body",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Title.Should().Be("Updated Title Only");
-        body.Body.Should().Be("Original Body");
-    }
-
-    [Fact]
-    public async Task UpdatePost_LeavesTitleUnchanged_WhenOnlyBodyIsGiven()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            Body = "Original Body",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { Body = "Updated Body Only" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Title.Should().Be("Original Title");
-        body.Body.Should().Be("Updated Body Only");
-    }
-
-    [Fact]
-    public async Task UpdatePost_LeavesTagsUnchanged_WhenTagsAreOmitted()
-    {
-        Tag tag = new Tag { Name = "Java", Slug = "java" };
-        await _tagsRepository.AddTag(tag);
-
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id
-        };
-        post.Tags.Add(tag);
-        await _postsRepository.AddPost(post);
-
-        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Title.Should().Be("Updated Title Only");
-        body.Tags.Should().HaveCount(1);
-        body.Tags.Should().Contain(t => t.Slug == "java");
-    }
-
-    [Fact]
-    public async Task UpdatePost_PublishesPost_WhenIsPublishedIsTrue()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
-        DateTimeOffset before = DateTimeOffset.UtcNow;
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        DateTimeOffset after = DateTimeOffset.UtcNow;
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.PublishedAt.Should().NotBeNull();
-        body.PublishedAt!.Value.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
-    }
-
-    [Fact]
-    public async Task UpdatePost_HidesPost_WhenIsPublishedIsFalse()
-    {
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id,
-            PublishedAt = DateTimeOffset.UtcNow
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.PublishedAt.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task UpdatePost_LeavesPublishedAtUnchanged_WhenIsPublishedIsNotProvided()
-    {
-        DateTimeOffset originalPublishedAt = DateTimeOffset.UtcNow.AddDays(-1);
-        Post post = new Post
-        {
-            Title = "Original Title",
-            Slug = "original-title",
-            AuthorId = _author.Id,
-            PublishedAt = originalPublishedAt
-        };
-        await _postsRepository.AddPost(post);
-        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
-
-        HttpResponseMessage response = await HttpClient.PutAsJsonAsync($"api/v1.0/posts/{post.Slug}",
-            request,
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.PublishedAt.Should().BeCloseTo(originalPublishedAt, TimeSpan.FromMilliseconds(1));
-    }
-
     // ---- GetPostCommentsBySlug ----
 
     [Fact]
@@ -640,6 +342,455 @@ public class PostsControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    #region UpdatePost
+
+    // ---- UpdatePost ----
+
+    [Fact]
+    public async Task UpdatePost_ReturnsUpdatedPost_WhenGivenValidData()
+    {
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            Body = "Original Body",
+            AuthorId = user.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title", Body = "Updated Body" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Id.Should().Be(post.Id);
+        body.Title.Should().Be("Updated Title");
+        body.Body.Should().Be("Updated Body");
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns404_WhenSlugDoesNotExist()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync("api/v1.0/posts/does-not-exist",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns400_WhenSlugParamIsInvalid()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{InvalidSlug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns400_WhenRequestBodyIsEmptyObject()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            new UpdatePostRequest(),
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns400_WhenTitleIsTooLong()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Title = TitleOverMaxLength };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns400_WhenTagsContainInvalidSlug()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Tags = ["java", "not@ValidSlug!"] };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdatePost_ReplacesTags_WhenTagsAreGiven()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Tag tag1 = new Tag { Name = "Java", Slug = "java" };
+        Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
+        Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
+        await _tagsRepository.AddTag(tag1);
+        await _tagsRepository.AddTag(tag2);
+        await _tagsRepository.AddTag(tag3);
+
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id
+        };
+        post.Tags.Add(tag1);
+        await _postsRepository.AddPost(post);
+
+        UpdatePostRequest request = new UpdatePostRequest { Tags = ["spring", "docker"] };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Tags.Should().HaveCount(2);
+        body.Tags.Should().Contain(t => t.Slug == "spring");
+        body.Tags.Should().Contain(t => t.Slug == "docker");
+        body.Tags.Should().NotContain(t => t.Slug == "java");
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesBodyUnchanged_WhenOnlyTitleIsGiven()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            Body = "Original Body",
+            AuthorId = author.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Title.Should().Be("Updated Title Only");
+        body.Body.Should().Be("Original Body");
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesTitleUnchanged_WhenOnlyBodyIsGiven()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            Body = "Original Body",
+            AuthorId = author.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Body = "Updated Body Only" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Title.Should().Be("Original Title");
+        body.Body.Should().Be("Updated Body Only");
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesTagsUnchanged_WhenTagsAreOmitted()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Tag tag = new Tag { Name = "Java", Slug = "java" };
+        await _tagsRepository.AddTag(tag);
+
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id
+        };
+        post.Tags.Add(tag);
+        await _postsRepository.AddPost(post);
+
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Title.Should().Be("Updated Title Only");
+        body.Tags.Should().HaveCount(1);
+        body.Tags.Should().Contain(t => t.Slug == "java");
+    }
+
+    [Fact]
+    public async Task UpdatePost_PublishesPost_WhenIsPublishedIsTrue()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
+        DateTimeOffset before = DateTimeOffset.UtcNow;
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        DateTimeOffset after = DateTimeOffset.UtcNow;
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.PublishedAt.Should().NotBeNull();
+        body.PublishedAt!.Value.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
+    }
+
+    [Fact]
+    public async Task UpdatePost_HidesPost_WhenIsPublishedIsFalse()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.PublishedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesPublishedAtUnchanged_WhenIsPublishedIsNotProvided()
+    {
+        (BlogUser author, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+        DateTimeOffset originalPublishedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = author.Id,
+            PublishedAt = originalPublishedAt
+        };
+        await _postsRepository.AddPost(post);
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
+
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.PublishedAt.Should().BeCloseTo(originalPublishedAt, TimeSpan.FromMilliseconds(1));
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns401_WhenUnauthenticated()
+    {
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        UpdatePostRequest request = new UpdatePostRequest
+        {
+            Body = "New body"
+        };
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            null,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task UpdatePost_Returns403_WhenIsNotOwnerAndNoUpdatePermissions()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([]);
+
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        UpdatePostRequest request = new UpdatePostRequest
+        {
+            Body = "New body"
+        };
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task UpdatePost_ReturnsUpdatedPost_WhenHasUpdatePermission()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        UpdatePostRequest request = new UpdatePostRequest
+        {
+            Body = "New body from moderator"
+        };
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? postResponse =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        postResponse.Should().NotBeNull();
+        postResponse.Body.Should().Be(request.Body);
+    }
+
+    [Fact]
+    public async Task UpdatePost_ReturnsUpdatedPost_WhenIsOwner()
+    {
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Post post = new Post
+        {
+            Title = "Original Title",
+            Slug = "original-title",
+            AuthorId = user.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        UpdatePostRequest request = new UpdatePostRequest
+        {
+            Body = "New body from owner"
+        };
+        HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? postResponse =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        postResponse.Should().NotBeNull();
+        postResponse.Body.Should().Be(request.Body);
+    }
+
+    #endregion
 
     #region CreatePost
 
