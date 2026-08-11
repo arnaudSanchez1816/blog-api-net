@@ -367,7 +367,7 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetPostCommentsBySlug_Returns404_WhenPostIsNotPublishedAndNotOwnerOrReadPermission()
+    public async Task GetPostCommentsBySlug_Returns403_WhenPostIsNotPublishedAndNotOwnerOrReadPermission()
     {
         (BlogUser _, string bearerToken) = await RegisterAuthenticatedUser();
 
@@ -384,13 +384,14 @@ public class PostsControllerTests : IntegrationTestBase
                 bearerToken,
                 TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]
     public async Task GetPostCommentsBySlug_ReturnsComments_WhenPostIsUnpublishedAndUserIsOwner()
     {
-        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Read]);
 
         Post post = new Post
         {
@@ -1063,7 +1064,7 @@ public class PostsControllerTests : IntegrationTestBase
     public async Task CreatePost_ReturnsCreatedPost_WhenGivenValidTitle()
     {
         (BlogUser user, string bearerToken) =
-            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Posts.Create]);
         CreatePostRequest request = new CreatePostRequest { Title = "Post title" };
 
         HttpResponseMessage response =

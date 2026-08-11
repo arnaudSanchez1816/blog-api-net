@@ -223,9 +223,11 @@ public class PostsController : ControllerBase
     /// <param name="slug"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Posts.GetCommentsBySlug)]
+    [HasPermission(Permissions.Comments.Read)]
     public async Task<ActionResult<GetPostCommentsResponse>> GetPostCommentsBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug)
@@ -253,7 +255,7 @@ public class PostsController : ControllerBase
                 ]);
             if (!permissionCheck.Succeeded)
             {
-                return NotFound();
+                return Forbid();
             }
         }
 
