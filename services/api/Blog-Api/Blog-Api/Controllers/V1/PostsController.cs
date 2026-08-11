@@ -157,25 +157,19 @@ public class PostsController : ControllerBase
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpPut(ApiRoutes.Posts.UpdateBySlug)]
+    [Authorize]
     public async Task<ActionResult<PostResponse>> UpdatePost(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug,
         [FromBody] UpdatePostRequest request)
     {
-        AuthenticateResult authenticateResult =
-            await _authenticationService.AuthenticateAsync(HttpContext, JwtBearerDefaults.AuthenticationScheme);
-        if (!authenticateResult.Succeeded)
-        {
-            return Unauthorized();
-        }
-
         Post? post = await _postsService.GetPostBySlugWithTags(slug);
         if (post is null)
         {
             return NotFound();
         }
 
-        AuthorizationResult permissionCheck = await _authorizationService.AuthorizeAsync(authenticateResult.Principal,
+        AuthorizationResult permissionCheck = await _authorizationService.AuthorizeAsync(User,
             post,
             Permissions.ToPermissionPolicy(Permissions.Posts.Update));
         if (!permissionCheck.Succeeded)
