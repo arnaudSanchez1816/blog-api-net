@@ -37,6 +37,16 @@ public static class HttpClientExtensions
             return client.SendWithBearerAsync(HttpMethod.Post, requestUri, value, bearerToken, ct);
         }
 
+        public Task<HttpResponseMessage> DeleteWithBearerAsync([StringSyntax("Uri")] string requestUri,
+            string? bearerToken,
+            CancellationToken ct = default)
+        {
+            return client.SendWithBearerAsync(HttpMethod.Delete,
+                new Uri(requestUri, UriKind.Relative),
+                bearerToken,
+                ct);
+        }
+
         private Task<HttpResponseMessage> SendWithBearerAsync(HttpMethod method,
             Uri requestUri, string? bearerToken, CancellationToken ct = default)
         {
