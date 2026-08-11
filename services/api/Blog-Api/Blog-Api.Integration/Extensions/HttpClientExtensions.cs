@@ -21,6 +21,14 @@ public static class HttpClientExtensions
             return client.SendWithBearerAsync(HttpMethod.Get, requestUri, bearerToken, ct);
         }
 
+        public Task<HttpResponseMessage> PutWithBearerAsJsonAsync<TValue>([StringSyntax("Uri")] string requestUri,
+            TValue value,
+            string? bearerToken,
+            CancellationToken ct = default)
+        {
+            return client.SendWithBearerAsync(HttpMethod.Put, requestUri, value, bearerToken, ct);
+        }
+
         public Task<HttpResponseMessage> PostWithBearerAsJsonAsync<TValue>([StringSyntax("Uri")] string requestUri,
             TValue value,
             string? bearerToken,
