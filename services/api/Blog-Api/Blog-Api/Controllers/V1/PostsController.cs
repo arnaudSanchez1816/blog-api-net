@@ -46,8 +46,10 @@ public class PostsController : ControllerBase
     /// <param name="includeUnpublished"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="403"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Posts.GetAll)]
+    [HasPermission(Permissions.Posts.Read)]
     public async Task<ActionResult<GetPostsResponse>> GetPosts(
         [FromQuery] GetPostsFilterQuery filterQuery,
         [FromQuery] PaginationQuery paginationQuery,

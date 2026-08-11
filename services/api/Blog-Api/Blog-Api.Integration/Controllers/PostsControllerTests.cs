@@ -1626,9 +1626,8 @@ public class PostsControllerTests : IntegrationTestBase
     [Fact]
     public async Task GetPosts_ExcludesUnpublishedPosts_WhenUnpublishedParamIsOmitted()
     {
-        string role = "Admin";
-        await CreateRoleWithPermissions(role, [Permissions.Posts.ReadUnpublished]);
-        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser(roles: [role]);
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         await _postsRepository.AddPost(new Post
         {
             Title = "Draft post",
@@ -1650,7 +1649,7 @@ public class PostsControllerTests : IntegrationTestBase
     public async Task GetPosts_ExcludesUnpublishedPosts_WhenUnpublishedParamIsFalse()
     {
         string role = "Admin";
-        await CreateRoleWithPermissions(role, [Permissions.Posts.ReadUnpublished]);
+        await CreateRoleWithPermissions(role, [Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser(roles: [role]);
         await _postsRepository.AddPost(new Post
         {
@@ -1674,9 +1673,8 @@ public class PostsControllerTests : IntegrationTestBase
     [Fact]
     public async Task GetPosts_IncludesUnpublishedPosts_WhenUnpublishedParamIsTrue()
     {
-        string role = "Admin";
-        await CreateRoleWithPermissions(role, [Permissions.Posts.ReadUnpublished]);
-        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser(roles: [role]);
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         await _postsRepository.AddPost(new Post
         {
             Title = "Draft post",
@@ -1698,9 +1696,9 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetPosts_ExcludesUnpublishedPosts_WhenUserHasMissingPermission()
+    public async Task GetPosts_ExcludesUnpublishedPosts_WhenUserHasNoReadUnpublishedPermission()
     {
-        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read]);
         await _postsRepository.AddPost(new Post
         {
             Title = "Draft post",
@@ -1718,6 +1716,25 @@ public class PostsControllerTests : IntegrationTestBase
             await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_Returns403_WhenUserHasNoPermissions()
+    {
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+        await _postsRepository.AddPost(new Post
+        {
+            Title = "Draft post",
+            Slug = "draft-post",
+            AuthorId = user.Id
+        });
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync("api/v1.0/posts",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     #endregion
