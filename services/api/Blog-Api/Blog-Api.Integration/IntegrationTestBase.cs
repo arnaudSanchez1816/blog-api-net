@@ -79,4 +79,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         return (user, result.AccessToken!);
     }
+
+    protected async Task<(BlogUser User, string BearerToken)> RegisterAuthenticatedUserWithPermissions(
+        IReadOnlyCollection<string> permissions, string displayName = "User")
+    {
+        string roleName = $"Role_{Guid.NewGuid()}";
+        await CreateRoleWithPermissions(roleName, permissions);
+
+        string email = $"{Guid.NewGuid()}@email.com";
+        AuthenticationResult result = await _authService.Register(displayName, email, "Password123", [roleName]);
+        BlogUser user = await _userManager.FindByEmailAsync(email) ?? throw new InvalidOperationException();
+
+        return (user, result.AccessToken!);
+    }
 }
