@@ -187,10 +187,12 @@ public class PostsController : ControllerBase
     /// </summary>
     /// <response code="200"></response>
     /// <response code="400">When slug is bad</response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpDelete(ApiRoutes.Posts.DeleteBySlug)]
-    //[Authorize]
+    [Authorize]
     public async Task<ActionResult<PostResponse>> DeletePost(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug)
@@ -201,13 +203,13 @@ public class PostsController : ControllerBase
             return NotFound();
         }
 
-        // AuthorizationResult authorizationResult = await _authorizationService.AuthorizeAsync(User,
-        //     post,
-        //     Permissions.ToPermissionPolicy(Permissions.Posts.Delete));
-        // if (!authorizationResult.Succeeded)
-        // {
-        //     return Forbid();
-        // }
+        AuthorizationResult authorizationResult = await _authorizationService.AuthorizeAsync(User,
+            post,
+            Permissions.ToPermissionPolicy(Permissions.Posts.Delete));
+        if (!authorizationResult.Succeeded)
+        {
+            return Forbid();
+        }
 
         await _postsService.DeletePost(post);
 

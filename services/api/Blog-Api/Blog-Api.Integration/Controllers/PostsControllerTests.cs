@@ -56,52 +56,6 @@ public class PostsControllerTests : IntegrationTestBase
         return user;
     }
 
-    // ---- DeletePost ----
-
-    [Fact]
-    public async Task DeletePost_ReturnsDeletedPost_WhenSlugExists()
-    {
-        Post post = new Post
-        {
-            Title = "Post to Delete",
-            Slug = "post-to-delete",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-
-        HttpResponseMessage response =
-            await HttpClient.DeleteAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Id.Should().Be(post.Id);
-        body.Title.Should().Be(post.Title);
-
-        HttpResponseMessage followUpResponse =
-            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
-        followUpResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task DeletePost_Returns404_WhenSlugDoesNotExist()
-    {
-        HttpResponseMessage response = await HttpClient.DeleteAsync("api/v1.0/posts/does-not-exist",
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task DeletePost_Returns400_WhenSlugIsInvalid()
-    {
-        HttpResponseMessage response =
-            await HttpClient.DeleteAsync($"api/v1.0/posts/{InvalidSlug}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     // ---- GetPostCommentsBySlug ----
 
     [Fact]
@@ -342,6 +296,152 @@ public class PostsControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    #region DeletePost
+
+    [Fact]
+    public async Task DeletePost_ReturnsDeletedPost_WhenSlugExists()
+    {
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Delete]);
+
+        Post post = new Post
+        {
+            Title = "Post to Delete",
+            Slug = "post-to-delete",
+            AuthorId = user.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Id.Should().Be(post.Id);
+        body.Title.Should().Be(post.Title);
+
+        HttpResponseMessage followUpResponse =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
+        followUpResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeletePost_DeletePost_WhenUserIsOwner()
+    {
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Post post = new Post
+        {
+            Title = "Post to Delete",
+            Slug = "post-to-delete",
+            AuthorId = user.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage followUpResponse =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
+        followUpResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeletePost_DeletePost_WhenUserHasDeletePermission()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Delete]);
+
+        Post post = new Post
+        {
+            Title = "Post to Delete",
+            Slug = "post-to-delete",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage followUpResponse =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
+        followUpResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeletePost_Returns404_WhenSlugDoesNotExist()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Delete]);
+
+        HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync("api/v1.0/posts/does-not-exist",
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeletePost_Returns400_WhenSlugIsInvalid()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Delete]);
+
+        HttpResponseMessage response =
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{InvalidSlug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeletePost_Returns401_WhenUnauthenticated()
+    {
+        HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync("api/v1.0/posts/does-not-exist",
+            null,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeletePost_Returns403_WhenNotOwnerAndNoDeletePermission()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Post post = new Post
+        {
+            Title = "Post to Delete",
+            Slug = "post-to-delete",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    #endregion
 
     #region UpdatePost
 
