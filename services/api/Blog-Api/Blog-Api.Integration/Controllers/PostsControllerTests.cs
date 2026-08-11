@@ -102,89 +102,6 @@ public class PostsControllerTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
-    // ---- CreatePost ----
-
-    // BUG: CreatePost hardcodes AuthorId = Guid.NewGuid() (see PostsController.CreatePost TODO), which
-    // points at a non-existent user and trips the posts.author_id FK constraint, so this currently
-    // 500s instead of returning 201. Skipped until an authenticated author id is wired in.
-    [Fact(Skip = "CreatePost.AuthorId is hardcoded to a random unsaved Guid - see TODO in PostsController.CreatePost")]
-    public async Task CreatePost_ReturnsCreatedPost_WhenGivenValidTitle()
-    {
-        CreatePostRequest request = new CreatePostRequest { Title = "Post title" };
-
-        HttpResponseMessage response =
-            await HttpClient.PostAsJsonAsync("api/v1.0/posts", request, TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Title.Should().Be(request.Title);
-        response.Headers.Location.Should().NotBeNull();
-
-        HttpResponseMessage locationResponse =
-            await HttpClient.GetAsync(response.Headers.Location, TestContext.Current.CancellationToken);
-        locationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? locationBody =
-            await locationResponse.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        locationBody.Should().NotBeNull();
-        locationBody.Title.Should().Be(request.Title);
-    }
-
-    [Fact]
-    public async Task CreatePost_Returns400_WhenTitleIsMissing()
-    {
-        HttpResponseMessage response = await HttpClient.PostAsJsonAsync("api/v1.0/posts",
-            new { },
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task CreatePost_Returns400_WhenTitleIsTooLong()
-    {
-        CreatePostRequest request = new CreatePostRequest { Title = TitleOverMaxLength };
-
-        HttpResponseMessage response =
-            await HttpClient.PostAsJsonAsync("api/v1.0/posts", request, TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    // See BUG note on CreatePost_ReturnsCreatedPost_WhenGivenValidTitle above.
-    [Fact(Skip = "CreatePost.AuthorId is hardcoded to a random unsaved Guid - see TODO in PostsController.CreatePost")]
-    public async Task CreatePost_ReturnsCreatedPost_WhenTitleIsExactlyAtMaxLength()
-    {
-        CreatePostRequest request = new CreatePostRequest { Title = TitleAtMaxLength };
-
-        HttpResponseMessage response =
-            await HttpClient.PostAsJsonAsync("api/v1.0/posts", request, TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-    }
-
-    [Fact]
-    public async Task CreatePost_Returns400_WhenTitleIsBlank()
-    {
-        CreatePostRequest request = new CreatePostRequest { Title = "        " };
-
-        HttpResponseMessage response =
-            await HttpClient.PostAsJsonAsync("api/v1.0/posts", request, TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task CreatePost_Returns400_WhenTitleIsNull()
-    {
-        HttpResponseMessage response = await HttpClient.PostAsJsonAsync("api/v1.0/posts",
-            new { Title = (string?)null },
-            TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     // ---- UpdatePost ----
 
     [Fact]
@@ -723,6 +640,143 @@ public class PostsControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    #region CreatePost
+
+    [Fact]
+    public async Task CreatePost_ReturnsCreatedPost_WhenGivenValidTitle()
+    {
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+        CreatePostRequest request = new CreatePostRequest { Title = "Post title" };
+
+        HttpResponseMessage response =
+            await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Title.Should().Be(request.Title);
+        body.Author.Id.Should().Be(user.Id);
+        response.Headers.Location.Should().NotBeNull();
+
+        HttpResponseMessage locationResponse =
+            await HttpClient.GetWithBearerAsync(response.Headers.Location,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+        locationResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? locationBody =
+            await locationResponse.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        locationBody.Should().NotBeNull();
+        locationBody.Title.Should().Be(request.Title);
+    }
+
+    [Fact]
+    public async Task CreatePost_Returns400_WhenTitleIsMissing()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+        HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+            new { },
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreatePost_Returns400_WhenTitleIsTooLong()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+        CreatePostRequest request = new CreatePostRequest { Title = TitleOverMaxLength };
+
+        HttpResponseMessage response =
+            await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreatePost_ReturnsCreatedPost_WhenTitleIsExactlyAtMaxLength()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+        CreatePostRequest request = new CreatePostRequest { Title = TitleAtMaxLength };
+
+        HttpResponseMessage response =
+            await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    [Fact]
+    public async Task CreatePost_Returns400_WhenTitleIsBlank()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+        CreatePostRequest request = new CreatePostRequest { Title = "        " };
+
+        HttpResponseMessage response =
+            await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreatePost_Returns400_WhenTitleIsNull()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+
+        HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+            new { Title = (string?)null },
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreatePost_Returns401_WhenNoBearerTokenIsProvided()
+    {
+        CreatePostRequest request = new CreatePostRequest { Title = "Unauthentitcated test post title" };
+
+        HttpResponseMessage response =
+            await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                null,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task CreatePost_Returns403_WhenUserHasNoCreatePermission()
+    {
+        await CreateRoleWithPermissions("Reader", [Permissions.Posts.Read]);
+        (_, string bearerToken) = await RegisterAuthenticatedUser(roles: ["Reader"]);
+
+        CreatePostRequest request = new CreatePostRequest { Title = "Forbidden test post title" };
+
+        HttpResponseMessage response =
+            await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    #endregion
 
     #region GetBySlug
 

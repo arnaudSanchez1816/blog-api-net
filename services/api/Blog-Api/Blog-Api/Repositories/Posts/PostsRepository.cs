@@ -87,6 +87,7 @@ public class PostsRepository : IPostsRepository
     {
         _context.Posts.Add(post);
         await _context.SaveChangesAsync();
+        await _context.Entry(post).Reference(p => p.Author).LoadAsync();
     }
 
     public async Task UpdatePost(Post post)

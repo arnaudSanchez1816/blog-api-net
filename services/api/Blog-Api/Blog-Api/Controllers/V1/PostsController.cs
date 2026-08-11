@@ -6,6 +6,7 @@ using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
+using BlogApi.Extensions;
 using BlogApi.Mapping;
 using BlogApi.Repositories.Posts;
 using BlogApi.Routes.V1;
@@ -126,8 +127,11 @@ public class PostsController : ControllerBase
     /// <param name="request"></param>
     /// <response code="201"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <returns></returns>
     [HttpPost(ApiRoutes.Posts.Create)]
+    [HasPermission(Permissions.Posts.Create)]
     public async Task<ActionResult<PostResponse>> CreatePost([FromBody] CreatePostRequest request)
     {
         string postSlug = await _postsService.GenerateUniqueSlugAsync(request.Title);
@@ -136,7 +140,7 @@ public class PostsController : ControllerBase
         {
             Title = request.Title,
             Slug = postSlug,
-            AuthorId = Guid.NewGuid() // TODO : replace with authenticated user id
+            AuthorId = User.GetUserId()
         };
         newPost = await _postsService.CreatePost(newPost);
 
