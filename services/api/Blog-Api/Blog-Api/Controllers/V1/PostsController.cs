@@ -85,9 +85,11 @@ public class PostsController : ControllerBase
     /// <param name="slug"></param>
     /// <response code="200"></response>
     /// <response code="400">When slug is bad</response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Posts.GetBySlug, Name = "GetPostBySlug")]
+    [HasPermission(Permissions.Posts.Read)]
     public async Task<ActionResult<PostResponse>> GetBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug)
@@ -101,21 +103,18 @@ public class PostsController : ControllerBase
 
         if (!post.IsPublished)
         {
-            AuthenticateResult authenticateResult =
-                await _authenticationService.AuthenticateAsync(HttpContext, JwtBearerDefaults.AuthenticationScheme);
-            if (!authenticateResult.Succeeded)
+            if (User.Identity?.IsAuthenticated != true)
             {
                 return NotFound();
             }
 
             AuthorizationResult authorizationCheck = await _authorizationService.AuthorizeAsync(
-                authenticateResult.Principal,
+                User,
                 post,
                 Permissions.ToPermissionPolicy(Permissions.Posts.ReadUnpublished));
             if (!authorizationCheck.Succeeded)
             {
-                // Maybe 403 ?
-                return NotFound();
+                return Forbid();
             }
         }
 

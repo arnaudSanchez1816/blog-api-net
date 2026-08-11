@@ -1289,7 +1289,7 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetBySlug_Returns404_WhenUserIsNotOwnerAndNoPermissions()
+    public async Task GetBySlug_Returns403_WhenUserIsNotOwnerAndNoPermissions()
     {
         (_, string bearerToken) = await RegisterAuthenticatedUser();
         Post post = new Post
@@ -1305,7 +1305,7 @@ public class PostsControllerTests : IntegrationTestBase
                 bearerToken,
                 TestContext.Current.CancellationToken);
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -1320,7 +1320,7 @@ public class PostsControllerTests : IntegrationTestBase
     [Fact]
     public async Task GetBySlug_ReturnsDraftPost_WhenUserIsOwner()
     {
-        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read]);
 
         Post post = new Post
         {
@@ -1356,7 +1356,7 @@ public class PostsControllerTests : IntegrationTestBase
     [Fact]
     public async Task GetBySlug_ReturnsDraftPost_WhenUserHasPermissions()
     {
-        await CreateRoleWithPermissions("Admin", [Permissions.Posts.ReadUnpublished]);
+        await CreateRoleWithPermissions("Admin", [Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         (_, string bearerToken) = await RegisterAuthenticatedUser(roles: ["Admin"]);
 
         Post post = new Post
