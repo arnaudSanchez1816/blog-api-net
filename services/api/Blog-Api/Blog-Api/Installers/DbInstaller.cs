@@ -62,7 +62,7 @@ public static class DbInstaller
         // Roles & permissions
         await CreateRoleWithClaims(roleManager, Roles.Admin, Roles.Permissions.AdminPermissions);
         await CreateRoleWithClaims(roleManager, Roles.Moderator, Roles.Permissions.ModeratorPermissions);
-        await CreateRoleWithClaims(roleManager, Roles.User, Roles.Permissions.UserPermissions);
+        await CreateRoleWithClaims(roleManager, Roles.User, Roles.Permissions.RegisteredUserPermissions);
 
         // Users
         BlogUser adminUser = await CreateAdminUser(databaseSeedingOptions, userManager);

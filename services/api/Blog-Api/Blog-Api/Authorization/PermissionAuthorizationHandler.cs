@@ -7,7 +7,12 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
-        if (context.User.HasClaim(c => c.Type == CustomClaimTypes.Permission && c.Value == requirement.Permission))
+        bool hasClaim = context.User.HasClaim(c =>
+            c.Type == CustomClaimTypes.Permission && c.Value == requirement.Permission);
+        bool isAuthenticated = context.User.Identity?.IsAuthenticated ?? false;
+        bool hasAnonClaim = !isAuthenticated &&
+                            Roles.Permissions.AnonymousPermissions.Contains(requirement.Permission);
+        if (hasClaim || hasAnonClaim)
         {
             context.Succeed(requirement);
         }

@@ -41,7 +41,18 @@ public static class Roles
             Authorization.Permissions.Comments.Delete
         ];
 
-        public static readonly IReadOnlyList<string> UserPermissions =
+        public static readonly IReadOnlyList<string> RegisteredUserPermissions =
+        [
+            // Posts
+            Authorization.Permissions.Posts.Read,
+            // Tags
+            Authorization.Permissions.Tags.Read,
+            // Comments
+            Authorization.Permissions.Comments.Read,
+            Authorization.Permissions.Comments.Create
+        ];
+
+        public static readonly IReadOnlyList<string> AnonymousPermissions =
         [
             // Posts
             Authorization.Permissions.Posts.Read,
