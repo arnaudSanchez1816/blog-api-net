@@ -33,4 +33,9 @@ public class Post : BaseEntity
 
     [NotMapped]
     public int CommentsCount { get; set; }
+
+    public bool IsPublished
+    {
+        get => PublishedAt != null;
+    }
 }

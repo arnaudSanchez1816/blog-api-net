@@ -56,88 +56,6 @@ public class PostsControllerTests : IntegrationTestBase
         return user;
     }
 
-    // ---- GetBySlug ----
-
-    [Fact]
-    public async Task GetBySlug_ReturnsPost_WhenPostExists()
-    {
-        Post post = new Post
-        {
-            Title = "Test Post Title",
-            Slug = "test-post-title",
-            Description = "Test post description",
-            Body = "Test post body content",
-            AuthorId = _author.Id
-        };
-        await _postsRepository.AddPost(post);
-
-        HttpResponseMessage response =
-            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Id.Should().Be(post.Id);
-        body.Title.Should().Be(post.Title);
-        body.Slug.Should().Be(post.Slug);
-        body.Description.Should().Be(post.Description);
-        body.Body.Should().Be(post.Body);
-        body.PublishedAt.Should().BeNull();
-        body.Author.Should().NotBeNull();
-        body.Author.Id.Should().Be(_author.Id);
-        body.Author.Name.Should().Be(_author.DisplayName);
-        body.Tags.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetBySlug_ReturnsPost_WithTags_WhenPostHasTags()
-    {
-        Tag tag1 = new Tag { Name = "Java", Slug = "java" };
-        Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
-        await _tagsRepository.AddTag(tag1);
-        await _tagsRepository.AddTag(tag2);
-
-        Post post = new Post
-        {
-            Title = "Post with Tags",
-            Slug = "post-with-tags",
-            AuthorId = _author.Id
-        };
-        post.Tags.Add(tag1);
-        post.Tags.Add(tag2);
-        await _postsRepository.AddPost(post);
-
-        HttpResponseMessage response =
-            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        PostResponse? body =
-            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
-        body.Should().NotBeNull();
-        body.Tags.Should().HaveCount(2);
-        body.Tags.Should().Contain(t => t.Slug == "java");
-        body.Tags.Should().Contain(t => t.Slug == "spring");
-    }
-
-    [Fact]
-    public async Task GetBySlug_Returns404_WhenSlugDoesNotExist()
-    {
-        HttpResponseMessage response =
-            await HttpClient.GetAsync("api/v1.0/posts/does-not-exist", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task GetBySlug_Returns400_WhenSlugIsInvalid()
-    {
-        HttpResponseMessage response =
-            await HttpClient.GetAsync($"api/v1.0/posts/{InvalidSlug}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
     // ---- DeletePost ----
 
     [Fact]
@@ -805,6 +723,204 @@ public class PostsControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    #region GetBySlug
+
+    // ---- GetBySlug ----
+
+    [Fact]
+    public async Task GetBySlug_ReturnsPost_WhenPostExists()
+    {
+        Post post = new Post
+        {
+            Title = "Test Post Title",
+            Slug = "test-post-title",
+            Description = "Test post description",
+            Body = "Test post body content",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Id.Should().Be(post.Id);
+        body.Title.Should().Be(post.Title);
+        body.Slug.Should().Be(post.Slug);
+        body.Description.Should().Be(post.Description);
+        body.Body.Should().Be(post.Body);
+        body.PublishedAt.Should().BeCloseTo(post.PublishedAt.Value, TimeSpan.FromMilliseconds(20));
+        body.Author.Should().NotBeNull();
+        body.Author.Id.Should().Be(_author.Id);
+        body.Author.Name.Should().Be(_author.DisplayName);
+        body.Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBySlug_ReturnsPost_WithTags_WhenPostHasTags()
+    {
+        Tag tag1 = new Tag { Name = "Java", Slug = "java" };
+        Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
+        await _tagsRepository.AddTag(tag1);
+        await _tagsRepository.AddTag(tag2);
+
+        Post post = new Post
+        {
+            Title = "Post with Tags",
+            Slug = "post-with-tags",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        post.Tags.Add(tag1);
+        post.Tags.Add(tag2);
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Tags.Should().HaveCount(2);
+        body.Tags.Should().Contain(t => t.Slug == "java");
+        body.Tags.Should().Contain(t => t.Slug == "spring");
+    }
+
+    [Fact]
+    public async Task GetBySlug_Returns404_WhenSlugDoesNotExist()
+    {
+        HttpResponseMessage response =
+            await HttpClient.GetAsync("api/v1.0/posts/does-not-exist", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBySlug_Returns404_WhenPostIsUnpublished()
+    {
+        Post post = new Post
+        {
+            Title = "Draft Post",
+            Slug = "draft-post",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBySlug_Returns404_WhenUserIsNotOwnerAndNoPermissions()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
+        Post post = new Post
+        {
+            Title = "Draft Post",
+            Slug = "draft-post",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task GetBySlug_Returns400_WhenSlugIsInvalid()
+    {
+        HttpResponseMessage response =
+            await HttpClient.GetAsync($"api/v1.0/posts/{InvalidSlug}", TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetBySlug_ReturnsDraftPost_WhenUserIsOwner()
+    {
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Post post = new Post
+        {
+            Title = "Test Post Title",
+            Slug = "test-post-title",
+            Description = "Test post description",
+            Body = "Test post body content",
+            AuthorId = user.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Id.Should().Be(post.Id);
+        body.Title.Should().Be(post.Title);
+        body.Slug.Should().Be(post.Slug);
+        body.Description.Should().Be(post.Description);
+        body.Body.Should().Be(post.Body);
+        body.PublishedAt.Should().BeNull();
+        body.Author.Should().NotBeNull();
+        body.Author.Id.Should().Be(user.Id);
+        body.Author.Name.Should().Be(user.DisplayName);
+        body.Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBySlug_ReturnsDraftPost_WhenUserHasPermissions()
+    {
+        await CreateRoleWithPermissions("Admin", [Permissions.Posts.ReadUnpublished]);
+        (_, string bearerToken) = await RegisterAuthenticatedUser(roles: ["Admin"]);
+
+        Post post = new Post
+        {
+            Title = "Test Post Title",
+            Slug = "test-post-title",
+            Description = "Test post description",
+            Body = "Test post body content",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        PostResponse? body =
+            await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+        body.Should().NotBeNull();
+        body.Id.Should().Be(post.Id);
+        body.Title.Should().Be(post.Title);
+        body.Slug.Should().Be(post.Slug);
+        body.Description.Should().Be(post.Description);
+        body.Body.Should().Be(post.Body);
+        body.PublishedAt.Should().BeNull();
+        body.Author.Should().NotBeNull();
+        body.Author.Id.Should().Be(_author.Id);
+        body.Author.Name.Should().Be(_author.DisplayName);
+        body.Tags.Should().BeEmpty();
+    }
+
+    #endregion
 
     #region GetPosts
 
