@@ -16,6 +16,7 @@ builder.Services.InstallExceptionHandlers();
 builder.Services.InstallCustomModelBinders();
 builder.Services.InstallAuthentication(builder.Configuration);
 builder.Services.InstallAuthorization();
+builder.Services.InstallCors(builder.Configuration);
 builder.Services.AddControllers();
 
 WebApplication app = builder.Build();
@@ -29,6 +30,8 @@ DatabaseSeedingResult databaseSeedingResult = await app.SeedDatabase();
 app.InstallExceptionHandlers();
 app.InstallScalar(databaseSeedingResult.DevAccessToken);
 app.UseHttpsRedirection();
+app.UseRouting();
+app.InstallCors();
 app.UseAuthorization();
 app.MapControllers();
 
