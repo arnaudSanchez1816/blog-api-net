@@ -12,7 +12,7 @@ public static class HttpClientExtensions
         public Task<HttpResponseMessage> GetWithBearerAsync([StringSyntax("Uri")] string requestUri,
             string? bearerToken, CancellationToken ct = default)
         {
-            return client.SendWithBearerAsync(HttpMethod.Get, new Uri(requestUri), bearerToken, ct);
+            return client.SendWithBearerAsync(HttpMethod.Get, new Uri(requestUri, UriKind.Relative), bearerToken, ct);
         }
 
         public Task<HttpResponseMessage> GetWithBearerAsync(Uri requestUri,
