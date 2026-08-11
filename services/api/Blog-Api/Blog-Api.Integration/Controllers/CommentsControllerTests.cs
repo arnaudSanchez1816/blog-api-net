@@ -1,10 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using BlogApi.Authorization;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Data;
 using BlogApi.Domain;
+using BlogApi.Integration.Extensions;
 using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
 
@@ -50,7 +52,7 @@ public class CommentsControllerTests : IntegrationTestBase
         await _postsRepository.AddPost(_post);
     }
 
-    // == GetById ==
+    #region GetById
 
     [Fact]
     public async Task GetById_ReturnsComment_WhenCommentExists()
@@ -96,11 +98,36 @@ public class CommentsControllerTests : IntegrationTestBase
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    // == UpdateById ==
+    [Fact]
+    public async Task GetById_Returns403_WhenNoReadPermission()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
+
+        Comment comment = new Comment
+        {
+            Username = "Comment author",
+            Body = "Comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+        await _commentsRepository.AddComment(comment);
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/comments/{comment.Id}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    #endregion
+
+    #region UpdateById
 
     [Fact]
     public async Task UpdateById_ReturnsUpdatedComment_WhenRequestIsValid()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -118,7 +145,8 @@ public class CommentsControllerTests : IntegrationTestBase
             Username = newCommentUsername
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -135,6 +163,7 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_LeaveUsernameUnchanged_WhenOnlyUpdatingBody()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -150,7 +179,8 @@ public class CommentsControllerTests : IntegrationTestBase
             Body = newCommentBody
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -164,6 +194,7 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_LeaveBodyUnchanged_WhenOnlyUpdatingUsername()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -179,7 +210,8 @@ public class CommentsControllerTests : IntegrationTestBase
             Username = newCommentUsername
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -193,13 +225,15 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_Returns404_WhenCommentDoesNotExists()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         const string newCommentBody = "New comment body";
         UpdateCommentRequest request = new UpdateCommentRequest
         {
             Body = newCommentBody
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{Guid.NewGuid()}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{Guid.NewGuid()}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -208,13 +242,15 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_Returns400_WhenIdIsInvalid()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         const string newCommentBody = "New comment body";
         UpdateCommentRequest request = new UpdateCommentRequest
         {
             Body = newCommentBody
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync("api/v1.0/comments/abcd", request,
+            await HttpClient.PutWithBearerAsJsonAsync("api/v1.0/comments/abcd", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -223,6 +259,7 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_Returns400_WhenUsernameIsEmpty()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -238,7 +275,8 @@ public class CommentsControllerTests : IntegrationTestBase
             Username = newCommentUsername
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -247,6 +285,7 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_Returns400_WhenUsernameIsTooLong()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -261,7 +300,8 @@ public class CommentsControllerTests : IntegrationTestBase
             Username = new string('a', Comment.UsernameMaxLength + 1)
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -270,6 +310,7 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_Returns400_WhenBodyIsEmpty()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -284,7 +325,8 @@ public class CommentsControllerTests : IntegrationTestBase
             Body = ""
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -293,6 +335,7 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task UpdateById_Returns400_WhenBodyIsTooLong()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Update]);
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -307,15 +350,32 @@ public class CommentsControllerTests : IntegrationTestBase
             Body = new string('a', Comment.BodyMaxLength + 1)
         };
         HttpResponseMessage response =
-            await HttpClient.PutAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
-    public async Task DeleteById_ReturnsDeletedComment_WhenCommentExists()
+    public async Task UpdateById_Returns401_WhenNoBearerTokenIsProvided()
     {
+        UpdateCommentRequest request = new UpdateCommentRequest
+        {
+            Body = "New comment body"
+        };
+        HttpResponseMessage response =
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{Guid.NewGuid()}", request,
+                null,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task UpdateById_Returns403_WhenUserHasNoUpdatePermission()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
         Comment comment = new Comment
         {
             Username = "Comment author",
@@ -325,9 +385,38 @@ public class CommentsControllerTests : IntegrationTestBase
         };
         await _commentsRepository.AddComment(comment);
 
+        UpdateCommentRequest request = new UpdateCommentRequest
+        {
+            Body = "New comment body"
+        };
+        HttpResponseMessage response =
+            await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/comments/{comment.Id}", request,
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    #endregion
+
+    #region DeleteById
+
+    [Fact]
+    public async Task DeleteById_ReturnsDeletedComment_WhenCommentExists()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Delete]);
+        Comment comment = new Comment
+        {
+            Username = "Comment author",
+            Body = "Comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+        await _commentsRepository.AddComment(comment);
 
         HttpResponseMessage response =
-            await HttpClient.DeleteAsync($"api/v1.0/comments/{comment.Id}",
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/comments/{comment.Id}",
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -344,8 +433,10 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task DeleteById_Returns404_WhenCommentDoesNotExists()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Delete]);
         HttpResponseMessage response =
-            await HttpClient.DeleteAsync($"api/v1.0/comments/{Guid.NewGuid()}",
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/comments/{Guid.NewGuid()}",
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -354,10 +445,46 @@ public class CommentsControllerTests : IntegrationTestBase
     [Fact]
     public async Task DeleteById_Returns400_WhenIdIsInvalid()
     {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Delete]);
         HttpResponseMessage response =
-            await HttpClient.DeleteAsync("api/v1.0/comments/abcd",
+            await HttpClient.DeleteWithBearerAsync("api/v1.0/comments/abcd",
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Fact]
+    public async Task DeleteById_Returns401_WhenNoBearerTokenIsProvided()
+    {
+        HttpResponseMessage response =
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/comments/{Guid.NewGuid()}",
+                null,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeleteById_Returns403_WhenUserHasNoDeletePermission()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
+        Comment comment = new Comment
+        {
+            Username = "Comment author",
+            Body = "Comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+        await _commentsRepository.AddComment(comment);
+
+        HttpResponseMessage response =
+            await HttpClient.DeleteWithBearerAsync($"api/v1.0/comments/{comment.Id}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    #endregion
 }

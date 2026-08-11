@@ -1,5 +1,6 @@
 using System.Net.Mime;
 using Asp.Versioning;
+using BlogApi.Authorization;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
@@ -30,9 +31,11 @@ public class CommentsController : ControllerBase
     /// <param name="id"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Comments.GetById)]
+    [HasPermission(Permissions.Comments.Read)]
     public async Task<ActionResult<CommentResponse>> GetById([FromRoute] Guid id)
     {
         Comment? comment = await _commentsService.GetCommentById(id);
@@ -51,9 +54,12 @@ public class CommentsController : ControllerBase
     /// <param name="request"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpPut(ApiRoutes.Comments.UpdateById)]
+    [HasPermission(Permissions.Comments.Update)]
     public async Task<ActionResult<CommentResponse>> UpdateById([FromRoute] Guid id,
         [FromBody] UpdateCommentRequest request)
     {
@@ -74,9 +80,12 @@ public class CommentsController : ControllerBase
     /// <param name="id"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
+    /// <response code="401"></response>
+    /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpDelete(ApiRoutes.Comments.DeleteById)]
+    [HasPermission(Permissions.Comments.Delete)]
     public async Task<ActionResult<CommentResponse>> DeleteById([FromRoute] Guid id)
     {
         Comment? comment = await _commentsService.GetCommentById(id);
