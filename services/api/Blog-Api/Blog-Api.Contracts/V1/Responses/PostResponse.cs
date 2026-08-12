@@ -29,6 +29,11 @@ public record PostResponse
     public required string Body { get; init; }
 
     /// <summary>
+    /// Estimated reading time, in minutes.
+    /// </summary>
+    public required int ReadingTime { get; init; }
+
+    /// <summary>
     /// Total number of comments for this post.
     /// </summary>
     public required int CommentsCount { get; init; }

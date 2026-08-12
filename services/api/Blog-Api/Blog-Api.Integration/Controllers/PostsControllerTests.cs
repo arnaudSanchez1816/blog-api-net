@@ -1209,6 +1209,7 @@ public class PostsControllerTests : IntegrationTestBase
             Description = "Test post description",
             Body = "Test post body content",
             AuthorId = _author.Id,
+            ReadingTime = 10,
             PublishedAt = DateTimeOffset.UtcNow
         };
         await _postsRepository.AddPost(post);
@@ -1226,6 +1227,7 @@ public class PostsControllerTests : IntegrationTestBase
         body.Description.Should().Be(post.Description);
         body.Body.Should().Be(post.Body);
         body.PublishedAt.Should().BeCloseTo(post.PublishedAt.Value, TimeSpan.FromMilliseconds(20));
+        body.ReadingTime.Should().Be(post.ReadingTime);
         body.Author.Should().NotBeNull();
         body.Author.Id.Should().Be(_author.Id);
         body.Author.Name.Should().Be(_author.DisplayName);
@@ -1329,7 +1331,8 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "test-post-title",
             Description = "Test post description",
             Body = "Test post body content",
-            AuthorId = user.Id
+            AuthorId = user.Id,
+            ReadingTime = 2
         };
         await _postsRepository.AddPost(post);
 
@@ -1348,6 +1351,7 @@ public class PostsControllerTests : IntegrationTestBase
         body.Description.Should().Be(post.Description);
         body.Body.Should().Be(post.Body);
         body.PublishedAt.Should().BeNull();
+        body.ReadingTime.Should().Be(post.ReadingTime);
         body.Author.Should().NotBeNull();
         body.Author.Id.Should().Be(user.Id);
         body.Author.Name.Should().Be(user.DisplayName);

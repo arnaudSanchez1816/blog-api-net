@@ -16,6 +16,7 @@ public static class PostsMappingExtensions
             Author = post.Author.ToPostAuthorResponse(),
             Description = post.Description,
             PublishedAt = post.PublishedAt,
+            ReadingTime = post.ReadingTime,
             Tags = post.Tags.Select(x => x.ToTagResponse()).ToList(),
             CommentsCount = post.CommentsCount
         };
