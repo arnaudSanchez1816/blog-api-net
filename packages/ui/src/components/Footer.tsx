@@ -24,7 +24,7 @@ export default function Footer({ children }: FooterProps) {
                 </div>
                 <Divider orientation="horizontal" className="my-8" />
                 <div className="text-foreground/70 flex items-center justify-center gap-1 text-sm md:justify-between">
-                    <p>© 2025</p>
+                    <p>© 2026</p>
                     <span className="md:hidden">-</span>
                     <Link
                         className="text-sm md:flex md:gap-1"
