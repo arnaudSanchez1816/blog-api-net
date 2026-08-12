@@ -36,4 +36,9 @@
 		<ProjectReference Include="..\Blog-Api.Contracts\Blog-Api.Contracts.csproj"/>
 	</ItemGroup>
 
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\markdown_lorem1.md"/>
+		<EmbeddedResource Include="Resources\markdown_test.md"/>
+	</ItemGroup>
+
 </Project>
