@@ -14,10 +14,13 @@ namespace BlogApi.Unit.Authentication;
 
 public class RefreshTokenAuthenticationHandlerTests : IDisposable
 {
+    private readonly Mock<TimeProvider> _timeProvider;
     private readonly Mock<ITokensService> _tokensService;
 
     public RefreshTokenAuthenticationHandlerTests()
     {
+        _timeProvider = new Mock<TimeProvider>();
+        _timeProvider.Setup(x => x.GetUtcNow()).Returns(DateTimeOffset.UtcNow);
         _tokensService = new Mock<ITokensService>();
     }
 
@@ -41,9 +44,13 @@ public class RefreshTokenAuthenticationHandlerTests : IDisposable
         optionsMonitor.Setup(x => x.Get(It.IsAny<string>())).Returns(new AuthenticationSchemeOptions());
 
         RefreshTokenAuthenticationHandler handler = new RefreshTokenAuthenticationHandler(optionsMonitor.Object,
-            NullLoggerFactory.Instance, UrlEncoder.Default, _tokensService.Object);
+            NullLoggerFactory.Instance,
+            UrlEncoder.Default,
+            _tokensService.Object,
+            _timeProvider.Object);
 
-        AuthenticationScheme scheme = new AuthenticationScheme(RefreshTokenAuthDefaults.RefreshTokenScheme, null,
+        AuthenticationScheme scheme = new AuthenticationScheme(RefreshTokenAuthDefaults.RefreshTokenScheme,
+            null,
             typeof(RefreshTokenAuthenticationHandler));
         await handler.InitializeAsync(scheme, context);
 
@@ -106,7 +113,7 @@ public class RefreshTokenAuthenticationHandlerTests : IDisposable
     public async Task HandleAuthenticateAsync_Fails_WhenTokenIsUsed()
     {
         (RefreshTokenAuthenticationHandler handler, _) = await CreateHandler("refresh-token-value");
-        RefreshToken usedToken = MakeToken(Guid.NewGuid(), used: true);
+        RefreshToken usedToken = MakeToken(Guid.NewGuid(), true);
         _tokensService.Setup(x => x.GetRefreshToken("refresh-token-value")).ReturnsAsync(usedToken);
 
         AuthenticateResult result = await handler.AuthenticateAsync();
@@ -140,7 +147,8 @@ public class RefreshTokenAuthenticationHandlerTests : IDisposable
         result.Ticket!.AuthenticationScheme.Should().Be(RefreshTokenAuthDefaults.RefreshTokenScheme);
         result.Principal!.FindFirstValue(ClaimTypes.NameIdentifier).Should().Be(userId.ToString());
         result.Principal!.FindFirstValue(ClaimTypes.AuthenticationMethod)
-            .Should().Be(RefreshTokenAuthDefaults.RefreshTokenScheme);
+            .Should()
+            .Be(RefreshTokenAuthDefaults.RefreshTokenScheme);
     }
 
     [Fact]

@@ -5,6 +5,8 @@ namespace BlogApi.Domain;
 
 public class RefreshToken
 {
+    public static readonly TimeSpan UsedGracePeriod = TimeSpan.FromSeconds(15);
+
     [Key]
     [MaxLength(256)]
     public required string Token { get; init; }
@@ -14,18 +16,29 @@ public class RefreshToken
     public bool Used { get; set; }
     public bool Invalidated { get; set; }
 
+    /// <summary>
+    /// Used to determine a token grace period to fix front end race conditions (Like React strict mode) due to token single
+    /// usage.
+    /// </summary>
+    public DateTimeOffset? UsedDate { get; set; }
+
     public required Guid UserId { get; init; }
 
     [ForeignKey(nameof(UserId))]
     public BlogUser User { get; init; } = null!;
 
-    public bool IsExpired
+    public bool IsExpired(DateTimeOffset now)
     {
-        get => DateTimeOffset.UtcNow >= ExpirationDate;
+        return now >= ExpirationDate;
     }
 
-    public bool IsActive
+    public bool IsActive(DateTimeOffset now)
     {
-        get => !Invalidated && !Used && !IsExpired;
+        return !Invalidated && (!Used || IsWithinGracePeriod(now)) && !IsExpired(now);
+    }
+
+    public bool IsWithinGracePeriod(DateTimeOffset now)
+    {
+        return Used && UsedDate?.Add(UsedGracePeriod) > now;
     }
 }

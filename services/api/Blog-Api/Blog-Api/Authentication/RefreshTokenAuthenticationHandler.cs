@@ -9,13 +9,15 @@ namespace BlogApi.Authentication;
 
 public class RefreshTokenAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+    private readonly TimeProvider _timeProvider;
     private readonly ITokensService _tokensService;
 
     public RefreshTokenAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger, UrlEncoder encoder,
-        ITokensService tokensService) : base(options, logger, encoder)
+        ITokensService tokensService, TimeProvider timeProvider) : base(options, logger, encoder)
     {
         _tokensService = tokensService;
+        _timeProvider = timeProvider;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -26,7 +28,7 @@ public class RefreshTokenAuthenticationHandler : AuthenticationHandler<Authentic
         }
 
         RefreshToken? tokenEntity = await _tokensService.GetRefreshToken(refreshToken);
-        if (tokenEntity is null || !tokenEntity.IsActive)
+        if (tokenEntity is null || !tokenEntity.IsActive(_timeProvider.GetUtcNow()))
         {
             return AuthenticateResult.Fail("Invalid refresh token");
         }

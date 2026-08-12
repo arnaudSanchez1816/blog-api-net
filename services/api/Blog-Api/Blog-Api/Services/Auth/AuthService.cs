@@ -8,16 +8,19 @@ namespace BlogApi.Services.Auth;
 public class AuthService : IAuthService
 {
     private const string InvalidEmailOrPasswordMessage = "Invalid e-mail or password.";
+
     private readonly RoleManager<BlogRole> _roleManager;
+    private readonly TimeProvider _timeProvider;
     private readonly ITokensService _tokensService;
     private readonly UserManager<BlogUser> _userManager;
 
     public AuthService(UserManager<BlogUser> userManager, ITokensService tokensService,
-        RoleManager<BlogRole> roleManager)
+        RoleManager<BlogRole> roleManager, TimeProvider timeProvider)
     {
         _userManager = userManager;
         _tokensService = tokensService;
         _roleManager = roleManager;
+        _timeProvider = timeProvider;
     }
 
     public async Task<AuthenticationResult> Login(string email, string password)
@@ -62,7 +65,7 @@ public class AuthService : IAuthService
             };
         }
 
-        if (refreshToken.Used)
+        if (refreshToken.Used && !refreshToken.IsWithinGracePeriod(_timeProvider.GetUtcNow()))
         {
             return new AuthenticationResult
             {
@@ -71,7 +74,7 @@ public class AuthService : IAuthService
             };
         }
 
-        if (refreshToken.IsExpired)
+        if (refreshToken.IsExpired(_timeProvider.GetUtcNow()))
         {
             return new AuthenticationResult
             {

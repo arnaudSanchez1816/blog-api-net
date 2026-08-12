@@ -14,12 +14,14 @@ public class TokensService : ITokensService
 {
     private readonly AppAuthenticationOptions _authOptions;
     private readonly IRefreshTokensRepository _refreshTokensRepository;
+    private readonly TimeProvider _timeProvider;
 
     public TokensService(IOptions<AppAuthenticationOptions> authOptions,
-        IRefreshTokensRepository refreshTokensRepository)
+        IRefreshTokensRepository refreshTokensRepository, TimeProvider timeProvider)
     {
         _authOptions = authOptions.Value;
         _refreshTokensRepository = refreshTokensRepository;
+        _timeProvider = timeProvider;
     }
 
     public string GenerateAccessToken(BlogUser user, IReadOnlyCollection<Claim>? additionalClaims = null)
@@ -59,8 +61,8 @@ public class TokensService : ITokensService
         RefreshToken refreshToken = new RefreshToken
         {
             Token = Convert.ToBase64String(randomBytes),
-            CreationDate = DateTimeOffset.UtcNow,
-            ExpirationDate = DateTimeOffset.UtcNow.AddDays(30),
+            CreationDate = _timeProvider.GetUtcNow(),
+            ExpirationDate = _timeProvider.GetUtcNow().AddDays(30),
             Used = false,
             Invalidated = false,
             UserId = user.Id
@@ -79,6 +81,7 @@ public class TokensService : ITokensService
     public async Task UseRefreshToken(RefreshToken token)
     {
         token.Used = true;
+        token.UsedDate = _timeProvider.GetUtcNow();
         await _refreshTokensRepository.UpdateToken(token);
     }
 

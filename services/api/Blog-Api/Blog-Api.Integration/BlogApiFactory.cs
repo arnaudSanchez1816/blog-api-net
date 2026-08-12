@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 using Npgsql;
 using Respawn;
 using Testcontainers.PostgreSql;
@@ -24,6 +25,8 @@ public class BlogApiFactory : WebApplicationFactory<IApiMarker>, IAsyncLifetime
     private Respawner _respawner = null!;
 
     public HttpClient HttpClient { get; private set; } = null!;
+
+    public FakeTimeProvider TimeProvider { get; } = new FakeTimeProvider(DateTimeOffset.UtcNow);
 
     // Some Installers (e.g. AuthenticationInstaller) read IConfiguration eagerly in Program.cs, before
     // builder.Build() runs. WebApplicationFactory's ConfigureAppConfiguration/ConfigureTestServices hooks
@@ -96,6 +99,8 @@ public class BlogApiFactory : WebApplicationFactory<IApiMarker>, IAsyncLifetime
             {
                 options.UseNpgsql(_dbContainer.GetConnectionString());
             });
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton<TimeProvider>(TimeProvider);
         });
     }
 }

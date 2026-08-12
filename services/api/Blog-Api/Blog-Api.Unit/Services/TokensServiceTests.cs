@@ -7,6 +7,7 @@ using BlogApi.Options;
 using BlogApi.Repositories.RefreshTokens;
 using BlogApi.Services.Tokens;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
@@ -19,12 +20,14 @@ public class TokensServiceTests : IDisposable
 
     private static readonly Uri JwtIssuerUri = new Uri("https://blog-api.test/");
     private static readonly Uri JwtAudienceUri = new Uri("https://blog-api.test/");
-
     private readonly Mock<IRefreshTokensRepository> _refreshTokensRepository;
+
+    private readonly FakeTimeProvider _timeProvider;
     private readonly ITokensService _tokensService;
 
     public TokensServiceTests()
     {
+        _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _refreshTokensRepository = new Mock<IRefreshTokensRepository>();
 
         IOptions<AppAuthenticationOptions> authOptions = Microsoft.Extensions.Options.Options.Create(
@@ -35,7 +38,7 @@ public class TokensServiceTests : IDisposable
                 JwtAudienceUri = JwtAudienceUri
             });
 
-        _tokensService = new TokensService(authOptions, _refreshTokensRepository.Object);
+        _tokensService = new TokensService(authOptions, _refreshTokensRepository.Object, _timeProvider);
     }
 
     public void Dispose()
@@ -214,8 +217,8 @@ public class TokensServiceTests : IDisposable
 
         refreshToken.Used.Should().BeFalse();
         refreshToken.Invalidated.Should().BeFalse();
-        refreshToken.IsActive.Should().BeTrue();
-        refreshToken.IsExpired.Should().BeFalse();
+        refreshToken.IsActive(_timeProvider.GetUtcNow()).Should().BeTrue();
+        refreshToken.IsExpired(_timeProvider.GetUtcNow()).Should().BeFalse();
     }
 
     [Fact]
@@ -272,6 +275,7 @@ public class TokensServiceTests : IDisposable
         await _tokensService.UseRefreshToken(refreshToken);
 
         refreshToken.Used.Should().BeTrue();
+        refreshToken.UsedDate.Should().BeCloseTo(_timeProvider.GetUtcNow(), TimeSpan.FromSeconds(1));
         _refreshTokensRepository.Verify(x => x.UpdateToken(refreshToken), Times.Once);
     }
 

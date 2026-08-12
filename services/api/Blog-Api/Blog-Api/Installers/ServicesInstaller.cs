@@ -19,6 +19,7 @@ public static class ServicesInstaller
         services.AddScoped<IAuthService, AuthService>();
         services.AddSingleton<ITextService, TextService>();
         services.AddSingleton<IMarkdownService, MarkdownService>();
+        services.AddSingleton(TimeProvider.System);
 
         return services;
     }

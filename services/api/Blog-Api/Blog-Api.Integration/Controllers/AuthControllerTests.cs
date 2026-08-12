@@ -302,7 +302,7 @@ public class AuthControllerTests : IntegrationTestBase
         RefreshToken? refreshToken = await _tokensService.GetRefreshToken(decodedToken);
         refreshToken.Should().NotBeNull();
         refreshToken.Invalidated.Should().BeTrue();
-        refreshToken.IsActive.Should().BeFalse();
+        refreshToken.IsActive(Factory.TimeProvider.GetUtcNow()).Should().BeFalse();
     }
 
     [Fact]
@@ -382,6 +382,23 @@ public class AuthControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task GetAccessToken_Returns200_WhenRefreshTokenUsedWithinGracePeriod()
+    {
+        (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
+        HttpResponseMessage firstResponse = await HttpClient.SendAsync(
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        Factory.TimeProvider.Advance(RefreshToken.UsedGracePeriod - TimeSpan.FromMilliseconds(100));
+        HttpResponseMessage secondResponse = await HttpClient.SendAsync(
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
+
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task GetAccessToken_Returns401_WhenNoCookieIsProvided()
     {
         HttpResponseMessage response = await HttpClient.SendAsync(
@@ -436,7 +453,7 @@ public class AuthControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetAccessToken_Returns401_WhenRefreshTokenWasAlreadyUsed()
+    public async Task GetAccessToken_Returns401_WhenRefreshTokenWasAlreadyUsedPastGracePeriod()
     {
         (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
         HttpResponseMessage firstResponse = await HttpClient.SendAsync(
@@ -444,6 +461,7 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
         firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
+        Factory.TimeProvider.Advance(RefreshToken.UsedGracePeriod);
         HttpResponseMessage secondResponse = await HttpClient.SendAsync(
             CreateGetAccessTokenRequest(refreshTokenCookieValue),
             TestContext.Current.CancellationToken);

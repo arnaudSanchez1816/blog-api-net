@@ -4,6 +4,7 @@ using BlogApi.Domain;
 using BlogApi.Services.Auth;
 using BlogApi.Services.Tokens;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace BlogApi.Unit.Services;
@@ -12,11 +13,13 @@ public class AuthServiceTests : IDisposable
 {
     private readonly IAuthService _authService;
     private readonly Mock<RoleManager<BlogRole>> _roleManager;
+    private readonly FakeTimeProvider _timeProvider;
     private readonly Mock<ITokensService> _tokensService;
     private readonly Mock<UserManager<BlogUser>> _userManager;
 
     public AuthServiceTests()
     {
+        _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         Mock<IUserStore<BlogUser>> userStore = new Mock<IUserStore<BlogUser>>();
         _userManager = new Mock<UserManager<BlogUser>>(userStore.Object,
             null!,
@@ -43,7 +46,10 @@ public class AuthServiceTests : IDisposable
         _tokensService.Setup(x => x.GenerateRefreshToken(It.IsAny<BlogUser>()))
             .ReturnsAsync((BlogUser user) => MakeRefreshToken(user.Id));
 
-        _authService = new AuthService(_userManager.Object, _tokensService.Object, _roleManager.Object);
+        _authService = new AuthService(_userManager.Object,
+            _tokensService.Object,
+            _roleManager.Object,
+            _timeProvider);
     }
 
     public void Dispose()
@@ -296,6 +302,48 @@ public class AuthServiceTests : IDisposable
         result.AccessToken.Should().Be("access-token");
         result.RefreshToken.Should().Be("refresh-token-value");
         _tokensService.Verify(x => x.UseRefreshToken(refreshToken), Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshTokens_ReturnsSuccess_WhenUsedTokenIsWithinGracePeriod()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken))
+            .Callback<RefreshToken>(t =>
+            {
+                t.Used = true;
+                t.UsedDate = _timeProvider.GetUtcNow();
+            });
+
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        result.Success.Should().BeTrue();
+
+        _timeProvider.Advance(RefreshToken.UsedGracePeriod - TimeSpan.FromMilliseconds(100));
+        result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        result.Success.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RefreshTokens_ReturnsFailure_WhenUsedTokenIsPastGracePeriod()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken))
+            .Callback<RefreshToken>(t =>
+            {
+                t.Used = true;
+                t.UsedDate = _timeProvider.GetUtcNow();
+            });
+
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        result.Success.Should().BeTrue();
+
+        _timeProvider.Advance(RefreshToken.UsedGracePeriod + TimeSpan.FromMilliseconds(100));
+        result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        result.Success.Should().BeFalse();
     }
 
     [Fact]
