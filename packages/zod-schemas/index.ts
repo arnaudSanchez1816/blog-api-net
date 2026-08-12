@@ -19,6 +19,7 @@ export const tagSchema = z.object({
 
 export const postSchema = z.object({
     id: z.coerce.number().int().min(1),
+    slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     title: z.string().trim().min(1),
     body: z.string(),
     tags: z.array(z.union([tagSchema.shape.id, tagSchema.shape.slug])),
