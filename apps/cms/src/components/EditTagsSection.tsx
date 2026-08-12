@@ -39,7 +39,7 @@ export default function EditTagsSection({
 
     const onTagSelected = (tagId: Key | null) => {
         if (tagId) {
-            const newTag = allTags.find((t) => t.id === Number(tagId))
+            const newTag = allTags.find((t) => t.id === tagId)
             if (!newTag) {
                 console.error("Tag does not exists")
                 return

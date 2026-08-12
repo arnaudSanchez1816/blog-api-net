@@ -15,17 +15,17 @@ export async function tagsAction(
         return await createTagAction(formData, accessToken)
     }
 
-    const tagId = formData.get("id")
-    if (!tagId) {
-        throw data({ message: "Invalid tag id" }, 400)
+    const tagSlug = formData.get("originalSlug")
+    if (!tagSlug) {
+        throw data({ message: "Invalid tag slug" }, 400)
     }
 
     if (method.toUpperCase() === "DELETE") {
-        return await deleteTagAction(tagId.toString(), accessToken)
+        return await deleteTagAction(tagSlug.toString(), accessToken)
     }
 
     if (method.toUpperCase() === "PUT") {
-        return await editTagAction(tagId.toString(), formData, accessToken)
+        return await editTagAction(tagSlug.toString(), formData, accessToken)
     }
 
     throw data({ message: "Invalid action" }, 400)
@@ -70,7 +70,7 @@ async function createTagAction(formData: FormData, accessToken: string) {
 }
 
 async function editTagAction(
-    tagId: number | string,
+    tagSlug: string,
     formData: FormData,
     accessToken: string
 ) {
@@ -84,8 +84,8 @@ async function editTagAction(
             throw new Error("Edit Tag Action slug param missing")
         }
         const editedTag = await editTag(
-            { name: name.toString(), slug: slug.toString() },
-            tagId,
+            { name: name.toString(), newSlug: slug.toString() },
+            tagSlug,
             accessToken
         )
         addToast({
@@ -112,9 +112,9 @@ async function editTagAction(
     }
 }
 
-async function deleteTagAction(tagId: number | string, accessToken: string) {
+async function deleteTagAction(tagSlug: string, accessToken: string) {
     try {
-        const deletedTag = await deleteTag(tagId, accessToken)
+        const deletedTag = await deleteTag(tagSlug, accessToken)
         addToast({
             title: "Tag deleted",
             description: `${deletedTag.name}`,

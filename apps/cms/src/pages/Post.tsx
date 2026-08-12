@@ -10,15 +10,17 @@ import PostAdminControls from "../components/PostAdminControls/PostAdminControls
 import CommentWithControls from "../components/CommentWithControls"
 import PostHeader from "@repo/ui/components/posts/PostHeader"
 import PostMarkdown from "@repo/ui/components/posts/PostMarkdown"
-import { useSearchLayoutContext } from "../../../../packages/ui/src/components/layouts/SearchLayout"
+import { useSearchLayoutContext } from "@repo/ui/components/layouts/SearchLayout"
 
 export async function postLoader(
     { params }: LoaderFunctionArgs,
     accessToken: string
 ): Promise<PostDetails> {
-    const postIdSchema = postSchema.pick({ id: true })
-    const { id } = await postIdSchema.parseAsync({ id: params.postId })
-    const post = await fetchPost(id, accessToken)
+    const postSlugSchema = postSchema.pick({ slug: true })
+    const { slug } = await postSlugSchema.parseAsync({
+        slug: params.postSlug,
+    })
+    const post = await fetchPost(slug, accessToken)
 
     return post
 }
@@ -26,7 +28,7 @@ export async function postLoader(
 export default function Post() {
     const post = useLoaderData<PostDetails>()
 
-    const { id, body, commentsCount } = post
+    const { slug, body, commentsCount } = post
 
     const [, setLeftContent] = useSearchLayoutContext()
     useEffect(() => {
@@ -51,7 +53,7 @@ export default function Post() {
             <Divider className="mb-8 mt-16" />
             <div>
                 <CommentsSection
-                    postId={id}
+                    postSlug={slug}
                     autoFetch={commentsAutoFetched}
                     commentsCount={commentsCount}
                     commentRender={(comment, { refreshComments }) => (

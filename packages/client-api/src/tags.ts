@@ -1,7 +1,7 @@
 import { checkApiUrlEnvVariable } from "./utils"
 
 export interface TagDetails {
-    id: number
+    id: string
     name: string
     slug: string
 }
@@ -29,13 +29,13 @@ export const fetchTags = async (): Promise<FetchTagsResult> => {
 }
 
 export const deleteTag = async (
-    idOrSlug: string | number,
+    slug: string,
     accessToken: string
 ): Promise<TagDetails> => {
     checkApiUrlEnvVariable()
 
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./tags/${idOrSlug}`, apiUrl)
+    const url = new URL(`./tags/${slug}`, apiUrl)
 
     const response = await fetch(url, {
         mode: "cors",
@@ -55,18 +55,18 @@ export const deleteTag = async (
 
 interface EditTagParams {
     name: string
-    slug: string
+    newSlug: string
 }
 
 export const editTag = async (
-    { name, slug }: EditTagParams,
-    idOrSlug: string | number,
+    { name, newSlug }: EditTagParams,
+    slug: string,
     accessToken: string
 ): Promise<TagDetails> => {
     checkApiUrlEnvVariable()
 
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./tags/${idOrSlug}`, apiUrl)
+    const url = new URL(`./tags/${slug}`, apiUrl)
 
     const response = await fetch(url, {
         mode: "cors",
@@ -75,7 +75,7 @@ export const editTag = async (
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ name, slug }),
+        body: JSON.stringify({ name, slug: newSlug }),
     })
     if (!response.ok) {
         throw response
@@ -85,10 +85,7 @@ export const editTag = async (
     return updatedTag
 }
 
-interface CreateTagParams extends Pick<EditTagParams, "name" | "slug"> {
-    name: string
-    slug: string
-}
+type CreateTagParams = Pick<TagDetails, "name" | "slug">
 
 export const createTag = async (
     { name, slug }: CreateTagParams,

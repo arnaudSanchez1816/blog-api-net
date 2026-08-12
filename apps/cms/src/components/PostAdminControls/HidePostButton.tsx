@@ -4,19 +4,19 @@ import { HIDE_INTENT } from "../../actions/posts"
 import { FetcherWithComponents } from "react-router"
 
 export interface HidePostButtonProps {
-    postId: number
+    postSlug: string
     fetcher: FetcherWithComponents<unknown>
 }
 
 export default function HidePostButton({
-    postId,
+    postSlug,
     fetcher,
 }: HidePostButtonProps) {
     const busy = fetcher.state !== "idle"
     const intent = fetcher.formData?.get("intent") || null
     const isBusyButton = intent === HIDE_INTENT
     return (
-        <fetcher.Form method="PUT" action={`/posts/${postId}`}>
+        <fetcher.Form method="PUT" action={`/posts/${postSlug}`}>
             <Button
                 color="warning"
                 startContent={<EyeIcon eyeOpen={false} />}

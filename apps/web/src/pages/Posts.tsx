@@ -10,7 +10,7 @@ import PostsList from "@repo/ui/components/PostsList/PostsList"
 import PostsListSkeleton from "@repo/ui/components/PostsList/PostsListSkeleton"
 import { fetchPosts, FetchPostsResult } from "@repo/client-api/posts"
 import SortByPublishedButton from "@repo/ui/components/SortByPublishedButton"
-import { useSearchLayoutContext } from "../../../../packages/ui/src/components/layouts/SearchLayout"
+import { useSearchLayoutContext } from "@repo/ui/components/layouts/SearchLayout"
 
 const pageSize = 10
 

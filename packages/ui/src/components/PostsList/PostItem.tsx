@@ -64,9 +64,15 @@ export interface PostItemProps {
 }
 
 export default function PostItem({ post, className = "" }: PostItemProps) {
-    const { id, title, description, readingTime, publishedAt, commentsCount } =
-        post
-    const postHref = `/posts/${id}`
+    const {
+        slug,
+        title,
+        description,
+        readingTime,
+        publishedAt,
+        commentsCount,
+    } = post
+    const postHref = `/posts/${slug}`
 
     return (
         <article className={className}>

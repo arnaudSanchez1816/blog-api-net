@@ -4,19 +4,19 @@ import { PUBLISH_INTENT } from "../../actions/posts"
 import { FetcherWithComponents } from "react-router"
 
 export interface PublishPostButtonProps {
-    postId: number
+    postSlug: string
     fetcher: FetcherWithComponents<unknown>
 }
 
 export default function PublishPostButton({
-    postId,
+    postSlug,
     fetcher,
 }: PublishPostButtonProps) {
     const busy = fetcher.state !== "idle"
     const intent = fetcher.formData?.get("intent") || null
     const isBusyButton = intent === PUBLISH_INTENT
     return (
-        <fetcher.Form method="PUT" action={`/posts/${postId}`}>
+        <fetcher.Form method="PUT" action={`/posts/${postSlug}`}>
             <Button
                 color="secondary"
                 startContent={<EyeIcon eyeOpen />}

@@ -27,11 +27,11 @@ export async function editPostLoader(
     { params }: LoaderFunctionArgs,
     accessToken: string | null
 ): Promise<EditPostLoaderReturnValue> {
-    const postIdSchema = postSchema.pick({ id: true })
-    const { id } = await postIdSchema.parseAsync({ id: params.postId })
+    const postSlugSchema = postSchema.pick({ slug: true })
+    const { slug } = await postSlugSchema.parseAsync({ slug: params.postSlug })
 
     const [post, allTags] = await Promise.all([
-        fetchPost(id, accessToken),
+        fetchPost(slug, accessToken),
         fetchTags(),
     ])
     return { post, allTags: allTags.results }
@@ -49,7 +49,7 @@ function EditPostLayout({ children, left, right }: EditPostLayoutProps) {
 
 export default function EditPost() {
     const { post, allTags } = useLoaderData<EditPostLoaderReturnValue>()
-    const { id, title, body, tags } = post
+    const { slug, title, body, tags } = post
     const [newTitle, setNewTitle] = useState<string>(title)
     const [newBody, setNewBody] = useState<string>(body)
     const [newTags, setNewTags] = useState<TagDetails[]>(tags)
@@ -58,7 +58,7 @@ export default function EditPost() {
     const fetcher = useFetcher()
 
     const isSaving =
-        fetcher.state !== "idle" && fetcher.formAction === `/posts/${id}/edit`
+        fetcher.state !== "idle" && fetcher.formAction === `/posts/${slug}/edit`
 
     const onSave = async () => {
         if (!isDirty) {
@@ -81,7 +81,7 @@ export default function EditPost() {
             await updatePostValidator.parseAsync(newData)
             // Submit form
             await fetcher.submit(newData, {
-                action: `/posts/${id}/edit`,
+                action: `/posts/${slug}/edit`,
                 method: "PUT",
                 encType: "application/json",
             })

@@ -1,7 +1,8 @@
 import { checkApiUrlEnvVariable } from "./utils"
 
 export interface PostDetails {
-    id: number
+    id: string
+    slug: string
     title: string
     description: string
     body: string
@@ -10,11 +11,11 @@ export interface PostDetails {
     commentsCount: number
     author: {
         name: string
-        id: number
+        id: string
     }
     tags: {
         name: string
-        id: number
+        id: string
         slug: string
     }[]
 }
@@ -136,12 +137,12 @@ export const fetchPosts = async (
 }
 
 export const fetchPost = async (
-    postId: number,
+    slug: string,
     accessToken?: string | null
 ): Promise<PostDetails> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./posts/${postId}`, apiUrl)
+    const url = new URL(`./posts/${slug}`, apiUrl)
     const response = await fetch(url, {
         mode: "cors",
         headers: {
@@ -160,12 +161,12 @@ export const fetchPost = async (
 }
 
 export const deletePost = async (
-    postId: number,
+    postSlug: string,
     accessToken: string
 ): Promise<PostDetailsWithoutCommentsAndTags> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./posts/${postId}`, apiUrl)
+    const url = new URL(`./posts/${postSlug}`, apiUrl)
 
     const response = await fetch(url, {
         mode: "cors",
@@ -186,20 +187,23 @@ export const deletePost = async (
 }
 
 export const publishPost = async (
-    postId: number,
+    postSlug: string,
     accessToken: string
 ): Promise<void> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./posts/${postId}/publish`, apiUrl)
+    const url = new URL(`./posts/${postSlug}`, apiUrl)
 
     const response = await fetch(url, {
         mode: "cors",
-        method: "POST",
+        method: "PUT",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
         },
+        body: JSON.stringify({
+            isPublished: true,
+        }),
     })
 
     if (!response.ok) {
@@ -208,20 +212,23 @@ export const publishPost = async (
 }
 
 export const hidePost = async (
-    postId: number,
+    postSlug: string,
     accessToken: string
 ): Promise<void> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./posts/${postId}/hide`, apiUrl)
+    const url = new URL(`./posts/${postSlug}`, apiUrl)
 
     const response = await fetch(url, {
         mode: "cors",
-        method: "POST",
+        method: "PUT",
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
         },
+        body: JSON.stringify({
+            isPublished: false,
+        }),
     })
 
     if (!response.ok) {
@@ -236,13 +243,13 @@ interface UpdatePostParams {
 }
 
 export const updatePost = async (
-    postId: number,
+    postSlug: string,
     { body, title, tags }: UpdatePostParams,
     accessToken: string
 ): Promise<Omit<PostDetails, "commentsCount">> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
-    const url = new URL(`./posts/${postId}`, apiUrl)
+    const url = new URL(`./posts/${postSlug}`, apiUrl)
     const response = await fetch(url, {
         mode: "cors",
         method: "PUT",

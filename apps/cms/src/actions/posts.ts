@@ -17,28 +17,23 @@ export async function postsAction(
     accessToken: string
 ) {
     const { method } = request
-    const { postId } = params
+    const { postSlug } = params
 
     const formData = await request.formData()
-    if (method === "POST" && !postId) {
+    if (method === "POST" && !postSlug) {
         return await createNewPost(formData, accessToken)
     }
 
-    if (postId) {
+    if (postSlug) {
         const intent = formData.get("intent")
-        const { postId } = params
-
-        if (!postId || isNaN(Number(postId))) {
-            throw new Error("Invalid post id")
-        }
 
         switch (intent) {
             case DELETE_INTENT:
-                return await deletePostAction(+postId, accessToken)
+                return await deletePostAction(postSlug, accessToken)
             case PUBLISH_INTENT:
-                return await publishPostAction(+postId, accessToken)
+                return await publishPostAction(postSlug, accessToken)
             case HIDE_INTENT:
-                return await hidePostAction(+postId, accessToken)
+                return await hidePostAction(postSlug, accessToken)
             default:
                 throw data({ message: "Invalid intent" }, 400)
         }
@@ -64,8 +59,8 @@ async function createNewPost(formData: FormData, accessToken: string) {
             description: "Your new article was successfully created.",
             color: "success",
         })
-        const { id } = newPost
-        return redirect(`/posts/${id}`)
+        const { slug } = newPost
+        return redirect(`/posts/${slug}`)
     } catch (error) {
         if (error instanceof Response) {
             const errorResponse = await parseErrorResponse(error)
@@ -81,9 +76,9 @@ async function createNewPost(formData: FormData, accessToken: string) {
     }
 }
 
-async function deletePostAction(postId: number, accessToken: string) {
+async function deletePostAction(postSlug: string, accessToken: string) {
     try {
-        await deletePost(postId, accessToken)
+        await deletePost(postSlug, accessToken)
         addToast({
             title: "Success",
             description: "Post deleted successfully",
@@ -105,9 +100,9 @@ async function deletePostAction(postId: number, accessToken: string) {
     }
 }
 
-async function publishPostAction(postId: number, accessToken: string) {
+async function publishPostAction(postSlug: string, accessToken: string) {
     try {
-        await publishPost(postId, accessToken)
+        await publishPost(postSlug, accessToken)
         addToast({
             title: "Success",
             description: "Post published successfully",
@@ -128,9 +123,9 @@ async function publishPostAction(postId: number, accessToken: string) {
     }
 }
 
-async function hidePostAction(postId: number, accessToken: string) {
+async function hidePostAction(postSlug: string, accessToken: string) {
     try {
-        await hidePost(postId, accessToken)
+        await hidePost(postSlug, accessToken)
         addToast({
             title: "Success",
             description: "Post hidden successfully",

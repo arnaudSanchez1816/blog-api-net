@@ -30,13 +30,13 @@ interface TagProps {
 }
 
 function Tag({ tag }: TagProps) {
-    const { id, name, slug } = tag
+    const { name, slug } = tag
     const [modalIsOpen, setModalIsOpen] = useState(false)
 
     const submit = useSubmit()
 
     const onDelete = () => {
-        submit({ id: id }, { method: "DELETE" })
+        submit({ originalSlug: slug }, { method: "DELETE" })
     }
 
     return (

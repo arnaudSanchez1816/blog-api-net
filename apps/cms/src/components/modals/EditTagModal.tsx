@@ -32,7 +32,7 @@ export default function EditTagModal({
     const isLoading = fetcher.state !== "idle"
     const [name, setName] = useState(tag.name)
     const [slug, setSlug] = useState(tag.slug)
-    const { id } = tag
+    const { slug: originalSlug } = tag
 
     const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -109,9 +109,9 @@ export default function EditTagModal({
                             >
                                 <Input
                                     type="hidden"
-                                    name="id"
+                                    name="originalSlug"
                                     isRequired
-                                    value={id.toString()}
+                                    value={originalSlug}
                                 />
                                 <Input
                                     type="text"

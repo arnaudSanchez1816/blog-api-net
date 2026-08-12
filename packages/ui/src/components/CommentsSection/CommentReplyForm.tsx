@@ -5,12 +5,12 @@ import { UserDetails } from "@repo/client-api/users"
 import { useState } from "react"
 
 export interface CommentReplyFormProps {
-    postId: number
+    postSlug: string
     fetchComments?: () => void
 }
 
 export default function CommentReplyForm({
-    postId,
+    postSlug,
     fetchComments,
 }: CommentReplyFormProps) {
     let accessToken: string | null | undefined
@@ -19,10 +19,10 @@ export default function CommentReplyForm({
         const authContext = useAuth()
         accessToken = authContext.accessToken
         user = authContext.user
-    } catch (error) {
+    } catch {
         /* empty */
-        console.error(error)
     }
+
     const [submitting, setSubmitting] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -34,13 +34,9 @@ export default function CommentReplyForm({
 
         setSubmitting(true)
         try {
-            if (isNaN(Number(postId))) {
-                throw new Error("Invalid post id")
-            }
-
             await postComment(
                 {
-                    postId,
+                    postSlug,
                     username: username as string,
                     commentBody: body as string,
                 },

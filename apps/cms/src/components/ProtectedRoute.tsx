@@ -1,7 +1,7 @@
 import useAuth from "@repo/auth-provider/useAuth"
 import { Navigate, Outlet, redirect } from "react-router"
 
-export function authLoader(user: { id: number } | null) {
+export function authLoader(user: { id: string } | null) {
     const isAuthenticated = !!user
     if (!isAuthenticated) {
         throw redirect("/login")

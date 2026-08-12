@@ -8,31 +8,27 @@ export async function editPostsActions(
     accessToken: string
 ) {
     const { method } = request
-    const { postId } = params
+    const { postSlug } = params
 
-    if (!postId) {
-        throw data({ message: "Invalid id" }, 400)
+    if (!postSlug) {
+        throw data({ message: "Invalid slug" }, 400)
     }
 
     if (method.toUpperCase() === "PUT") {
-        if (!postId || isNaN(Number(postId))) {
-            throw new Error("Post id invalid")
-        }
-
-        return await updatePostAction(Number(postId), request, accessToken)
+        return await updatePostAction(postSlug, request, accessToken)
     }
 
     throw data({ message: "Invalid method" }, 400)
 }
 
 async function updatePostAction(
-    id: number,
+    slug: string,
     request: Request,
     accessToken: string
 ) {
     try {
         const updatedPostData = await request.json()
-        await updatePost(id, updatedPostData, accessToken)
+        const updatedPost = await updatePost(slug, updatedPostData, accessToken)
 
         addToast({
             title: "Success",
@@ -40,7 +36,7 @@ async function updatePostAction(
             color: "success",
         })
 
-        return redirect(`/posts/${id}`)
+        return redirect(`/posts/${updatedPost.slug}`)
     } catch (error) {
         if (error instanceof Response) {
             const errorResponse = await parseErrorResponse(error)

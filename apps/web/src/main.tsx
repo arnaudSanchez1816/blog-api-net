@@ -59,7 +59,7 @@ const router = createBrowserRouter(
                             }}
                         />
                         <Route
-                            path=":postId"
+                            path=":postSlug"
                             element={<PostPage />}
                             loader={postPageLoader}
                         />

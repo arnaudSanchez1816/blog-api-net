@@ -1,16 +1,10 @@
 import { FetchPostsParams, PostDetails } from "./posts"
 import { checkApiUrlEnvVariable } from "./utils"
 
-export interface UserRole {
-    id: number
-    name: string
-}
-
 export interface UserDetails {
-    id: number
+    id: string
     name: string
     email: string
-    roles: UserRole[]
 }
 
 export const fetchCurrentUser = async (token: string): Promise<UserDetails> => {

@@ -13,16 +13,16 @@ interface ControlsButtonsGroupProps {
 }
 
 function ControlsButtonsGroup({ post, fetcher }: ControlsButtonsGroupProps) {
-    const { id, publishedAt } = post
+    const { slug, publishedAt } = post
 
     return (
         <>
-            <EditPostButton postId={id} fetcher={fetcher} />
-            <DeletePostButton postId={id} fetcher={fetcher} />
+            <EditPostButton postSlug={slug} fetcher={fetcher} />
+            <DeletePostButton postSlug={slug} fetcher={fetcher} />
             {!publishedAt ? (
-                <PublishPostButton postId={id} fetcher={fetcher} />
+                <PublishPostButton postSlug={slug} fetcher={fetcher} />
             ) : (
-                <HidePostButton postId={id} fetcher={fetcher} />
+                <HidePostButton postSlug={slug} fetcher={fetcher} />
             )}
         </>
     )

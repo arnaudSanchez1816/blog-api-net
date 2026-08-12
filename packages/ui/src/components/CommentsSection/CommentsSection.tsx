@@ -13,14 +13,14 @@ export interface CommentsSectionWrapperProps {
     commentsCount: number
     children: ComponentProps<"div">["children"]
     fetchComments?: () => void
-    postId: number
+    postSlug: string
 }
 
 function CommentsSectionWrapper({
     commentsCount,
     children,
     fetchComments,
-    postId,
+    postSlug,
 }: CommentsSectionWrapperProps) {
     return (
         <div id={commentsSectionId}>
@@ -29,7 +29,10 @@ function CommentsSectionWrapper({
                 {commentsCount === 1 ? "Comment" : "Comments"}
             </h2>
             <div className="mt-8 flex flex-col gap-12">{children}</div>
-            <CommentReplyForm fetchComments={fetchComments} postId={postId} />
+            <CommentReplyForm
+                fetchComments={fetchComments}
+                postSlug={postSlug}
+            />
         </div>
     )
 }
@@ -40,14 +43,14 @@ export type RenderCommentCallback = (
 ) => ReactNode
 
 export interface CommentsSectionProps {
-    postId: number
+    postSlug: string
     commentsCount: number
     commentRender?: RenderCommentCallback
     autoFetch?: boolean
 }
 
 export default function CommentsSection({
-    postId,
+    postSlug,
     commentsCount,
     commentRender,
     autoFetch = true,
@@ -56,19 +59,18 @@ export default function CommentsSection({
     try {
         const authContext = useAuth()
         accessToken = authContext.accessToken
-    } catch (error) {
+    } catch {
         /* empty */
-        console.error(error)
     }
 
     const fetchCommentsQuery = useCallback(() => {
-        return fetchComments(postId, accessToken)
-    }, [postId, accessToken])
+        return fetchComments(postSlug, accessToken)
+    }, [postSlug, accessToken])
 
     const [comments, loading, error, triggerFetch] = useQuery({
         queryFn: fetchCommentsQuery,
         enabled: autoFetch,
-        queryKey: ["comments", postId],
+        queryKey: ["comments", postSlug],
     })
 
     if (error) {
@@ -76,7 +78,7 @@ export default function CommentsSection({
             <CommentsSectionWrapper
                 commentsCount={commentsCount}
                 fetchComments={triggerFetch}
-                postId={postId}
+                postSlug={postSlug}
             >
                 <Alert
                     color="danger"
@@ -95,7 +97,7 @@ export default function CommentsSection({
             <CommentsSectionWrapper
                 commentsCount={commentsCount}
                 fetchComments={triggerFetch}
-                postId={postId}
+                postSlug={postSlug}
             >
                 {skeletons}
             </CommentsSectionWrapper>
@@ -108,7 +110,7 @@ export default function CommentsSection({
                 <CommentsSectionWrapper
                     commentsCount={commentsCount}
                     fetchComments={triggerFetch}
-                    postId={postId}
+                    postSlug={postSlug}
                 >
                     <div className="flex items-center justify-center">
                         <p className="text-foreground/70 text-lg font-medium">
@@ -122,7 +124,7 @@ export default function CommentsSection({
                 <CommentsSectionWrapper
                     commentsCount={commentsCount}
                     fetchComments={triggerFetch}
-                    postId={postId}
+                    postSlug={postSlug}
                 >
                     <div className="mt-8 flex justify-center">
                         <Button
@@ -143,7 +145,7 @@ export default function CommentsSection({
         <CommentsSectionWrapper
             commentsCount={commentsCount}
             fetchComments={triggerFetch}
-            postId={postId}
+            postSlug={postSlug}
         >
             {results.length > 0 ? (
                 results.map((comment) =>

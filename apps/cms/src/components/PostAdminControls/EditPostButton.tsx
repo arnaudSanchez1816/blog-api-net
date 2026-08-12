@@ -3,19 +3,19 @@ import EditIcon from "@repo/ui/components/Icons/EditIcon"
 import { FetcherWithComponents } from "react-router"
 
 export interface EditPostButtonProps {
-    postId: number
+    postSlug: string
     fetcher: FetcherWithComponents<unknown>
 }
 
 export default function EditPostButton({
-    postId,
+    postSlug,
     fetcher,
 }: EditPostButtonProps) {
     const busy = fetcher.state !== "idle"
 
     return (
         <Button
-            href={`/posts/${postId}/edit`}
+            href={`/posts/${postSlug}/edit`}
             as={Link}
             startContent={<EditIcon />}
             color="primary"

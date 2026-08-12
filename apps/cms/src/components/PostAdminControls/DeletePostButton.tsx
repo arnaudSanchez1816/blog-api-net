@@ -4,19 +4,19 @@ import { DELETE_INTENT } from "../../actions/posts"
 import { FetcherWithComponents } from "react-router"
 
 export interface DeletePostButtonProps {
-    postId: number
+    postSlug: string
     fetcher: FetcherWithComponents<unknown>
 }
 
 export default function DeletePostButton({
-    postId,
+    postSlug,
     fetcher,
 }: DeletePostButtonProps) {
     const busy = fetcher.state !== "idle"
     const intent = fetcher.formData?.get("intent") || null
     const isBusyButton = intent === DELETE_INTENT
     return (
-        <fetcher.Form method="DELETE" action={`/posts/${postId}`}>
+        <fetcher.Form method="DELETE" action={`/posts/${postSlug}`}>
             <Button
                 color="danger"
                 startContent={<DeleteIcon />}

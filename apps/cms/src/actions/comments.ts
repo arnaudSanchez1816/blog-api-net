@@ -19,12 +19,9 @@ export async function commentsAction(
     }
 }
 
-async function deleteCommentAction(id: string | number, accessToken: string) {
+async function deleteCommentAction(id: string, accessToken: string) {
     try {
-        if (isNaN(Number(id))) {
-            throw new Error("Delete comment action id invalid")
-        }
-        const deletedComment = await deleteComment(Number(id), accessToken)
+        const deletedComment = await deleteComment(id, accessToken)
         addToast({
             title: "Success",
             description: "Comment deleted successfully",

@@ -74,7 +74,7 @@ function Root() {
                                             }}
                                         />
                                         <Route
-                                            path=":postId"
+                                            path=":postSlug"
                                             element={<Post />}
                                             loader={(loaderArgs) =>
                                                 postLoader(
@@ -111,7 +111,7 @@ function Root() {
                                     />
                                 </Route>
                                 <Route
-                                    path="/posts/:postId/edit"
+                                    path="/posts/:postSlug/edit"
                                     element={<EditPost />}
                                     loader={(actionFuncArgs) =>
                                         editPostLoader(
