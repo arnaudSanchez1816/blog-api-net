@@ -85,6 +85,24 @@ public class PostsServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task UpdatePost_LeavesBodyUnchanged_WhenProvidedBodyIsIdentical()
+    {
+        Post post = CreatePost();
+        string originalBody = post.Body;
+        string originalDescription = post.Description;
+        int originalReadingTime = post.ReadingTime;
+
+        UpdatePostRequest request = new UpdatePostRequest { Body = post.Body };
+
+        await _postsService.UpdatePost(post, request);
+
+        post.Body.Should().Be(originalBody);
+        post.Description.Should().Be(originalDescription);
+        post.ReadingTime.Should().Be(originalReadingTime);
+        _markdownService.Verify(x => x.MarkdownToPlainText(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
     public async Task UpdatePost_LeavesBodyUnchanged_WhenBodyNotProvided()
     {
         Post post = CreatePost();
@@ -185,6 +203,21 @@ public class PostsServiceTests : IDisposable
 
         post.Title.Should().Be(title);
         post.Slug.Should().Be(expectedSlug);
+    }
+
+    [Fact]
+    public async Task UpdatePost_LeavesTitleAndSlugUnchanged_WhenProvidedTitleIsIdentical()
+    {
+        Post post = CreatePost();
+        string originalTitle = post.Title;
+        string originalSlug = post.Slug;
+
+        UpdatePostRequest request = new UpdatePostRequest { Title = originalTitle };
+
+        await _postsService.UpdatePost(post, request);
+
+        post.Title.Should().Be(originalTitle);
+        post.Slug.Should().Be(originalSlug);
     }
 
     [Fact]

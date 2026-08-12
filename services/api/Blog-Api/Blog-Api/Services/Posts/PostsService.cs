@@ -58,7 +58,7 @@ public class PostsService : IPostsService
     public async Task UpdatePost(Post post, UpdatePostRequest updatePostDto)
     {
         string? body = updatePostDto.Body;
-        if (body is not null)
+        if (body is not null && body != post.Body)
         {
             post.Body = body;
 
@@ -68,7 +68,7 @@ public class PostsService : IPostsService
         }
 
         string? title = updatePostDto.Title;
-        if (title is not null)
+        if (title is not null && title != post.Title)
         {
             post.Title = title;
             post.Slug = await GenerateUniqueSlugAsync(title);
