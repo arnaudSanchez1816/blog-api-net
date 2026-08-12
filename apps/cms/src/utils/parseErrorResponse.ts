@@ -14,13 +14,14 @@ export async function parseErrorResponse(
     }
     if (errorResponse.body) {
         try {
-            const errorBody = await errorResponse.json()
-            const errorMessage = errorBody.errors
-                ? Object.values(errorBody.errors)[0]
-                : errorBody.title
+            const errorBody = (await errorResponse.json()) as {
+                errors: Record<string, string>[]
+                title: string
+                detail: string
+            }
             parsedError = {
                 ...parsedError,
-                errorMessage: errorMessage ?? statusText,
+                errorMessage: errorBody.title ?? statusText,
                 errors: errorBody.errors,
             }
         } catch (e) {
