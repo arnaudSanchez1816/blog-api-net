@@ -156,7 +156,8 @@ public class AuthService : IAuthService
         {
             Success = true,
             AccessToken = accessToken,
-            RefreshToken = refreshToken.Token
+            RefreshToken = refreshToken.Token,
+            User = user
         };
     }
 }

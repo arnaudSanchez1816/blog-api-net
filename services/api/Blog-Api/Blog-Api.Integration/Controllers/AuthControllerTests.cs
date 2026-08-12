@@ -95,7 +95,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string email = "admin@email.com";
         const string password = "Password1234";
-        await _authService.Register(username, email, password);
+        AuthenticationResult registerResult = await _authService.Register(username, email, password);
 
         LoginRequest request = new LoginRequest
         {
@@ -110,6 +110,9 @@ public class AuthControllerTests : IntegrationTestBase
             await response.Content.ReadFromJsonAsync<LoginResponse>(TestContext.Current.CancellationToken);
         loginResponse.Should().NotBeNull();
         loginResponse.AccessToken.Should().NotBeEmpty();
+        loginResponse.User.Id.Should().Be(registerResult.User!.Id);
+        loginResponse.User.Name.Should().Be(registerResult.User!.DisplayName);
+        loginResponse.User.Email.Should().Be(registerResult.User!.Email);
     }
 
     [Fact]
@@ -142,8 +145,9 @@ public class AuthControllerTests : IntegrationTestBase
         value.Should().NotBeEmpty();
         options.HttpOnly.Should().BeTrue();
         options.Secure.Should().BeTrue();
-        options.MaxAge.Should().BeCloseTo(RefreshTokenAuthDefaults.RefreshTokenCookieMaxAge,
-            TimeSpan.FromSeconds(1));
+        options.MaxAge.Should()
+            .BeCloseTo(RefreshTokenAuthDefaults.RefreshTokenCookieMaxAge,
+                TimeSpan.FromSeconds(1));
         options.SameSite.Should().Be(SameSiteMode.Strict);
         string? expectedPath = _linkGenerator.GetPathByAction("GetAccessToken", "Auth", new { version = "1" });
         options.Path.Should().Be(expectedPath!);
@@ -208,7 +212,8 @@ public class AuthControllerTests : IntegrationTestBase
         await _authService.Register(username, email, password);
 
         HttpResponseMessage response =
-            await HttpClient.PostAsJsonAsync("api/v1/auth/login", new { password },
+            await HttpClient.PostAsJsonAsync("api/v1/auth/login",
+                new { password },
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -345,7 +350,8 @@ public class AuthControllerTests : IntegrationTestBase
         (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
 
         HttpResponseMessage response = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(refreshTokenCookieValue), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         GetAccessTokenResponse? tokenResponse =
@@ -360,7 +366,8 @@ public class AuthControllerTests : IntegrationTestBase
         (string originalRefreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
 
         HttpResponseMessage response = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(originalRefreshTokenCookieValue), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(originalRefreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         bool hasCookieHeaders =
@@ -378,7 +385,8 @@ public class AuthControllerTests : IntegrationTestBase
     public async Task GetAccessToken_Returns401_WhenNoCookieIsProvided()
     {
         HttpResponseMessage response = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(),
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -387,7 +395,8 @@ public class AuthControllerTests : IntegrationTestBase
     public async Task GetAccessToken_Returns401_WhenCookieDoesNotMatchAnyToken()
     {
         HttpResponseMessage response = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest("not-a-real-refresh-token"), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest("not-a-real-refresh-token"),
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -404,7 +413,8 @@ public class AuthControllerTests : IntegrationTestBase
         await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(refreshTokenCookieValue), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -419,7 +429,8 @@ public class AuthControllerTests : IntegrationTestBase
         logoutResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         HttpResponseMessage response = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(refreshTokenCookieValue), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -429,11 +440,13 @@ public class AuthControllerTests : IntegrationTestBase
     {
         (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
         HttpResponseMessage firstResponse = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(refreshTokenCookieValue), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
         firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
 
         HttpResponseMessage secondResponse = await HttpClient.SendAsync(
-            CreateGetAccessTokenRequest(refreshTokenCookieValue), TestContext.Current.CancellationToken);
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
 
         secondResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -447,7 +460,8 @@ public class AuthControllerTests : IntegrationTestBase
             new AuthenticationHeaderValue(JwtBearerDefaults.AuthenticationScheme, jwtBearer);
 
         HttpResponseMessage response = await HttpClient.SendAsync(
-            getAccessTokenRequest, TestContext.Current.CancellationToken);
+            getAccessTokenRequest,
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }

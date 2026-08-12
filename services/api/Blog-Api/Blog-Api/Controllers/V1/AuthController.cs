@@ -3,6 +3,7 @@ using Asp.Versioning;
 using BlogApi.Authentication;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
+using BlogApi.Mapping;
 using BlogApi.Routes.V1;
 using BlogApi.Services.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -42,15 +43,18 @@ public class AuthController : ControllerBase
         {
             // Return Problem instead of just BadRequest() so we can pass the error message.
             // BadRequest() calls with a parameter are not formatted as ProblemDetails by the ProblemDetailsMiddleware
-            return Problem(string.Join("\n", result.Errors!), statusCode: StatusCodes.Status400BadRequest,
+            return Problem(string.Join("\n", result.Errors!),
+                statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid login");
         }
 
-        Response.Cookies.Append(RefreshTokenAuthDefaults.RefreshTokenCookie, result.RefreshToken!,
+        Response.Cookies.Append(RefreshTokenAuthDefaults.RefreshTokenCookie,
+            result.RefreshToken!,
             GetRefreshTokenCookieOptions(RefreshTokenAuthDefaults.RefreshTokenCookieMaxAge));
         return Ok(new LoginResponse
         {
-            AccessToken = result.AccessToken!
+            AccessToken = result.AccessToken!,
+            User = result.User!.ToUserResponse()
         });
     }
 
@@ -89,7 +93,7 @@ public class AuthController : ControllerBase
     /// <exception cref="InvalidOperationException"></exception>
     [HttpGet(ApiRoutes.Auth.GetAccessToken)]
     [Authorize(AuthenticationSchemes = RefreshTokenAuthDefaults.RefreshTokenScheme)]
-    public async Task<IActionResult> GetAccessToken()
+    public async Task<ActionResult<GetAccessTokenResponse>> GetAccessToken()
     {
         if (!HttpContext.Items.TryGetValue(RefreshTokenAuthDefaults.RefreshTokenHttpContextItem,
                 out object? tokenObject) || tokenObject is not RefreshToken refreshToken)
@@ -100,12 +104,14 @@ public class AuthController : ControllerBase
         AuthenticationResult result = await _authService.RefreshTokens(User, refreshToken);
         if (!result.Success)
         {
-            return Problem(string.Join("\n", result.Errors!), statusCode: StatusCodes.Status401Unauthorized,
+            return Problem(string.Join("\n", result.Errors!),
+                statusCode: StatusCodes.Status401Unauthorized,
                 title: "Invalid credentials");
         }
 
         // Update the refresh token cookie
-        Response.Cookies.Append(RefreshTokenAuthDefaults.RefreshTokenCookie, result.RefreshToken!,
+        Response.Cookies.Append(RefreshTokenAuthDefaults.RefreshTokenCookie,
+            result.RefreshToken!,
             GetRefreshTokenCookieOptions(RefreshTokenAuthDefaults.RefreshTokenCookieMaxAge));
 
         return Ok(new GetAccessTokenResponse

@@ -1,3 +1,5 @@
+using BlogApi.Domain;
+
 namespace BlogApi.Services.Auth;
 
 public record AuthenticationResult
@@ -9,4 +11,6 @@ public record AuthenticationResult
     public string? RefreshToken { get; init; }
 
     public IReadOnlyCollection<string>? Errors { get; init; }
+
+    public BlogUser? User { get; init; }
 }

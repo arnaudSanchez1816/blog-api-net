@@ -85,6 +85,7 @@ public class AuthServiceTests : IDisposable
         AuthenticationResult result = await _authService.Login("user@example.com", "password");
 
         result.Success.Should().BeFalse();
+        result.User.Should().BeNull();
         result.Errors.Should().NotBeNullOrEmpty();
         _userManager.Verify(x => x.CheckPasswordAsync(It.IsAny<BlogUser>(), It.IsAny<string>()), Times.Never);
     }
@@ -116,6 +117,7 @@ public class AuthServiceTests : IDisposable
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
         result.RefreshToken.Should().Be("refresh-token-value");
+        result.User.Should().Be(user);
         result.Errors.Should().BeNull();
     }
 
