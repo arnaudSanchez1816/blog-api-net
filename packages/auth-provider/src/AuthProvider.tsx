@@ -109,18 +109,24 @@ export const AuthProvider = ({
                 const responseJson = await response.json()
                 const { user, accessToken } = responseJson
 
+                if (!user) {
+                    throw new Error("Expected user is null")
+                }
+
                 setUser(user)
                 setAccessToken(accessToken)
                 return { user }
             } catch (error) {
+                console.error(error)
                 if (error instanceof Response) {
-                    console.error(error)
                     const body = error.body ? await error.json() : {}
                     const { errorMessage } = body.title || {
                         errorMessage: "Failed to login",
                     }
 
                     return { error: errorMessage }
+                } else if (error instanceof Error) {
+                    return { error: error.message }
                 }
                 throw error
             }
