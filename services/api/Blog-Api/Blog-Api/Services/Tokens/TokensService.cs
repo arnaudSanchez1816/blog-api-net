@@ -24,6 +24,22 @@ public class TokensService : ITokensService
         _timeProvider = timeProvider;
     }
 
+    public RefreshToken CreateRefreshToken(BlogUser user)
+    {
+        byte[] randomBytes = RandomNumberGenerator.GetBytes(32);
+        RefreshToken refreshToken = new RefreshToken
+        {
+            Token = Convert.ToBase64String(randomBytes),
+            CreationDate = _timeProvider.GetUtcNow(),
+            ExpirationDate = _timeProvider.GetUtcNow().AddDays(30),
+            Used = false,
+            Invalidated = false,
+            UserId = user.Id
+        };
+
+        return refreshToken;
+    }
+
     public string GenerateAccessToken(BlogUser user, IReadOnlyCollection<Claim>? additionalClaims = null)
     {
         JsonWebTokenHandler tokenHandler = new JsonWebTokenHandler();
@@ -55,18 +71,9 @@ public class TokensService : ITokensService
         return tokenHandler.CreateToken(jwtDescriptor);
     }
 
-    public async Task<RefreshToken> GenerateRefreshToken(BlogUser user)
+    public async Task<RefreshToken> GenerateAndSaveRefreshToken(BlogUser user)
     {
-        byte[] randomBytes = RandomNumberGenerator.GetBytes(32);
-        RefreshToken refreshToken = new RefreshToken
-        {
-            Token = Convert.ToBase64String(randomBytes),
-            CreationDate = _timeProvider.GetUtcNow(),
-            ExpirationDate = _timeProvider.GetUtcNow().AddDays(30),
-            Used = false,
-            Invalidated = false,
-            UserId = user.Id
-        };
+        RefreshToken refreshToken = CreateRefreshToken(user);
 
         await _refreshTokensRepository.AddToken(refreshToken);
 
@@ -78,11 +85,12 @@ public class TokensService : ITokensService
         return await _refreshTokensRepository.GetToken(token);
     }
 
-    public async Task UseRefreshToken(RefreshToken token)
+    public async Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken)
     {
         token.Used = true;
         token.UsedDate = _timeProvider.GetUtcNow();
-        await _refreshTokensRepository.UpdateToken(token);
+        token.ReplacedByToken = replacedByToken;
+        await _refreshTokensRepository.RotateToken(token, replacedByToken);
     }
 
     public async Task RevokeRefreshToken(RefreshToken token)

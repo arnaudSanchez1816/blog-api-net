@@ -27,6 +27,14 @@ public class RefreshToken
     [ForeignKey(nameof(UserId))]
     public BlogUser User { get; init; } = null!;
 
+    public RefreshToken? ReplacedByToken { get; set; }
+
+    /// <summary>
+    /// To handle race condition where two calls to rotate a refresh token are simultanous
+    /// </summary>
+    [Timestamp]
+    public uint Version { get; set; }
+
     public bool IsExpired(DateTimeOffset now)
     {
         return now >= ExpirationDate;

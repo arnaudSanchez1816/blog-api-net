@@ -4,6 +4,7 @@ using BlogApi.Domain;
 using BlogApi.Services.Auth;
 using BlogApi.Services.Tokens;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
@@ -43,8 +44,10 @@ public class AuthServiceTests : IDisposable
         _tokensService = new Mock<ITokensService>();
         _tokensService.Setup(x => x.GenerateAccessToken(It.IsAny<BlogUser>(), It.IsAny<IReadOnlyCollection<Claim>>()))
             .Returns("access-token");
-        _tokensService.Setup(x => x.GenerateRefreshToken(It.IsAny<BlogUser>()))
+        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(It.IsAny<BlogUser>()))
             .ReturnsAsync((BlogUser user) => MakeRefreshToken(user.Id));
+        _tokensService.Setup(x => x.CreateRefreshToken(It.IsAny<BlogUser>()))
+            .Returns((BlogUser user) => MakeRefreshToken(user.Id));
 
         _authService = new AuthService(_userManager.Object,
             _tokensService.Object,
@@ -74,7 +77,7 @@ public class AuthServiceTests : IDisposable
     {
         return new RefreshToken
         {
-            Token = "refresh-token-value",
+            Token = $"{Guid.NewGuid()}",
             CreationDate = DateTimeOffset.UtcNow,
             ExpirationDate = expirationDate ?? DateTimeOffset.UtcNow.AddDays(30),
             Used = used,
@@ -115,14 +118,17 @@ public class AuthServiceTests : IDisposable
     public async Task Login_ReturnsSuccess_WhenCredentialsAreValid()
     {
         BlogUser user = MakeUser();
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
         _userManager.Setup(x => x.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
         _userManager.Setup(x => x.CheckPasswordAsync(user, "password")).ReturnsAsync(true);
+        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(user))
+            .ReturnsAsync(refreshToken);
 
         AuthenticationResult result = await _authService.Login(user.Email!, "password");
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
-        result.RefreshToken.Should().Be("refresh-token-value");
+        result.RefreshToken.Should().Be(refreshToken.Token);
         result.User.Should().Be(user);
         result.Errors.Should().BeNull();
     }
@@ -180,12 +186,17 @@ public class AuthServiceTests : IDisposable
                                      u.DisplayName == "newuser"),
                 "password"))
             .ReturnsAsync(IdentityResult.Success);
+        RefreshToken refreshToken = MakeRefreshToken(Guid.NewGuid());
+        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(It.Is<BlogUser>(u =>
+                u.UserName == "newuser@example.com" && u.Email == "newuser@example.com" &&
+                u.DisplayName == "newuser")))
+            .ReturnsAsync(refreshToken);
 
         AuthenticationResult result = await _authService.Register("newuser", "newuser@example.com", "password");
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
-        result.RefreshToken.Should().Be("refresh-token-value");
+        result.RefreshToken.Should().Be(refreshToken.Token);
     }
 
     [Fact]
@@ -246,7 +257,7 @@ public class AuthServiceTests : IDisposable
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
     }
 
     [Fact]
@@ -259,7 +270,7 @@ public class AuthServiceTests : IDisposable
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
     }
 
     [Fact]
@@ -273,7 +284,7 @@ public class AuthServiceTests : IDisposable
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
     }
 
     [Fact]
@@ -286,7 +297,7 @@ public class AuthServiceTests : IDisposable
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
     }
 
     [Fact]
@@ -295,13 +306,15 @@ public class AuthServiceTests : IDisposable
         BlogUser user = MakeUser();
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
         RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
 
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
-        result.RefreshToken.Should().Be("refresh-token-value");
-        _tokensService.Verify(x => x.UseRefreshToken(refreshToken), Times.Once);
+        result.RefreshToken.Should().Be(replacementToken.Token);
+        _tokensService.Verify(x => x.UseRefreshToken(refreshToken, replacementToken), Times.Once);
     }
 
     [Fact]
@@ -310,11 +323,14 @@ public class AuthServiceTests : IDisposable
         BlogUser user = MakeUser();
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
         RefreshToken refreshToken = MakeRefreshToken(user.Id);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken))
-            .Callback<RefreshToken>(t =>
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+            .Callback<RefreshToken, RefreshToken>((t, r) =>
             {
                 t.Used = true;
                 t.UsedDate = _timeProvider.GetUtcNow();
+                t.ReplacedByToken = r;
             });
 
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
@@ -331,11 +347,14 @@ public class AuthServiceTests : IDisposable
         BlogUser user = MakeUser();
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
         RefreshToken refreshToken = MakeRefreshToken(user.Id);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken))
-            .Callback<RefreshToken>(t =>
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+            .Callback<RefreshToken, RefreshToken>((t, r) =>
             {
                 t.Used = true;
                 t.UsedDate = _timeProvider.GetUtcNow();
+                t.ReplacedByToken = r;
             });
 
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
@@ -344,6 +363,108 @@ public class AuthServiceTests : IDisposable
         _timeProvider.Advance(RefreshToken.UsedGracePeriod + TimeSpan.FromMilliseconds(100));
         result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
         result.Success.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RefreshTokens_ReturnsSuccess_WhenConcurrencyConflictHasReplacementWithinGracePeriod()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+        RefreshToken winningReplacement = MakeRefreshToken(user.Id);
+        RefreshToken refetchedToken = MakeRefreshToken(user.Id, true);
+        refetchedToken.UsedDate = _timeProvider.GetUtcNow();
+        refetchedToken.ReplacedByToken = winningReplacement;
+
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync(refetchedToken);
+
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+
+        result.Success.Should().BeTrue();
+        result.AccessToken.Should().Be("access-token");
+        result.RefreshToken.Should().Be(winningReplacement.Token);
+        _tokensService.Verify(x => x.GenerateAccessToken(user, It.IsAny<IReadOnlyCollection<Claim>>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task RefreshTokens_ReturnsFailure_WhenConcurrencyConflictHasNoReplacement()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+        RefreshToken refetchedToken = MakeRefreshToken(user.Id);
+
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync(refetchedToken);
+
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task RefreshTokens_ReturnsFailure_WhenConcurrencyConflictReplacementIsPastGracePeriod()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+        RefreshToken winningReplacement = MakeRefreshToken(user.Id);
+        RefreshToken refetchedToken = MakeRefreshToken(user.Id, true);
+        refetchedToken.UsedDate = _timeProvider.GetUtcNow();
+        refetchedToken.ReplacedByToken = winningReplacement;
+
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync(refetchedToken);
+
+        _timeProvider.Advance(RefreshToken.UsedGracePeriod + TimeSpan.FromMilliseconds(100));
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task RefreshTokens_ReturnsFailure_WhenConcurrencyConflictRefetchReturnsNull()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id);
+        RefreshToken replacementToken = MakeRefreshToken(user.Id);
+
+        _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+            .ThrowsAsync(new DbUpdateConcurrencyException());
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync((RefreshToken?)null);
+
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task RefreshTokens_Throws_WhenUsedTokenWithinGracePeriodHasNoReplacement()
+    {
+        BlogUser user = MakeUser();
+        _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
+        RefreshToken refreshToken = MakeRefreshToken(user.Id, true);
+        refreshToken.UsedDate = _timeProvider.GetUtcNow();
+        refreshToken.ReplacedByToken = null;
+
+        Func<Task> act = async () => await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Fact]

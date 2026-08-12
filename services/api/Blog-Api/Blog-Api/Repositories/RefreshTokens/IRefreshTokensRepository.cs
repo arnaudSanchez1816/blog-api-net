@@ -10,5 +10,7 @@ public interface IRefreshTokensRepository
 
     public Task UpdateToken(RefreshToken token);
 
+    public Task RotateToken(RefreshToken usedToken, RefreshToken newToken);
+
     public Task DeleteExpiredTokens(TimeSpan expiredForAtLeast = default);
 }

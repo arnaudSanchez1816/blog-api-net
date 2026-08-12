@@ -22,7 +22,11 @@ public static class DbInstaller
         {
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
                 .UseExceptionProcessor()
-                .UseAsyncSeeding(SeedDatabaseInternal);
+                .UseAsyncSeeding(SeedDatabaseInternal)
+                .UseSeeding((context, b) =>
+                {
+                    SeedDatabaseInternal(context, b, CancellationToken.None).GetAwaiter().GetResult();
+                });
             options.UseSnakeCaseNamingConvention();
         });
 

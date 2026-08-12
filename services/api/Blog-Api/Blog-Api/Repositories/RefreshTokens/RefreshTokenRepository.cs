@@ -21,12 +21,20 @@ public class RefreshTokenRepository : IRefreshTokensRepository
 
     public async Task<RefreshToken?> GetToken(string token)
     {
-        return await _context.RefreshTokens.SingleOrDefaultAsync(x => x.Token == token);
+        return await _context.RefreshTokens.Include(x => x.ReplacedByToken).SingleOrDefaultAsync(x => x.Token == token);
     }
 
     public async Task UpdateToken(RefreshToken token)
     {
         _context.RefreshTokens.Update(token);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RotateToken(RefreshToken usedToken, RefreshToken newToken)
+    {
+        // Update the used token and add the new one in a single transaction
+        _context.RefreshTokens.Update(usedToken);
+        _context.RefreshTokens.Add(newToken);
         await _context.SaveChangesAsync();
     }
 

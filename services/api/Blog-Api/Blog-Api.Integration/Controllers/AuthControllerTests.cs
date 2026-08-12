@@ -20,10 +20,10 @@ namespace BlogApi.Integration.Controllers;
 [Collection(nameof(TestsCollection))]
 public class AuthControllerTests : IntegrationTestBase
 {
-    private IAuthService _authService;
-    private DataContext _context;
-    private LinkGenerator _linkGenerator;
-    private ITokensService _tokensService;
+    private IAuthService _authService = null!;
+    private DataContext _context = null!;
+    private LinkGenerator _linkGenerator = null!;
+    private ITokensService _tokensService = null!;
 
     public AuthControllerTests(BlogApiFactory factory) : base(factory)
     {
@@ -482,6 +482,45 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task GetAccessToken_ConvergesOnSameChildToken_WhenCalledConcurrentlyWithSameCookie()
+    {
+        (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
+        string decodedOriginalToken = Uri.UnescapeDataString(refreshTokenCookieValue);
+
+        Task<HttpResponseMessage> firstRequest = HttpClient.SendAsync(
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
+        Task<HttpResponseMessage> secondRequest = HttpClient.SendAsync(
+            CreateGetAccessTokenRequest(refreshTokenCookieValue),
+            TestContext.Current.CancellationToken);
+        HttpResponseMessage[] responses = await Task.WhenAll(firstRequest, secondRequest);
+
+        responses[0].StatusCode.Should().Be(HttpStatusCode.OK);
+        responses[1].StatusCode.Should().Be(HttpStatusCode.OK);
+
+        string ExtractRefreshTokenCookieValue(HttpResponseMessage response)
+        {
+            bool hasCookieHeaders =
+                response.Headers.TryGetValues(HeaderNames.SetCookie, out IEnumerable<string>? cookieHeaders);
+            hasCookieHeaders.Should().BeTrue();
+            string? refreshTokenCookie =
+                cookieHeaders!.FirstOrDefault(x => x.StartsWith($"{RefreshTokenAuthDefaults.RefreshTokenCookie}="));
+            refreshTokenCookie.Should().NotBeEmpty();
+            (string _, string value, CookieOptions _) = ParseCookieString(refreshTokenCookie);
+            return value;
+        }
+
+        string firstChildToken = ExtractRefreshTokenCookieValue(responses[0]);
+        string secondChildToken = ExtractRefreshTokenCookieValue(responses[1]);
+        firstChildToken.Should().Be(secondChildToken);
+
+        RefreshToken? originalToken = await _tokensService.GetRefreshToken(decodedOriginalToken);
+        originalToken.Should().NotBeNull();
+        originalToken.ReplacedByToken.Should().NotBeNull();
+        originalToken.ReplacedByToken!.Token.Should().Be(Uri.UnescapeDataString(firstChildToken));
     }
 
     #endregion

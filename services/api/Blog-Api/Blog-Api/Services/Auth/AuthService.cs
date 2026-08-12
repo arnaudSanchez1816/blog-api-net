@@ -2,6 +2,7 @@ using System.Security.Claims;
 using BlogApi.Domain;
 using BlogApi.Services.Tokens;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Services.Auth;
 
@@ -45,7 +46,8 @@ public class AuthService : IAuthService
             };
         }
 
-        return await GenerateAuthenticationResultForUser(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
+        return await GenerateAuthenticationResultForUser(user, refreshToken);
     }
 
     public async Task Logout(RefreshToken token)
@@ -92,9 +94,40 @@ public class AuthService : IAuthService
             };
         }
 
-        await _tokensService.UseRefreshToken(refreshToken);
+        RefreshToken newRefreshToken;
+        if (!refreshToken.Used)
+        {
+            // Use refresh token and pass replacement token reference
+            newRefreshToken = _tokensService.CreateRefreshToken(user);
+            try
+            {
+                await _tokensService.UseRefreshToken(refreshToken, newRefreshToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                RefreshToken? refreshedTokenInstance = await _tokensService.GetRefreshToken(refreshToken.Token);
+                if (refreshedTokenInstance is { ReplacedByToken: not null } &&
+                    refreshedTokenInstance.IsWithinGracePeriod(_timeProvider.GetUtcNow()))
+                {
+                    // Race condition where two calls happen with the same refresh token before it is set to Used
+                    // Use the refreshed token replacement token instead of generating a new one
+                    return await GenerateAuthenticationResultForUser(user, refreshedTokenInstance.ReplacedByToken);
+                }
 
-        return await GenerateAuthenticationResultForUser(user);
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    Errors = ["Refresh token was already used"]
+                };
+            }
+        }
+        else
+        {
+            newRefreshToken = refreshToken.ReplacedByToken ??
+                              throw new InvalidOperationException("Refresh token replacement reference is null");
+        }
+
+        return await GenerateAuthenticationResultForUser(user, newRefreshToken);
     }
 
     public async Task<AuthenticationResult> Register(string displayName, string email, string password,
@@ -132,10 +165,12 @@ public class AuthService : IAuthService
             await _userManager.AddToRolesAsync(newUser, roles);
         }
 
-        return await GenerateAuthenticationResultForUser(newUser);
+        RefreshToken newRefreshToken = await _tokensService.GenerateAndSaveRefreshToken(newUser);
+        return await GenerateAuthenticationResultForUser(newUser, newRefreshToken);
     }
 
-    private async Task<AuthenticationResult> GenerateAuthenticationResultForUser(BlogUser user)
+    private async Task<AuthenticationResult> GenerateAuthenticationResultForUser(BlogUser user,
+        RefreshToken refreshToken)
     {
         IList<Claim> userClaims = await _userManager.GetClaimsAsync(user);
         List<Claim> customClaims = new List<Claim>(userClaims);
@@ -153,7 +188,6 @@ public class AuthService : IAuthService
         }
 
         string accessToken = _tokensService.GenerateAccessToken(user, customClaims);
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
 
         return new AuthenticationResult
         {

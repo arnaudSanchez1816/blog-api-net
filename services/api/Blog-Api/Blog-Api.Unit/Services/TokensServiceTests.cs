@@ -199,21 +199,21 @@ public class TokensServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GenerateRefreshToken_ReturnsTokenLinkedToUser_WhenUserIsValid()
+    public async Task GenerateAndSaveRefreshToken_ReturnsTokenLinkedToUser_WhenUserIsValid()
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         refreshToken.UserId.Should().Be(user.Id);
     }
 
     [Fact]
-    public async Task GenerateRefreshToken_ReturnsUnusedAndNotInvalidatedToken_WhenGenerated()
+    public async Task GenerateAndSaveRefreshToken_ReturnsUnusedAndNotInvalidatedToken_WhenGenerated()
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         refreshToken.Used.Should().BeFalse();
         refreshToken.Invalidated.Should().BeFalse();
@@ -222,23 +222,23 @@ public class TokensServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GenerateRefreshToken_SetsExpirationDate_ToThirtyDaysFromNow()
+    public async Task GenerateAndSaveRefreshToken_SetsExpirationDate_ToThirtyDaysFromNow()
     {
         BlogUser user = CreateUser();
         DateTimeOffset beforeGeneration = DateTimeOffset.UtcNow;
 
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         refreshToken.ExpirationDate.Should().BeCloseTo(beforeGeneration.AddDays(30), 5.Seconds());
         refreshToken.CreationDate.Should().BeCloseTo(beforeGeneration, 5.Seconds());
     }
 
     [Fact]
-    public async Task GenerateRefreshToken_ReturnsUrlSafeNonEmptyToken_WhenGenerated()
+    public async Task GenerateAndSaveRefreshToken_ReturnsUrlSafeNonEmptyToken_WhenGenerated()
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         refreshToken.Token.Should().NotBeNullOrWhiteSpace();
         byte[] decoded = Convert.FromBase64String(refreshToken.Token);
@@ -246,44 +246,56 @@ public class TokensServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task GenerateRefreshToken_GeneratesUniqueToken_WhenCalledMultipleTimesForSameUser()
+    public async Task GenerateAndSaveRefreshToken_GeneratesUniqueToken_WhenCalledMultipleTimesForSameUser()
     {
         BlogUser user = CreateUser();
 
-        RefreshToken firstToken = await _tokensService.GenerateRefreshToken(user);
-        RefreshToken secondToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken firstToken = await _tokensService.GenerateAndSaveRefreshToken(user);
+        RefreshToken secondToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         firstToken.Token.Should().NotBe(secondToken.Token);
     }
 
     [Fact]
-    public async Task GenerateRefreshToken_PersistsTokenThroughRepository_WhenGenerated()
+    public async Task GenerateAndSaveRefreshToken_PersistsTokenThroughRepository_WhenGenerated()
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         _refreshTokensRepository.Verify(x => x.AddToken(refreshToken), Times.Once);
+    }
+
+    [Fact]
+    public void CreateRefreshToken_DoesNotPersistToken_ThroughRepository()
+    {
+        BlogUser user = CreateUser();
+
+        _tokensService.CreateRefreshToken(user);
+
+        _refreshTokensRepository.Verify(x => x.AddToken(It.IsAny<RefreshToken>()), Times.Never);
     }
 
     [Fact]
     public async Task UseRefreshToken_SetToken_AsUsed()
     {
         BlogUser user = CreateUser();
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
+        RefreshToken replacementToken = _tokensService.CreateRefreshToken(user);
 
-        await _tokensService.UseRefreshToken(refreshToken);
+        await _tokensService.UseRefreshToken(refreshToken, replacementToken);
 
         refreshToken.Used.Should().BeTrue();
         refreshToken.UsedDate.Should().BeCloseTo(_timeProvider.GetUtcNow(), TimeSpan.FromSeconds(1));
-        _refreshTokensRepository.Verify(x => x.UpdateToken(refreshToken), Times.Once);
+        refreshToken.ReplacedByToken.Should().Be(replacementToken);
+        _refreshTokensRepository.Verify(x => x.RotateToken(refreshToken, replacementToken), Times.Once);
     }
 
     [Fact]
     public async Task RevokeRefreshToken_SetToken_AsInvalidated()
     {
         BlogUser user = CreateUser();
-        RefreshToken refreshToken = await _tokensService.GenerateRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
 
         await _tokensService.RevokeRefreshToken(refreshToken);
 
