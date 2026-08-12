@@ -10,7 +10,7 @@ public interface ITokensService
 
     public Task<RefreshToken> GenerateAndSaveRefreshToken(BlogUser user);
 
-    public Task<RefreshToken?> GetRefreshToken(string token);
+    public Task<RefreshToken?> GetRefreshToken(string token, bool forceFetchFromDatabase = false);
     public Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken);
     public Task RevokeRefreshToken(RefreshToken token);
 }

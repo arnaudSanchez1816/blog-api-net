@@ -258,5 +258,59 @@ public class RefreshTokensRepositoryTests : IntegrationTestBase
         orphanLoserChild.Should().BeNull();
     }
 
+    [Fact]
+    public async Task GetToken_ReturnsStaleTrackedInstance_WhenCalledOnSameContextAfterFailedRotate()
+    {
+        // Arrange: reproduces the bug where a concurrency-conflict recovery path re-queried through the same
+        // DbContext that still tracked the losing entity's rejected, unsaved mutations. Because that entity
+        // is already tracked, EF's identity map hands the same (stale) instance back instead of hitting the
+        // database, so the recovery code would see its own rejected child instead of the real winner.
+        RefreshToken token = MakeToken("token", DateTimeOffset.UtcNow.AddMinutes(1));
+        await _refreshTokensRepository.AddToken(token);
+
+        IServiceScopeFactory scopeFactory = GetRequiredService<IServiceScopeFactory>();
+
+        await using AsyncServiceScope winnerScope = scopeFactory.CreateAsyncScope();
+        IRefreshTokensRepository winnerRepository =
+            winnerScope.ServiceProvider.GetRequiredService<IRefreshTokensRepository>();
+        DataContext winnerContext = winnerScope.ServiceProvider.GetRequiredService<DataContext>();
+        RefreshToken winnerToken =
+            await winnerContext.RefreshTokens.SingleAsync(x => x.Token == "token",
+                TestContext.Current.CancellationToken);
+        RefreshToken winnerChild = MakeToken("winner-child-2", DateTimeOffset.UtcNow.AddMinutes(1));
+        winnerToken.Used = true;
+        winnerToken.ReplacedByToken = winnerChild;
+
+        await using AsyncServiceScope loserScope = scopeFactory.CreateAsyncScope();
+        IRefreshTokensRepository loserRepository =
+            loserScope.ServiceProvider.GetRequiredService<IRefreshTokensRepository>();
+        DataContext loserContext = loserScope.ServiceProvider.GetRequiredService<DataContext>();
+        RefreshToken loserToken =
+            await loserContext.RefreshTokens.SingleAsync(x => x.Token == "token",
+                TestContext.Current.CancellationToken);
+        RefreshToken loserChild = MakeToken("loser-child-2", DateTimeOffset.UtcNow.AddMinutes(1));
+        loserToken.Used = true;
+        loserToken.ReplacedByToken = loserChild;
+
+        // Act
+        await winnerRepository.RotateToken(winnerToken, winnerChild);
+
+        Func<Task> loserAct = async () => await loserRepository.RotateToken(loserToken, loserChild);
+        await loserAct.Should().ThrowAsync<DbUpdateConcurrencyException>();
+
+        // Assert: a tracked re-query on the loser's own context returns its own rejected, never-persisted
+        // child instead of the real committed winner.
+        RefreshToken? staleReread = await loserRepository.GetToken("token");
+        staleReread.Should().NotBeNull();
+        staleReread.ReplacedByToken.Should().NotBeNull();
+        staleReread.ReplacedByToken!.Token.Should().Be("loser-child-2");
+
+        // A no-tracking read bypasses the identity map and returns the real, committed replacement.
+        RefreshToken? freshReread = await loserRepository.GetToken("token", true);
+        freshReread.Should().NotBeNull();
+        freshReread.ReplacedByToken.Should().NotBeNull();
+        freshReread.ReplacedByToken!.Token.Should().Be("winner-child-2");
+    }
+
     #endregion
 }

@@ -6,7 +6,7 @@ public interface IRefreshTokensRepository
 {
     public Task AddToken(RefreshToken token);
 
-    public Task<RefreshToken?> GetToken(string token);
+    public Task<RefreshToken?> GetToken(string token, bool asNoTracking = false);
 
     public Task UpdateToken(RefreshToken token);
 

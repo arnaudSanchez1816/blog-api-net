@@ -80,9 +80,9 @@ public class TokensService : ITokensService
         return refreshToken;
     }
 
-    public async Task<RefreshToken?> GetRefreshToken(string token)
+    public async Task<RefreshToken?> GetRefreshToken(string token, bool forceFetchFromDatabase = false)
     {
-        return await _refreshTokensRepository.GetToken(token);
+        return await _refreshTokensRepository.GetToken(token, forceFetchFromDatabase);
     }
 
     public async Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken)

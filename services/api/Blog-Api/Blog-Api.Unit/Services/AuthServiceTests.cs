@@ -380,7 +380,7 @@ public class AuthServiceTests : IDisposable
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
         _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync(refetchedToken);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync(refetchedToken);
 
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
@@ -402,7 +402,7 @@ public class AuthServiceTests : IDisposable
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
         _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync(refetchedToken);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync(refetchedToken);
 
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 
@@ -425,7 +425,7 @@ public class AuthServiceTests : IDisposable
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
         _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync(refetchedToken);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync(refetchedToken);
 
         _timeProvider.Advance(RefreshToken.UsedGracePeriod + TimeSpan.FromMilliseconds(100));
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
@@ -445,7 +445,7 @@ public class AuthServiceTests : IDisposable
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
         _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token)).ReturnsAsync((RefreshToken?)null);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync((RefreshToken?)null);
 
         AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
 

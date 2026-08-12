@@ -19,9 +19,15 @@ public class RefreshTokenRepository : IRefreshTokensRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task<RefreshToken?> GetToken(string token)
+    public async Task<RefreshToken?> GetToken(string token, bool asNoTracking = false)
     {
-        return await _context.RefreshTokens.Include(x => x.ReplacedByToken).SingleOrDefaultAsync(x => x.Token == token);
+        IQueryable<RefreshToken> tokenQuery = _context.RefreshTokens.Include(x => x.ReplacedByToken);
+        if (asNoTracking)
+        {
+            tokenQuery = tokenQuery.AsNoTracking();
+        }
+
+        return await tokenQuery.SingleOrDefaultAsync(x => x.Token == token);
     }
 
     public async Task UpdateToken(RefreshToken token)
@@ -44,5 +50,12 @@ public class RefreshTokenRepository : IRefreshTokensRepository
 
         await _context.RefreshTokens.Where(t => t.ExpirationDate < cutoff)
             .ExecuteDeleteAsync();
+    }
+
+    public async Task<RefreshToken?> GetTokenFromDatabase(string token)
+    {
+        return await _context.RefreshTokens.AsNoTracking()
+            .Include(x => x.ReplacedByToken)
+            .SingleOrDefaultAsync(x => x.Token == token);
     }
 }

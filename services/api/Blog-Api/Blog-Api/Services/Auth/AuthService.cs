@@ -105,7 +105,11 @@ public class AuthService : IAuthService
             }
             catch (DbUpdateConcurrencyException)
             {
-                RefreshToken? refreshedTokenInstance = await _tokensService.GetRefreshToken(refreshToken.Token);
+                // Bypass this DbContext's identity map: refreshToken is still tracked here with the
+                // in-memory mutations we just made and failed to save, so a tracked re-query would hand
+                // those rejected values right back instead of the other request's real committed replacement.
+                RefreshToken? refreshedTokenInstance =
+                    await _tokensService.GetRefreshToken(refreshToken.Token, true);
                 if (refreshedTokenInstance is { ReplacedByToken: not null } &&
                     refreshedTokenInstance.IsWithinGracePeriod(_timeProvider.GetUtcNow()))
                 {
