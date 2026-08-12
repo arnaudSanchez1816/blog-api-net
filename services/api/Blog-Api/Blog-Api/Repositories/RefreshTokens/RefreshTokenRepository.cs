@@ -51,11 +51,4 @@ public class RefreshTokenRepository : IRefreshTokensRepository
         await _context.RefreshTokens.Where(t => t.ExpirationDate < cutoff)
             .ExecuteDeleteAsync();
     }
-
-    public async Task<RefreshToken?> GetTokenFromDatabase(string token)
-    {
-        return await _context.RefreshTokens.AsNoTracking()
-            .Include(x => x.ReplacedByToken)
-            .SingleOrDefaultAsync(x => x.Token == token);
-    }
 }
