@@ -38,22 +38,16 @@ export const AuthProvider = ({
     const [init, setInit] = useState(false)
 
     useLayoutEffect(() => {
-        let ignore = false
+        const controller = new AbortController()
 
         const initAuthProvider = async () => {
             try {
-                const token = await fetchAccessToken()
-                if (ignore) {
-                    return
-                }
+                const token = await fetchAccessToken(controller.signal)
                 setAccessToken(token)
-                const user = await fetchCurrentUser(token)
-                if (ignore) {
-                    return
-                }
+                const user = await fetchCurrentUser(token, controller.signal)
                 setUser(user)
             } catch (error) {
-                if (ignore) {
+                if (controller.signal.aborted) {
                     return
                 }
                 if (!(error instanceof Response)) {
@@ -62,13 +56,15 @@ export const AuthProvider = ({
                 setAccessToken(null)
                 setUser(null)
             } finally {
-                setInit(true)
+                if (!controller.signal.aborted) {
+                    setInit(true)
+                }
             }
         }
         initAuthProvider()
 
         return () => {
-            ignore = true
+            controller.abort()
         }
     }, [])
 

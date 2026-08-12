@@ -1,5 +1,5 @@
 import { FetchPostsParams, PostDetails } from "./posts"
-import { checkApiUrlEnvVariable } from "./utils"
+import { checkApiUrlEnvVariable, timeoutSignal } from "./utils"
 
 export interface UserDetails {
     id: string
@@ -7,7 +7,10 @@ export interface UserDetails {
     email: string
 }
 
-export const fetchCurrentUser = async (token: string): Promise<UserDetails> => {
+export const fetchCurrentUser = async (
+    token: string,
+    signal?: AbortSignal
+): Promise<UserDetails> => {
     if (!token) {
         throw new Error("Token is invalid")
     }
@@ -22,6 +25,7 @@ export const fetchCurrentUser = async (token: string): Promise<UserDetails> => {
         },
         mode: "cors",
         method: "get",
+        signal: timeoutSignal(5000, signal),
     })
     if (!response.ok) {
         throw response
