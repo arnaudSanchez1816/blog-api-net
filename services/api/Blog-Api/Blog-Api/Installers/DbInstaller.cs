@@ -169,7 +169,7 @@ public static class DbInstaller
     private static async Task<string?> ReadResourceFile(string resourceName, CancellationToken ct = default)
     {
         Assembly assembly = Assembly.GetExecutingAssembly();
-        await using Stream? stream = assembly.GetManifestResourceStream("BlogApi.Resources.markdown_test.md");
+        await using Stream? stream = assembly.GetManifestResourceStream(resourceName);
         if (stream == null)
         {
             return null;
