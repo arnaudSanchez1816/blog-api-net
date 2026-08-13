@@ -1,6 +1,7 @@
 # Blog-API
 
 [![Blog-api CI](https://github.com/arnaudSanchez1816/blog-api-net/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/arnaudSanchez1816/blog-api-net/actions/workflows/ci.yml)
+
 A blogging platform built with Spring and React.
 
 This is a reimplementation of the back-end API of my already existing [Node.js/Express version](https://github.com/arnaudSanchez1816/blog-api).
