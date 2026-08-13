@@ -1,0 +1,54 @@
+name: blog-api-net-image
+
+networks:
+  localdev:
+    name: blog-api-localdev
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Blog-Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ConnectionStrings__DefaultConnection=Host=db-pg;Port=5432;Database=blog-api-net;Username=blogapi;Password=blogapi
+      - AppAuthenticationOptions__JwtAccessSecret=local-test-secret-not-for-production-0000
+      - AppAuthenticationOptions__JwtIssuerUri=https://api.blog-api.com
+      - AppAuthenticationOptions__JwtAudienceUri=https://cms.blog-api.com
+      - DatabaseSeedingOptions__Enabled=true
+      - DatabaseSeedingOptions__AdminName=Administrator
+      - DatabaseSeedingOptions__AdminEmail=admin@email.com
+      - DatabaseSeedingOptions__AdminPassword=AdminPassword123
+    ports:
+      - "8080:8080"
+    volumes:
+      - dataprotection-keys:/home/app/keys
+    depends_on:
+      db-pg:
+        condition: service_healthy
+    networks:
+      - localdev
+
+  db-pg:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: blogapi
+      POSTGRES_PASSWORD: blogapi
+      POSTGRES_DB: blog-api-net
+    ports:
+      - "5432"
+    networks:
+      - localdev
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "blogapi", "-d", "blog-api-net" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+  dataprotection-keys:

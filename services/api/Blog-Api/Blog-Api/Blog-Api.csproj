@@ -5,6 +5,7 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>BlogApi</RootNamespace>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	</PropertyGroup>
 	<PropertyGroup>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -39,6 +40,12 @@
 	<ItemGroup>
 		<EmbeddedResource Include="Resources\markdown_lorem1.md"/>
 		<EmbeddedResource Include="Resources\markdown_test.md"/>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="..\.dockerignore">
+			<Link>.dockerignore</Link>
+		</Content>
 	</ItemGroup>
 
 </Project>
