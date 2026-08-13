@@ -52,7 +52,9 @@ public static class DbInstaller
 
     public static async Task<DatabaseSeedingResult> SeedDatabase(this WebApplication app)
     {
-        if (!app.Environment.IsDevelopment())
+        DatabaseSeedingOptions databaseSeedingOptions =
+            app.Services.GetRequiredService<IOptions<DatabaseSeedingOptions>>().Value;
+        if (!databaseSeedingOptions.Enabled)
         {
             return new DatabaseSeedingResult();
         }
@@ -61,8 +63,6 @@ public static class DbInstaller
         DataContext context = scope.ServiceProvider.GetRequiredService<DataContext>();
         ILogger<DataContext> logger = scope.ServiceProvider.GetRequiredService<ILogger<DataContext>>();
         IAuthService authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-        DatabaseSeedingOptions databaseSeedingOptions =
-            app.Services.GetRequiredService<IOptions<DatabaseSeedingOptions>>().Value;
 
         logger.LogInformation("Seeding database...");
 

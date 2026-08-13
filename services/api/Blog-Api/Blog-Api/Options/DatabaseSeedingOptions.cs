@@ -6,6 +6,8 @@ public class DatabaseSeedingOptions
 {
     public const string ConfigurationSection = "DatabaseSeedingOptions";
 
+    public bool Enabled { get; init; } = false;
+
     [Required]
     public required string AdminName { get; init; }
 

@@ -20,10 +20,7 @@ builder.Services.InstallCors(builder.Configuration);
 builder.Services.AddControllers();
 
 WebApplication app = builder.Build();
-if (app.Environment.IsDevelopment())
-{
-    await app.MigrateDatabase();
-}
+await app.MigrateDatabase();
 
 DatabaseSeedingResult databaseSeedingResult = await app.SeedDatabase();
 
