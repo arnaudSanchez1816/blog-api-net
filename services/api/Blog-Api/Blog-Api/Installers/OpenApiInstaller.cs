@@ -5,6 +5,7 @@ using BlogApi.Options;
 using BlogApi.Transformers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
@@ -126,35 +127,32 @@ public static class OpenApiInstaller
             });
 
         // Bind open api options
-        OpenApiOptions openApiOptions = new OpenApiOptions();
-        configuration.Bind(nameof(OpenApiOptions), openApiOptions);
-        services.AddSingleton(openApiOptions);
+        services.AddOptions<OpenApiOptions>().BindConfiguration(OpenApiOptions.ConfigurationSection);
 
         return services;
     }
 
     public static WebApplication InstallScalar(this WebApplication app, string? defaultBearerToken = null)
     {
-        OpenApiOptions options = app.Services.GetRequiredService<OpenApiOptions>();
+        OpenApiOptions openApiOptions = app.Services.GetRequiredService<IOptions<OpenApiOptions>>().Value;
 
-        if (app.Environment.IsDevelopment())
+        if (openApiOptions.Enable)
         {
-            app.MapOpenApi(options.JsonRoute);
-        }
-
-        app.MapScalarApiReference(options.UiEndpoint,
-            x =>
-            {
-                x.Title = options.Title;
-                x.OpenApiRoutePattern = options.JsonRoute;
-                x.WithClassicLayout();
-                x.AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme);
-                if (defaultBearerToken != null)
+            app.MapOpenApi(openApiOptions.JsonRoute);
+            app.MapScalarApiReference(openApiOptions.UiEndpoint,
+                x =>
                 {
-                    x.AddHttpAuthentication(JwtBearerDefaults.AuthenticationScheme,
-                        auth => auth.Token = defaultBearerToken);
-                }
-            });
+                    x.Title = openApiOptions.Title;
+                    x.OpenApiRoutePattern = openApiOptions.JsonRoute;
+                    x.WithClassicLayout();
+                    x.AddPreferredSecuritySchemes(JwtBearerDefaults.AuthenticationScheme);
+                    if (app.Environment.IsDevelopment() && defaultBearerToken != null)
+                    {
+                        x.AddHttpAuthentication(JwtBearerDefaults.AuthenticationScheme,
+                            auth => auth.Token = defaultBearerToken);
+                    }
+                });
+        }
 
         return app;
     }
