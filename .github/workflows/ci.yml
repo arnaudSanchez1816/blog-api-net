@@ -1,0 +1,26 @@
+name: Blog-api-net CI
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/api/**'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api/Blog-Api
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: services/api
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+      - name: Build with dotnet
+        run: dotnet build --configuration Release
+      - name: Run tests
+        run: dotnet test --configuration Release
