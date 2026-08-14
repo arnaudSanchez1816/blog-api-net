@@ -1,4 +1,4 @@
-providers = ['...', 'node', 'turborepo']
+providers = ['node']
 
 [phase.setup]
   nixPkgs = ['...', 'pnpm']  
