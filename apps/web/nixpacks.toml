@@ -1,4 +1,1 @@
 providers = ['node']
-
-[phase.setup]
-  nixPkgs = ['...', 'pnpm']  
