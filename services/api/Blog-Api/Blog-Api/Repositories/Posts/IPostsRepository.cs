@@ -5,7 +5,7 @@ namespace BlogApi.Repositories.Posts;
 
 public interface IPostsRepository
 {
-    public Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
+    public Task<PagedPostSummariesResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
         CancellationToken ct = default);
 
     public Task<Post?> GetPostBySlug(string slug, CancellationToken ct = default);

@@ -7,11 +7,11 @@ namespace BlogApi.Contracts.V1.Responses;
 public record GetPostsResponse
 {
     [JsonPropertyName("results")]
-    public required IReadOnlyCollection<PostResponse> Posts { get; init; }
+    public required IReadOnlyCollection<PostSummaryResponse> Posts { get; init; }
 
     public required PagedResponseMetadata Metadata { get; init; }
 
-    public static GetPostsResponse Create(IReadOnlyCollection<PostResponse> posts, int totalCount,
+    public static GetPostsResponse Create(IReadOnlyCollection<PostSummaryResponse> posts, int totalCount,
         GetPostsFilterQuery filter, PaginationQuery pagination)
     {
         GetPostsResponse response = new GetPostsResponse

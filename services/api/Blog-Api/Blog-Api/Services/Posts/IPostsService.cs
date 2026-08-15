@@ -7,7 +7,7 @@ namespace BlogApi.Services.Posts;
 
 public interface IPostsService
 {
-    public Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
+    public Task<PagedPostSummariesResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
         CancellationToken ct = default);
 
     public Task<Post?> GetPostBySlug(string slug, CancellationToken ct = default);

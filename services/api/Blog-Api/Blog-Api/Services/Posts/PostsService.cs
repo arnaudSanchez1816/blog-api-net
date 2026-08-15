@@ -29,7 +29,7 @@ public class PostsService : IPostsService
         _commentsService = commentsService;
     }
 
-    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
+    public async Task<PagedPostSummariesResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
         CancellationToken ct = default)
     {
         return await _postsRepository.GetPosts(filter, pagination, ct);

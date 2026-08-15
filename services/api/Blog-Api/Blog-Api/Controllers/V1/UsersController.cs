@@ -70,9 +70,11 @@ public class UsersController : ControllerBase
         Guid userId = User.GetUserId();
         // Always include unpublished when getting user posts
         filterQuery = filterQuery with { IncludeUnpublished = true, Author = userId };
-        PagedPostsResult pagedPostsResult = await _postsService.GetPosts(filterQuery, paginationQuery, ct);
+        PagedPostSummariesResult pagedPostsResult = await _postsService.GetPosts(filterQuery, paginationQuery, ct);
 
-        List<PostResponse> mappedPosts = pagedPostsResult.Posts.Select(p => p.ToPostResponse()).ToList();
-        return Ok(GetPostsResponse.Create(mappedPosts, pagedPostsResult.TotalCount, filterQuery, paginationQuery));
+        return Ok(GetPostsResponse.Create(pagedPostsResult.Posts,
+            pagedPostsResult.TotalCount,
+            filterQuery,
+            paginationQuery));
     }
 }

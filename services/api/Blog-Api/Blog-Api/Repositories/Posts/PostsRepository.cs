@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
+using BlogApi.Contracts.V1.Responses;
 using BlogApi.Data;
 using BlogApi.Domain;
 using Microsoft.EntityFrameworkCore;
@@ -16,12 +17,10 @@ public class PostsRepository : IPostsRepository
         _context = context;
     }
 
-    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
+    public async Task<PagedPostSummariesResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
         CancellationToken ct = default)
     {
-        IQueryable<Post> postsQuery = _context.Posts.AsQueryable()
-            .Include(p => p.Author)
-            .Include(p => p.Tags);
+        IQueryable<Post> postsQuery = _context.Posts.AsQueryable();
 
         // Use default filters if none are provided
         filter ??= new GetPostsFilterQuery();
@@ -30,20 +29,30 @@ public class PostsRepository : IPostsRepository
 
         int totalCount = await postsQuery.CountAsync(ct);
 
-        if (pagination is null)
+        if (pagination is not null)
         {
-            List<Post> allPosts = await ToPostsWithCommentsCountAsync(postsQuery, ct);
+            (int pageNumber, int pageSize) = pagination;
+            int skip = (pageNumber - 1) * pageSize;
 
-            return new PagedPostsResult { Posts = allPosts, TotalCount = totalCount };
+            postsQuery = postsQuery.Skip(skip).Take(pageSize);
         }
 
-        // Pagination
-        (int pageNumber, int pageSize) = pagination;
-        int skip = (pageNumber - 1) * pageSize;
+        List<PostSummaryResponse> postSummaryResponses = await postsQuery
+            .Select(p => new PostSummaryResponse
+            {
+                Id = p.Id,
+                Title = p.Title,
+                ReadingTime = p.ReadingTime,
+                CommentsCount = p.Comments.Count(),
+                Description = p.Description,
+                Slug = p.Slug,
+                PublishedAt = p.PublishedAt,
+                Author = new PostAuthorResponse { Id = p.Author.Id, Name = p.Author.DisplayName },
+                Tags = p.Tags.Select(t => new TagResponse { Id = t.Id, Name = t.Name, Slug = t.Slug }).ToList()
+            })
+            .ToListAsync(ct);
 
-        List<Post> pagedPosts = await ToPostsWithCommentsCountAsync(postsQuery.Skip(skip).Take(pageSize), ct);
-
-        return new PagedPostsResult { Posts = pagedPosts, TotalCount = totalCount };
+        return new PagedPostSummariesResult { Posts = postSummaryResponses, TotalCount = totalCount };
     }
 
     public async Task<Post?> GetPostBySlug(string slug, CancellationToken ct = default)

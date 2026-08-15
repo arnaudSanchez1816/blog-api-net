@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
+using BlogApi.Contracts.V1.Responses;
 using BlogApi.Data;
 using BlogApi.Domain;
 using BlogApi.Repositories.Comments;
@@ -55,6 +56,32 @@ public class PostsRepositoryTests : IntegrationTestBase
             });
     }
 
+    [Fact]
+    public async Task GetPosts_Throws_WhenCancellationIsRequested()
+    {
+        CancellationToken cancelledToken = new CancellationToken(true);
+
+        Func<Task> act = async () => await _postsRepository.GetPosts(null, null, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task AddPost_Throws_WhenCancellationIsRequested()
+    {
+        Post post = new Post
+        {
+            Title = "Post title",
+            Slug = "post-title-cancelled",
+            AuthorId = _author.Id
+        };
+        CancellationToken cancelledToken = new CancellationToken(true);
+
+        Func<Task> act = async () => await _postsRepository.AddPost(post, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
     #region GetPostBySlugWithComments
 
     [Fact]
@@ -67,10 +94,11 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-with-comments-loaded",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithComments(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithComments(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -87,7 +115,7 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-with-comments-loaded",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         Comment firstComment = new Comment
         {
             Body = "comment b",
@@ -95,7 +123,7 @@ public class PostsRepositoryTests : IntegrationTestBase
             PostId = post.Id,
             CreatedAt = DateTimeOffset.UtcNow.AddDays(-10)
         };
-        await _commentsRepository.AddComment(firstComment, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(firstComment, TestContext.Current.CancellationToken);
         Comment secondComment = new Comment
         {
             Body = "comment body 2",
@@ -103,7 +131,7 @@ public class PostsRepositoryTests : IntegrationTestBase
             PostId = post.Id,
             CreatedAt = DateTimeOffset.UtcNow.AddDays(-5)
         };
-        await _commentsRepository.AddComment(secondComment, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(secondComment, TestContext.Current.CancellationToken);
         Comment lastComment = new Comment
         {
             Body = "comment body 3",
@@ -111,10 +139,11 @@ public class PostsRepositoryTests : IntegrationTestBase
             PostId = post.Id,
             CreatedAt = DateTimeOffset.UtcNow
         };
-        await _commentsRepository.AddComment(lastComment, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(lastComment, TestContext.Current.CancellationToken);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithComments(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithComments(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -133,11 +162,12 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-with-comments-loaded",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         await AddCommentsToPost(post.Id, 4);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithComments(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithComments(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -162,10 +192,10 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Assert
-        Post? addedPost = await _postsRepository.GetPostBySlug(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? addedPost = await _postsRepository.GetPostBySlug(post.Slug, TestContext.Current.CancellationToken);
         addedPost.Should().NotBeNull();
         addedPost.Title.Should().Be(post.Title);
         addedPost.Slug.Should().Be(post.Slug);
@@ -182,7 +212,7 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-slug",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         Post duplicatePost = new Post
         {
@@ -212,13 +242,13 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-to-delete",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        await _postsRepository.DeletePost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.DeletePost(post, TestContext.Current.CancellationToken);
 
         // Assert
-        Post? deletedPost = await _postsRepository.GetPostBySlug(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? deletedPost = await _postsRepository.GetPostBySlug(post.Slug, TestContext.Current.CancellationToken);
         deletedPost.Should().BeNull();
     }
 
@@ -255,15 +285,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "original-slug",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
         post.Title = "Updated title";
         post.Body = "Updated body";
-        await _postsRepository.UpdatePost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.UpdatePost(post, TestContext.Current.CancellationToken);
 
         // Assert
-        Post? updatedPost = await _postsRepository.GetPostBySlug(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? updatedPost = await _postsRepository.GetPostBySlug(post.Slug, TestContext.Current.CancellationToken);
         updatedPost.Should().NotBeNull();
         updatedPost.Title.Should().Be("Updated title");
         updatedPost.Body.Should().Be("Updated body");
@@ -306,16 +336,18 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
         post.Tags.Add(tag1);
         post.Tags.Add(tag2);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        Post trackedPost = (await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken))!;
+        Post trackedPost =
+            (await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken))!;
         trackedPost.Tags.Clear();
         trackedPost.Tags.Add(tag3);
-        await _postsRepository.UpdatePost(trackedPost, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.UpdatePost(trackedPost, TestContext.Current.CancellationToken);
 
         // Assert
-        Post? updatedPost = await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? updatedPost =
+            await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken);
         updatedPost.Should().NotBeNull();
         updatedPost.Tags.Should().HaveCount(1);
         updatedPost.Tags.Should().Contain(t => t.Slug == "docker");
@@ -340,7 +372,7 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
         postToUpdate.Tags.Add(sharedTag);
         postToUpdate.Tags.Add(tagToRemove);
-        await _postsRepository.AddPost(postToUpdate, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postToUpdate, TestContext.Current.CancellationToken);
 
         Post otherPost = new Post
         {
@@ -349,16 +381,18 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id
         };
         otherPost.Tags.Add(sharedTag);
-        await _postsRepository.AddPost(otherPost, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(otherPost, TestContext.Current.CancellationToken);
 
         // Act
-        Post trackedPost = (await _postsRepository.GetPostBySlugWithTags(postToUpdate.Slug, ct: TestContext.Current.CancellationToken))!;
+        Post trackedPost =
+            (await _postsRepository.GetPostBySlugWithTags(postToUpdate.Slug, TestContext.Current.CancellationToken))!;
         trackedPost.Tags.Clear();
         trackedPost.Tags.Add(sharedTag);
-        await _postsRepository.UpdatePost(trackedPost, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.UpdatePost(trackedPost, TestContext.Current.CancellationToken);
 
         // Assert
-        Post? refetchedOtherPost = await _postsRepository.GetPostBySlugWithTags(otherPost.Slug, ct: TestContext.Current.CancellationToken);
+        Post? refetchedOtherPost =
+            await _postsRepository.GetPostBySlugWithTags(otherPost.Slug, TestContext.Current.CancellationToken);
         refetchedOtherPost.Should().NotBeNull();
         refetchedOtherPost.Tags.Should().HaveCount(1);
         refetchedOtherPost.Tags.Should().Contain(t => t.Slug == "dotnet");
@@ -379,15 +413,17 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id
         };
         post.Tags.Add(tag);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        Post trackedPost = (await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken))!;
+        Post trackedPost =
+            (await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken))!;
         trackedPost.Tags.Clear();
-        await _postsRepository.UpdatePost(trackedPost, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.UpdatePost(trackedPost, TestContext.Current.CancellationToken);
 
         // Assert
-        Post? updatedPost = await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? updatedPost =
+            await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken);
         updatedPost.Should().NotBeNull();
         updatedPost.Tags.Should().BeEmpty();
     }
@@ -406,10 +442,10 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-slug",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlug(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost = await _postsRepository.GetPostBySlug(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -423,7 +459,8 @@ public class PostsRepositoryTests : IntegrationTestBase
     public async Task GetPostBySlug_ReturnsNull_WhenPostDoesNotExist()
     {
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlug("non-existent-slug", ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlug("non-existent-slug", TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().BeNull();
@@ -439,11 +476,11 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-with-comments",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         await AddCommentsToPost(post.Id, 3);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlug(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost = await _postsRepository.GetPostBySlug(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -464,11 +501,12 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-with-comments-and-tags",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         await AddCommentsToPost(post.Id, 2);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -492,10 +530,11 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
         post.Tags.Add(tag1);
         post.Tags.Add(tag2);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -514,10 +553,11 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-slug",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithTags(post.Slug, ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithTags(post.Slug, TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().NotBeNull();
@@ -528,7 +568,8 @@ public class PostsRepositoryTests : IntegrationTestBase
     public async Task GetPostBySlugWithTags_ReturnsNull_WhenPostDoesNotExist()
     {
         // Act
-        Post? foundPost = await _postsRepository.GetPostBySlugWithTags("non-existent-slug", ct: TestContext.Current.CancellationToken);
+        Post? foundPost =
+            await _postsRepository.GetPostBySlugWithTags("non-existent-slug", TestContext.Current.CancellationToken);
 
         // Assert
         foundPost.Should().BeNull();
@@ -557,14 +598,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
         };
-        await _postsRepository.AddPost(matching, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(nonMatching, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(matching, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(nonMatching, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "dotNET" };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -596,15 +638,16 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
         };
-        await _postsRepository.AddPost(first, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(second, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(nonMatching, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(first, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(second, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(nonMatching, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "dotnet" };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -623,13 +666,14 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "nonexistent" };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -653,14 +697,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(first, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(second, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(first, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(second, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "" };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -684,14 +729,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(post1, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(post2, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post1, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post2, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Q = "   " };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -717,14 +763,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = author2.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(postWithAuthor1, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithAuthor2, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor1, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor2, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Author = author1.Id };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -751,14 +798,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = author2.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(postWithAuthor1, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithAuthor2, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor1, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor2, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Author = null };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -782,14 +830,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = null
         };
-        await _postsRepository.AddPost(published, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(draft, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(published, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(draft, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = false };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -814,14 +863,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = null
         };
-        await _postsRepository.AddPost(published, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(draft, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(published, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(draft, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = true };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -840,13 +890,14 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = null
         };
-        await _postsRepository.AddPost(draft, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(draft, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { IncludeUnpublished = false };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -879,14 +930,15 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
         postWithDockerTag.Tags.Add(dockerTag);
 
-        await _postsRepository.AddPost(postWithDotnetTag, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithDockerTag, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithDotnetTag, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithDockerTag, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["dotnet"] };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -930,15 +982,16 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
         postWithCookingTag.Tags.Add(cookingTag);
 
-        await _postsRepository.AddPost(postWithDotnetTag, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithDockerTag, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithCookingTag, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithDotnetTag, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithDockerTag, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithCookingTag, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["dotnet", "docker"] };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -963,13 +1016,14 @@ public class PostsRepositoryTests : IntegrationTestBase
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-1)
         };
         post.Tags.Add(dotnetTag);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = ["nonexistent-tag"] };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -993,14 +1047,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(first, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(second, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(first, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(second, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = null };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1024,14 +1079,15 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(first, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(second, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(first, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(second, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { Tags = [] };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1055,8 +1111,8 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(first, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(second, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(first, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(second, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery
         {
@@ -1065,8 +1121,9 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1091,8 +1148,8 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(first, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(second, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(first, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(second, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery
         {
@@ -1101,8 +1158,9 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1135,15 +1193,16 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = sharedPublishedAt
         };
-        await _postsRepository.AddPost(earliest, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(tiedFirst, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(tiedSecond, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(earliest, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(tiedFirst, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(tiedSecond, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { SortBy = PostSortOption.PublishedAtAscending };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(3);
@@ -1179,15 +1238,16 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = sharedPublishedAt
         };
-        await _postsRepository.AddPost(latest, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(tiedFirst, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(tiedSecond, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(latest, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(tiedFirst, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(tiedSecond, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery { SortBy = PostSortOption.PublishedAtDescending };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(3);
@@ -1203,16 +1263,18 @@ public class PostsRepositoryTests : IntegrationTestBase
         // Arrange
         for (int i = 0; i < 5; i++)
             await _postsRepository.AddPost(new Post
-            {
-                Title = $"Post {i}",
-                Slug = $"post-{i}",
-                AuthorId = _author.Id,
-                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
-            }, ct: TestContext.Current.CancellationToken);
+                {
+                    Title = $"Post {i}",
+                    Slug = $"post-{i}",
+                    AuthorId = _author.Id,
+                    PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+                },
+                TestContext.Current.CancellationToken);
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(new GetPostsFilterQuery(), null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(5);
@@ -1225,18 +1287,21 @@ public class PostsRepositoryTests : IntegrationTestBase
         // should skip the 2 most recent posts and return the next 2.
         for (int i = 0; i < 5; i++)
             await _postsRepository.AddPost(new Post
-            {
-                Title = $"Post {i}",
-                Slug = $"post-{i}",
-                AuthorId = _author.Id,
-                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
-            }, ct: TestContext.Current.CancellationToken);
+                {
+                    Title = $"Post {i}",
+                    Slug = $"post-{i}",
+                    AuthorId = _author.Id,
+                    PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+                },
+                TestContext.Current.CancellationToken);
 
         PaginationQuery pagination = new PaginationQuery(2, 2);
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(),
+            pagination,
+            TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1251,18 +1316,21 @@ public class PostsRepositoryTests : IntegrationTestBase
         // Arrange: 5 posts, page size 2 means page 3 only has 1 remaining result
         for (int i = 0; i < 5; i++)
             await _postsRepository.AddPost(new Post
-            {
-                Title = $"Post {i}",
-                Slug = $"post-{i}",
-                AuthorId = _author.Id,
-                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
-            }, ct: TestContext.Current.CancellationToken);
+                {
+                    Title = $"Post {i}",
+                    Slug = $"post-{i}",
+                    AuthorId = _author.Id,
+                    PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+                },
+                TestContext.Current.CancellationToken);
 
         PaginationQuery pagination = new PaginationQuery(3, 2);
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(),
+            pagination,
+            TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -1276,18 +1344,21 @@ public class PostsRepositoryTests : IntegrationTestBase
         // Arrange
         for (int i = 0; i < 3; i++)
             await _postsRepository.AddPost(new Post
-            {
-                Title = $"Post {i}",
-                Slug = $"post-{i}",
-                AuthorId = _author.Id,
-                PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
-            }, ct: TestContext.Current.CancellationToken);
+                {
+                    Title = $"Post {i}",
+                    Slug = $"post-{i}",
+                    AuthorId = _author.Id,
+                    PublishedAt = DateTimeOffset.UtcNow.AddDays(-i)
+                },
+                TestContext.Current.CancellationToken);
 
         PaginationQuery pagination = new PaginationQuery(3, 2);
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), pagination, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(),
+            pagination,
+            TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().BeEmpty();
@@ -1312,12 +1383,13 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = null
         };
-        await _postsRepository.AddPost(published, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(draft, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(published, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(draft, TestContext.Current.CancellationToken);
 
         // Act: null filter should default to excluding unpublished, no tag filter, default sort
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(null, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(null, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(1);
@@ -1379,11 +1451,11 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
         publishedDocker.Tags.Add(dockerTag);
 
-        await _postsRepository.AddPost(publishedDotnetOlder, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(publishedDotnetNewer, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(author2DotnetPost, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(draftDotnet, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(publishedDocker, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(publishedDotnetOlder, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(publishedDotnetNewer, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(author2DotnetPost, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(draftDotnet, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(publishedDocker, TestContext.Current.CancellationToken);
 
         GetPostsFilterQuery filter = new GetPostsFilterQuery
         {
@@ -1394,8 +1466,9 @@ public class PostsRepositoryTests : IntegrationTestBase
         };
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(filter, null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(filter, null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1421,13 +1494,14 @@ public class PostsRepositoryTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-2)
         };
-        await _postsRepository.AddPost(postWithTwoComments, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithNoComments, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithTwoComments, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithNoComments, TestContext.Current.CancellationToken);
         await AddCommentsToPost(postWithTwoComments.Id, 2);
 
         // Act
-        PagedPostsResult pagedResult = await _postsRepository.GetPosts(new GetPostsFilterQuery(), null, ct: TestContext.Current.CancellationToken);
-        List<Post> result = pagedResult.Posts;
+        PagedPostSummariesResult pagedResult =
+            await _postsRepository.GetPosts(new GetPostsFilterQuery(), null, TestContext.Current.CancellationToken);
+        List<PostSummaryResponse> result = pagedResult.Posts;
 
         // Assert
         result.Should().HaveCount(2);
@@ -1461,12 +1535,13 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "other-post",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(exactMatch, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(suffixedMatch, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(nonMatching, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(exactMatch, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(suffixedMatch, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(nonMatching, TestContext.Current.CancellationToken);
 
         // Act
-        IReadOnlyCollection<string> result = await _postsRepository.GetSlugsStartingWithSlug("post-title", ct: TestContext.Current.CancellationToken);
+        IReadOnlyCollection<string> result =
+            await _postsRepository.GetSlugsStartingWithSlug("post-title", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().HaveCount(2);
@@ -1485,10 +1560,11 @@ public class PostsRepositoryTests : IntegrationTestBase
             Slug = "post-title-extra",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         // Act
-        IReadOnlyCollection<string> result = await _postsRepository.GetSlugsStartingWithSlug("post-titl", ct: TestContext.Current.CancellationToken);
+        IReadOnlyCollection<string> result =
+            await _postsRepository.GetSlugsStartingWithSlug("post-titl", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().BeEmpty();
@@ -1499,44 +1575,20 @@ public class PostsRepositoryTests : IntegrationTestBase
     {
         // Arrange
         await _postsRepository.AddPost(new Post
-        {
-            Title = "Post title",
-            Slug = "post-title",
-            AuthorId = _author.Id
-        }, ct: TestContext.Current.CancellationToken);
+            {
+                Title = "Post title",
+                Slug = "post-title",
+                AuthorId = _author.Id
+            },
+            TestContext.Current.CancellationToken);
 
         // Act
-        IReadOnlyCollection<string> result = await _postsRepository.GetSlugsStartingWithSlug("non-existent", ct: TestContext.Current.CancellationToken);
+        IReadOnlyCollection<string> result =
+            await _postsRepository.GetSlugsStartingWithSlug("non-existent", TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().BeEmpty();
     }
 
     #endregion
-
-    [Fact]
-    public async Task GetPosts_Throws_WhenCancellationIsRequested()
-    {
-        CancellationToken cancelledToken = new CancellationToken(canceled: true);
-
-        Func<Task> act = async () => await _postsRepository.GetPosts(null, null, cancelledToken);
-
-        await act.Should().ThrowAsync<OperationCanceledException>();
-    }
-
-    [Fact]
-    public async Task AddPost_Throws_WhenCancellationIsRequested()
-    {
-        Post post = new Post
-        {
-            Title = "Post title",
-            Slug = "post-title-cancelled",
-            AuthorId = _author.Id
-        };
-        CancellationToken cancelledToken = new CancellationToken(canceled: true);
-
-        Func<Task> act = async () => await _postsRepository.AddPost(post, cancelledToken);
-
-        await act.Should().ThrowAsync<OperationCanceledException>();
-    }
 }

@@ -74,10 +74,9 @@ public class PostsController : ControllerBase
             IncludeUnpublished = canReadDraftPosts && includeUnpublished
         };
 
-        PagedPostsResult result = await _postsService.GetPosts(filterQuery, paginationQuery, ct);
-        List<PostResponse> mappedPosts = result.Posts.Select(p => p.ToPostResponse()).ToList();
+        PagedPostSummariesResult result = await _postsService.GetPosts(filterQuery, paginationQuery, ct);
 
-        return Ok(GetPostsResponse.Create(mappedPosts, result.TotalCount, filterQuery, paginationQuery));
+        return Ok(GetPostsResponse.Create(result.Posts, result.TotalCount, filterQuery, paginationQuery));
     }
 
     /// <summary>
