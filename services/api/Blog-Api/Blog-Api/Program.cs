@@ -36,6 +36,7 @@ app.InstallHealthChecks();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.InstallCors();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
