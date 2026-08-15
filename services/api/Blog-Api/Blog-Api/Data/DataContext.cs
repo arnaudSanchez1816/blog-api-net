@@ -32,6 +32,8 @@ public class DataContext : IdentityDbContext<BlogUser, BlogRole, Guid>
             post.Property(p => p.Slug).HasMaxLength(220);
             post.HasIndex(p => p.Slug).IsUnique();
             post.HasMany(p => p.Tags).WithMany(); // Unidirectional many to many
+            // Add an regular index for published posts
+            post.HasIndex(p => p.PublishedAt).HasFilter("published_at IS NOT NULL");
         });
     }
 
