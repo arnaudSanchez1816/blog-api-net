@@ -4,6 +4,7 @@ using BlogApi.Seeding;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.InstallForwardedHeaders();
 builder.Services.InstallApiVersioning();
 builder.Services.InstallDatabase(builder.Configuration);
 builder.Services.InstallIdentity(builder.Configuration);
@@ -25,6 +26,7 @@ await app.MigrateDatabase();
 
 DatabaseSeedingResult databaseSeedingResult = await app.SeedDatabase();
 
+app.InstallForwardedHeaders();
 app.InstallExceptionHandlers();
 app.InstallScalar(databaseSeedingResult.DevAccessToken);
 app.InstallHealthChecks();
