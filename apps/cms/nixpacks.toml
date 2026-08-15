@@ -1,0 +1,10 @@
+providers = ['node']
+
+[phases.setup]
+nixPkgs = ['...', 'caddy']
+
+[phases.build]
+cmds = ['pnpm --filter cms run build']
+
+[start]
+cmd = 'caddy run --config apps/cms/Caddyfile --adapter caddyfile 2>&1'
