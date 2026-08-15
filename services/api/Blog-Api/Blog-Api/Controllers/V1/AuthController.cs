@@ -3,6 +3,7 @@ using Asp.Versioning;
 using BlogApi.Authentication;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
+using BlogApi.Installers;
 using BlogApi.Mapping;
 using BlogApi.Routes.V1;
 using BlogApi.Services.Auth;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace BlogApi.Controllers.V1;
 
@@ -36,6 +38,7 @@ public class AuthController : ControllerBase
     /// <response code="400"></response>
     /// <returns>A valid access token</returns>
     [HttpPost(ApiRoutes.Auth.Login)]
+    [EnableRateLimiting(RateLimiterInstaller.AuthRateLimiterPolicy)]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
         AuthenticationResult result = await _authService.Login(request.Email, request.Password, ct);

@@ -8,6 +8,7 @@ builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
 
 // Add services to the container.
 builder.Services.InstallForwardedHeaders();
+builder.Services.InstallRateLimiter(builder.Configuration);
 builder.Services.InstallApiVersioning();
 builder.Services.InstallDatabase(builder.Configuration);
 builder.Services.InstallIdentity(builder.Configuration);
@@ -36,6 +37,7 @@ app.InstallHealthChecks();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.InstallCors();
+app.InstallRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
