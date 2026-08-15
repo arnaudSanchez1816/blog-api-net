@@ -1,5 +1,6 @@
 using System.Text.Json;
 using BlogApi.Authentication;
+using BlogApi.Authorization;
 using BlogApi.Controllers.V1;
 using BlogApi.Options;
 using BlogApi.Transformers;
@@ -46,14 +47,18 @@ public static class OpenApiInstaller
                     return Task.CompletedTask;
                 });
 
-                // Mark endpoints with authorize attribute as secured
+                // Mark endpoints with authorize attribute as secured unless there are only authorize
+                // attributes that are permission checks that look for a permission that is granted to anonymous users
                 options.AddOperationTransformer((operation, context, _) =>
                 {
                     List<AuthorizeAttribute> authorizeAttributes = context.Description.ActionDescriptor
                         .EndpointMetadata
                         .OfType<AuthorizeAttribute>()
                         .ToList();
-                    if (authorizeAttributes.Count > 0)
+                    bool requiresAuth = authorizeAttributes.Any(att =>
+                        att is not HasPermissionAttribute hasPermission ||
+                        !Roles.Permissions.AnonymousPermissions.Contains(hasPermission.Permission));
+                    if (requiresAuth)
                     {
                         operation.Security = [];
 
