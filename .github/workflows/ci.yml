@@ -31,4 +31,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Dokploy deploy
-        run: curl -fsS -X POST "${{ secrets.DOKPLOY_DEPLOY_WEBHOOK }}"
+        run: |
+          curl -fsS -X POST "https://dokploy.asanchez1816.cloud/api/compose.deploy" \
+            -H "accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${{ secrets.DOKPLOY_API_TOKEN }}" \
+            -d '{"composeId": "${{ secrets.DOKPLOY_API_COMPOSE_ID }}"}'
