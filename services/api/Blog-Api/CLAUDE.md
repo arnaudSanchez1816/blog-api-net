@@ -71,6 +71,13 @@ pair is interface-first (`IPostsService`/`PostsService`, `IPostsRepository`/`Pos
 registered in `ServicesInstaller`/`RepositoriesInstaller`. `Blog-Api/Mapping/*MappingExtensions.cs` holds
 domain-entity-to-contract mapping as extension methods (no AutoMapper).
 
+  Known tradeoff: the repository layer is a thin wrapper over EF Core (itself already a repository/unit-of-work
+  implementation), and some repositories (`TagsService`/`CommentsService` in particular) forward to it 1:1
+  with no added behavior. Each repository method also calls its own `SaveChangesAsync`, so there's no way to
+  make two writes atomic across repositories. This is a deliberate, acknowledged choice from building the
+  pattern out for the first time on this project, not an oversight — kept as-is rather than collapsed, since
+  removing it isn't worth the churn at this stage. Don't "fix" this without being asked.
+
 - **Routes**: centralized as string constants in `Blog-Api/Routes/V1/ApiRoutes.cs` (e.g.
   `ApiRoutes.Posts.Base`), rather than inline literals on controller attributes. All routes are versioned via
   `api/v{version:apiVersion}/...` (`Asp.Versioning`, configured in `VersioningInstaller`, URL-segment
