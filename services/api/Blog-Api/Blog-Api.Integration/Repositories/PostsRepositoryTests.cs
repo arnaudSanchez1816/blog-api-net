@@ -1513,4 +1513,30 @@ public class PostsRepositoryTests : IntegrationTestBase
     }
 
     #endregion
+
+    [Fact]
+    public async Task GetPosts_Throws_WhenCancellationIsRequested()
+    {
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _postsRepository.GetPosts(null, null, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task AddPost_Throws_WhenCancellationIsRequested()
+    {
+        Post post = new Post
+        {
+            Title = "Post title",
+            Slug = "post-title-cancelled",
+            AuthorId = _author.Id
+        };
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _postsRepository.AddPost(post, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
 }

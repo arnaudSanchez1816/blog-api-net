@@ -272,4 +272,31 @@ public class CommentsRepositoryTests : IntegrationTestBase
         Func<Task> act = async () => await _commentsRepository.DeleteComment(comment);
         await act.Should().ThrowAsync<DbUpdateException>();
     }
+
+    [Fact]
+    public async Task GetAllCommentsWithPostId_Throws_WhenCancellationIsRequested()
+    {
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _commentsRepository.GetAllCommentsWithPostId(_post.Id, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task AddComment_Throws_WhenCancellationIsRequested()
+    {
+        Comment comment = new Comment
+        {
+            Body = "Comment body",
+            Username = "Username",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = _post.Id
+        };
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _commentsRepository.AddComment(comment, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
 }

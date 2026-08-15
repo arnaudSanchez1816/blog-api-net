@@ -396,4 +396,25 @@ public class TagsRepositoryTests : IntegrationTestBase
 
         await act.Should().ThrowAsync<DbUpdateException>();
     }
+
+    [Fact]
+    public async Task GetAllTags_Throws_WhenCancellationIsRequested()
+    {
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _tagsRepository.GetAllTags(cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task AddTag_Throws_WhenCancellationIsRequested()
+    {
+        Tag tag = new Tag { Name = "Tag", Slug = "tag" };
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _tagsRepository.AddTag(tag, cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
 }

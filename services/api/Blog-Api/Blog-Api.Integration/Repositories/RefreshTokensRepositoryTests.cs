@@ -313,4 +313,25 @@ public class RefreshTokensRepositoryTests : IntegrationTestBase
     }
 
     #endregion
+
+    [Fact]
+    public async Task GetToken_Throws_WhenCancellationIsRequested()
+    {
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _refreshTokensRepository.GetToken("token", ct: cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task AddToken_Throws_WhenCancellationIsRequested()
+    {
+        RefreshToken token = MakeToken("cancelled-token", DateTimeOffset.UtcNow.AddMinutes(1));
+        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+
+        Func<Task> act = async () => await _refreshTokensRepository.AddToken(token, ct: cancelledToken);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+    }
 }
