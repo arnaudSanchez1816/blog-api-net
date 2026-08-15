@@ -13,51 +13,52 @@ public class TagsRepository : ITagsRepository
         _context = context;
     }
 
-    public async Task<List<Tag>> GetAllTags()
+    public async Task<List<Tag>> GetAllTags(CancellationToken ct = default)
     {
-        return await _context.Tags.ToListAsync();
+        return await _context.Tags.ToListAsync(ct);
     }
 
-    public async Task<Tag?> GetTagBySlug(string slug)
+    public async Task<Tag?> GetTagBySlug(string slug, CancellationToken ct = default)
     {
-        return await _context.Tags.SingleOrDefaultAsync(x => x.Slug == slug);
+        return await _context.Tags.SingleOrDefaultAsync(x => x.Slug == slug, ct);
     }
 
-    public async Task<Tag?> GetTagById(Guid id)
+    public async Task<Tag?> GetTagById(Guid id, CancellationToken ct = default)
     {
-        return await _context.Tags.SingleOrDefaultAsync(x => x.Id == id);
+        return await _context.Tags.SingleOrDefaultAsync(x => x.Id == id, ct);
     }
 
-    public async Task<List<Tag>> GetAllTagsBySlug(IReadOnlyCollection<string> slugs)
+    public async Task<List<Tag>> GetAllTagsBySlug(IReadOnlyCollection<string> slugs, CancellationToken ct = default)
     {
-        return await _context.Tags.Where(x => slugs.Contains(x.Slug)).ToListAsync();
+        return await _context.Tags.Where(x => slugs.Contains(x.Slug)).ToListAsync(ct);
     }
 
-    public async Task<List<Tag>> GetAllTagsById(IReadOnlyCollection<Guid> ids)
+    public async Task<List<Tag>> GetAllTagsById(IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
     {
-        return await _context.Tags.Where(x => ids.Contains(x.Id)).ToListAsync();
+        return await _context.Tags.Where(x => ids.Contains(x.Id)).ToListAsync(ct);
     }
 
-    public async Task<List<Tag>> GetAllTagsByIdOrSlug(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs)
+    public async Task<List<Tag>> GetAllTagsByIdOrSlug(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs,
+        CancellationToken ct = default)
     {
-        return await _context.Tags.Where(x => slugs.Contains(x.Slug) || ids.Contains(x.Id)).ToListAsync();
+        return await _context.Tags.Where(x => slugs.Contains(x.Slug) || ids.Contains(x.Id)).ToListAsync(ct);
     }
 
-    public async Task AddTag(Tag newTag)
+    public async Task AddTag(Tag newTag, CancellationToken ct = default)
     {
         _context.Tags.Add(newTag);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
-    public async Task UpdateTag(Tag tagToUpdate)
+    public async Task UpdateTag(Tag tagToUpdate, CancellationToken ct = default)
     {
         _context.Tags.Update(tagToUpdate);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteTag(Tag tagToDelete)
+    public async Task DeleteTag(Tag tagToDelete, CancellationToken ct = default)
     {
         _context.Tags.Remove(tagToDelete);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 }

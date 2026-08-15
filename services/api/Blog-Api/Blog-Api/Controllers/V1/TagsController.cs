@@ -38,7 +38,7 @@ public class TagsController : ControllerBase
     /// <returns>A list of all tags in the application</returns>
     [HttpGet(ApiRoutes.Tags.GetAll)]
     [HasPermission(Permissions.Tags.Read)]
-    public async Task<ActionResult<GetTagsResponse>> GetAllTags()
+    public async Task<ActionResult<GetTagsResponse>> GetAllTags(CancellationToken ct)
     {
         List<Tag> tags = await _tagsService.GetAllTags();
 

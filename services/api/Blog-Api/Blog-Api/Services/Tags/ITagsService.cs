@@ -4,14 +4,16 @@ namespace BlogApi.Services.Tags;
 
 public interface ITagsService
 {
-    public Task<Tag?> GetTag(Guid id);
-    public Task<Tag?> GetTag(string slug);
-    public Task<List<Tag>> GetAllTags();
-    public Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids);
-    public Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs);
-    public Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs);
+    public Task<Tag?> GetTag(Guid id, CancellationToken ct = default);
+    public Task<Tag?> GetTag(string slug, CancellationToken ct = default);
+    public Task<List<Tag>> GetAllTags(CancellationToken ct = default);
+    public Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, CancellationToken ct = default);
+    public Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs, CancellationToken ct = default);
 
-    public Task<Tag> CreateTag(Tag tag);
-    public Task DeleteTag(Tag tag);
-    public Task UpdateTag(Tag tag, string? name, string? slug);
+    public Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs,
+        CancellationToken ct = default);
+
+    public Task<Tag> CreateTag(Tag tag, CancellationToken ct = default);
+    public Task DeleteTag(Tag tag, CancellationToken ct = default);
+    public Task UpdateTag(Tag tag, string? name, string? slug, CancellationToken ct = default);
 }

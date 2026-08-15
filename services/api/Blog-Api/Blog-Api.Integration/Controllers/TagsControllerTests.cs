@@ -56,8 +56,8 @@ public class TagsControllerTests : IntegrationTestBase
     {
         Tag tag1 = new Tag { Name = "tag1", Slug = "tag-1-slug" };
         Tag tag2 = new Tag { Name = "tag2", Slug = "tag-2-slug" };
-        await _tagsRepository.AddTag(tag1);
-        await _tagsRepository.AddTag(tag2);
+        await _tagsRepository.AddTag(tag1, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag2, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync("api/v1.0/tags", TestContext.Current.CancellationToken);
@@ -82,8 +82,8 @@ public class TagsControllerTests : IntegrationTestBase
 
         Tag tag1 = new Tag { Name = "tag1", Slug = "tag-1-slug" };
         Tag tag2 = new Tag { Name = "tag2", Slug = "tag-2-slug" };
-        await _tagsRepository.AddTag(tag1);
-        await _tagsRepository.AddTag(tag2);
+        await _tagsRepository.AddTag(tag1, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag2, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/tags", bearerToken, TestContext.Current.CancellationToken);
@@ -99,7 +99,7 @@ public class TagsControllerTests : IntegrationTestBase
     public async Task GetBySlug_ReturnsTag_WhenTagExists()
     {
         Tag tag = new Tag { Name = "DotNet", Slug = "dotnet" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/tags/{tag.Slug}", TestContext.Current.CancellationToken);
@@ -150,7 +150,7 @@ public class TagsControllerTests : IntegrationTestBase
     public async Task GetById_ReturnsTag_WhenTagExists()
     {
         Tag tag = new Tag { Name = "DotNet", Slug = "dotnet" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/tags/id/{tag.Id}", TestContext.Current.CancellationToken);
@@ -314,7 +314,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Create]);
         Tag existingTag = new Tag { Name = "Existing", Slug = "existing-slug" };
-        await _tagsRepository.AddTag(existingTag);
+        await _tagsRepository.AddTag(existingTag, TestContext.Current.CancellationToken);
         CreateTagRequest request = new CreateTagRequest { Name = "New tag", Slug = existingTag.Slug };
 
         HttpResponseMessage response =
@@ -454,7 +454,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = "TagName", Slug = UnicodeSlug };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -470,7 +470,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = "UpdatedTag", Slug = "updated-tag-slug" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -500,7 +500,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = NameOverMaxLength, Slug = "updated-tag-slug" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -516,7 +516,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = "TagName", Slug = SlugOverMaxLength };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -532,7 +532,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = "TagName", Slug = InvalidSlug };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -548,7 +548,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "OriginalName", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = null, Slug = "updated-tag-slug" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -573,7 +573,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "OriginalName", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = "UpdatedName", Slug = null };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -598,7 +598,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag tag = new Tag { Name = "OriginalName", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
             new UpdateTagRequest(),
@@ -642,8 +642,8 @@ public class TagsControllerTests : IntegrationTestBase
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Update]);
         Tag existingTag = new Tag { Name = "Existing", Slug = "existing-slug" };
         Tag otherTag = new Tag { Name = "Other", Slug = "other-tag" };
-        await _tagsRepository.AddTag(existingTag);
-        await _tagsRepository.AddTag(otherTag);
+        await _tagsRepository.AddTag(existingTag, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(otherTag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Slug = otherTag.Slug };
 
         HttpResponseMessage response =
@@ -673,7 +673,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Read]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
         UpdateTagRequest request = new UpdateTagRequest { Name = "TagName", Slug = "new-slug" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/tags/{tag.Slug}",
@@ -693,7 +693,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Delete]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-to-delete" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync($"api/v1.0/tags/{tag.Slug}",
             bearerToken,
@@ -749,7 +749,7 @@ public class TagsControllerTests : IntegrationTestBase
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Tags.Read]);
         Tag tag = new Tag { Name = "Tag", Slug = "tag-slug" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync($"api/v1.0/tags/{tag.Slug}",
             bearerToken,

@@ -33,7 +33,7 @@ public class TagsServiceTests : IDisposable
             Name = name,
             Slug = slug
         };
-        Tag createdTag = await _tagsService.CreateTag(newTag);
+        Tag createdTag = await _tagsService.CreateTag(newTag, TestContext.Current.CancellationToken);
 
         createdTag.Name.Should().Be(name);
         createdTag.Slug.Should().Be(slug);
@@ -51,7 +51,7 @@ public class TagsServiceTests : IDisposable
             Slug = originalSlug
         };
 
-        await _tagsService.UpdateTag(tag, null, "new-slug");
+        await _tagsService.UpdateTag(tag, null, "new-slug", TestContext.Current.CancellationToken);
 
         tag.Name.Should().Be(originalName);
         tag.Slug.Should().Be("new-slug");
@@ -69,7 +69,7 @@ public class TagsServiceTests : IDisposable
             Slug = originalSlug
         };
 
-        await _tagsService.UpdateTag(tag, "New name", null);
+        await _tagsService.UpdateTag(tag, "New name", null, TestContext.Current.CancellationToken);
 
         tag.Name.Should().Be("New name");
         tag.Slug.Should().Be(originalSlug);
@@ -87,7 +87,7 @@ public class TagsServiceTests : IDisposable
             Slug = originalSlug
         };
 
-        await _tagsService.UpdateTag(tag, "New name", "new-slug");
+        await _tagsService.UpdateTag(tag, "New name", "new-slug", TestContext.Current.CancellationToken);
 
         tag.Name.Should().Be("New name");
         tag.Slug.Should().Be("new-slug");
@@ -105,7 +105,7 @@ public class TagsServiceTests : IDisposable
             Slug = originalSlug
         };
 
-        await _tagsService.UpdateTag(tag, null, null);
+        await _tagsService.UpdateTag(tag, null, null, TestContext.Current.CancellationToken);
 
         tag.Name.Should().Be(originalName);
         tag.Slug.Should().Be(originalSlug);

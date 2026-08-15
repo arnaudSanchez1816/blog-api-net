@@ -12,42 +12,43 @@ public class TagsService : ITagsService
         _tagsRepository = tagsRepository;
     }
 
-    public async Task<Tag?> GetTag(Guid id)
+    public async Task<Tag?> GetTag(Guid id, CancellationToken ct = default)
     {
         return await _tagsRepository.GetTagById(id);
     }
 
-    public async Task<Tag?> GetTag(string slug)
+    public async Task<Tag?> GetTag(string slug, CancellationToken ct = default)
     {
         return await _tagsRepository.GetTagBySlug(slug);
     }
 
-    public async Task<List<Tag>> GetAllTags()
+    public async Task<List<Tag>> GetAllTags(CancellationToken ct = default)
     {
         return await _tagsRepository.GetAllTags();
     }
 
-    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids)
+    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
     {
         return await _tagsRepository.GetAllTagsById(ids);
     }
 
-    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs)
+    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs, CancellationToken ct = default)
     {
         return await _tagsRepository.GetAllTagsBySlug(slugs);
     }
 
-    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs)
+    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs,
+        CancellationToken ct = default)
     {
         return await _tagsRepository.GetAllTagsByIdOrSlug(ids, slugs);
     }
 
-    public async Task DeleteTag(Tag tag)
+    public async Task DeleteTag(Tag tag, CancellationToken ct = default)
     {
         await _tagsRepository.DeleteTag(tag);
     }
 
-    public async Task UpdateTag(Tag tag, string? name, string? slug)
+    public async Task UpdateTag(Tag tag, string? name, string? slug, CancellationToken ct = default)
     {
         if (name is null && slug is null)
         {
@@ -67,7 +68,7 @@ public class TagsService : ITagsService
         await _tagsRepository.UpdateTag(tag);
     }
 
-    public async Task<Tag> CreateTag(Tag tag)
+    public async Task<Tag> CreateTag(Tag tag, CancellationToken ct = default)
     {
         await _tagsRepository.AddTag(tag);
         return tag;
