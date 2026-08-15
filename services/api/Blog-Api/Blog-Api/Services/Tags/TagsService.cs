@@ -27,20 +27,9 @@ public class TagsService : ITagsService
         return await _tagsRepository.GetAllTags(ct);
     }
 
-    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
-    {
-        return await _tagsRepository.GetAllTagsById(ids, ct);
-    }
-
     public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs, CancellationToken ct = default)
     {
         return await _tagsRepository.GetAllTagsBySlug(slugs, ct);
-    }
-
-    public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs,
-        CancellationToken ct = default)
-    {
-        return await _tagsRepository.GetAllTagsByIdOrSlug(ids, slugs, ct);
     }
 
     public async Task DeleteTag(Tag tag, CancellationToken ct = default)

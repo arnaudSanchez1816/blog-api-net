@@ -33,17 +33,6 @@ public class TagsRepository : ITagsRepository
         return await _context.Tags.Where(x => slugs.Contains(x.Slug)).ToListAsync(ct);
     }
 
-    public async Task<List<Tag>> GetAllTagsById(IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
-    {
-        return await _context.Tags.Where(x => ids.Contains(x.Id)).ToListAsync(ct);
-    }
-
-    public async Task<List<Tag>> GetAllTagsByIdOrSlug(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs,
-        CancellationToken ct = default)
-    {
-        return await _context.Tags.Where(x => slugs.Contains(x.Slug) || ids.Contains(x.Id)).ToListAsync(ct);
-    }
-
     public async Task AddTag(Tag newTag, CancellationToken ct = default)
     {
         _context.Tags.Add(newTag);

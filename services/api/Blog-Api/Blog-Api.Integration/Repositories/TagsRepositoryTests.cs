@@ -174,28 +174,6 @@ public class TagsRepositoryTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetAllTagsById_ReturnsMatchingTags_ExcludesNonMatching()
-    {
-        // Arrange
-        Tag tag1 = new Tag { Name = "Dotnet", Slug = "dotnet" };
-        Tag tag2 = new Tag { Name = "Asp Net core", Slug = "asp" };
-        Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(tag1, TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(tag2, TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(tag3, TestContext.Current.CancellationToken);
-
-        // Act
-        List<Tag> result =
-            await _tagsRepository.GetAllTagsById([tag1.Id, tag2.Id], TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Should().HaveCount(2);
-        result.Should().Contain(t => t.Id == tag1.Id);
-        result.Should().Contain(t => t.Id == tag2.Id);
-        result.Should().NotContain(t => t.Id == tag3.Id);
-    }
-
-    [Fact]
     public async Task GetAllTagsBySlug_ReturnsMatchingTags_ExcludesNonMatching()
     {
         // Arrange
@@ -218,24 +196,6 @@ public class TagsRepositoryTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetAllTagsById_ReturnsEmpty_WhenNoMatchesFound()
-    {
-        // Arrange
-        await _tagsRepository.AddTag(new Tag { Name = "Dotnet", Slug = "dotnet" },
-            TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(new Tag { Name = "Asp Net core", Slug = "asp" },
-            TestContext.Current.CancellationToken);
-
-        // Act
-        List<Tag> result =
-            await _tagsRepository.GetAllTagsById([Guid.NewGuid(), Guid.NewGuid()],
-                TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
     public async Task GetAllTagsBySlug_ReturnsEmpty_WhenNoMatchesFound()
     {
         // Arrange
@@ -247,22 +207,6 @@ public class TagsRepositoryTests : IntegrationTestBase
         // Act
         List<Tag> result = await _tagsRepository.GetAllTagsBySlug(["non-existent", "also-non-existent"],
             TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetAllTagsById_ReturnsEmpty_WhenInputCollectionIsEmpty()
-    {
-        // Arrange
-        await _tagsRepository.AddTag(new Tag { Name = "Dotnet", Slug = "dotnet" },
-            TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(new Tag { Name = "Asp Net core", Slug = "asp" },
-            TestContext.Current.CancellationToken);
-
-        // Act
-        List<Tag> result = await _tagsRepository.GetAllTagsById([], TestContext.Current.CancellationToken);
 
         // Assert
         result.Should().BeEmpty();
@@ -282,70 +226,6 @@ public class TagsRepositoryTests : IntegrationTestBase
 
         // Assert
         result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetAllTagsById_ReturnsEmpty_WhenThereIsNoTags()
-    {
-        List<Tag> result =
-            await _tagsRepository.GetAllTagsById([Guid.NewGuid()], TestContext.Current.CancellationToken);
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetAllTagsByIdOrSlug_ReturnsEmpty_WhenInputCollectionIsEmpty()
-    {
-        // Arrange
-        await _tagsRepository.AddTag(new Tag { Name = "Dotnet", Slug = "dotnet" },
-            TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(new Tag { Name = "Asp Net core", Slug = "asp" },
-            TestContext.Current.CancellationToken);
-
-        // Act
-        List<Tag> result = await _tagsRepository.GetAllTagsByIdOrSlug([], [], TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetAllTagsByIdOrSlug_ReturnsEmpty_WhenNoMatchFound()
-    {
-        // Arrange
-        await _tagsRepository.AddTag(new Tag { Name = "Dotnet", Slug = "dotnet" },
-            TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(new Tag { Name = "Asp Net core", Slug = "asp" },
-            TestContext.Current.CancellationToken);
-
-        // Act
-        List<Tag> result = await _tagsRepository.GetAllTagsByIdOrSlug([Guid.NewGuid()],
-            ["random-slug"],
-            TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task GetAllTagsByIdOrSlug_ReturnsMatchingTags_ExcludesNonMatching()
-    {
-        // Arrange
-        Tag tag1 = new Tag { Name = "Dotnet", Slug = "dotnet" };
-        await _tagsRepository.AddTag(tag1, TestContext.Current.CancellationToken);
-        Tag tag2 = new Tag { Name = "Asp Net core", Slug = "asp" };
-        await _tagsRepository.AddTag(tag2, TestContext.Current.CancellationToken);
-        Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(tag3, TestContext.Current.CancellationToken);
-
-        // Act
-        List<Tag> result =
-            await _tagsRepository.GetAllTagsByIdOrSlug([tag1.Id], [tag2.Slug], TestContext.Current.CancellationToken);
-
-        // Assert
-        result.Should().HaveCount(2);
-        result.Should().Contain(t => t.Slug == "dotnet");
-        result.Should().Contain(t => t.Slug == "asp");
-        result.Should().NotContain(t => t.Slug == "docker");
     }
 
     [Fact]
@@ -400,7 +280,7 @@ public class TagsRepositoryTests : IntegrationTestBase
     [Fact]
     public async Task GetAllTags_Throws_WhenCancellationIsRequested()
     {
-        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+        CancellationToken cancelledToken = new CancellationToken(true);
 
         Func<Task> act = async () => await _tagsRepository.GetAllTags(cancelledToken);
 
@@ -411,7 +291,7 @@ public class TagsRepositoryTests : IntegrationTestBase
     public async Task AddTag_Throws_WhenCancellationIsRequested()
     {
         Tag tag = new Tag { Name = "Tag", Slug = "tag" };
-        CancellationToken cancelledToken = new CancellationToken(canceled: true);
+        CancellationToken cancelledToken = new CancellationToken(true);
 
         Func<Task> act = async () => await _tagsRepository.AddTag(tag, cancelledToken);
 
