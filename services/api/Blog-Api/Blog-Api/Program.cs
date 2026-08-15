@@ -3,6 +3,9 @@ using BlogApi.Seeding;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+// Setting this to false in appsettings does not work
+builder.WebHost.ConfigureKestrel(options => options.AddServerHeader = false);
+
 // Add services to the container.
 builder.Services.InstallForwardedHeaders();
 builder.Services.InstallApiVersioning();
