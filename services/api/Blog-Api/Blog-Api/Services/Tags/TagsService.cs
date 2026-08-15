@@ -14,38 +14,38 @@ public class TagsService : ITagsService
 
     public async Task<Tag?> GetTag(Guid id, CancellationToken ct = default)
     {
-        return await _tagsRepository.GetTagById(id);
+        return await _tagsRepository.GetTagById(id, ct);
     }
 
     public async Task<Tag?> GetTag(string slug, CancellationToken ct = default)
     {
-        return await _tagsRepository.GetTagBySlug(slug);
+        return await _tagsRepository.GetTagBySlug(slug, ct);
     }
 
     public async Task<List<Tag>> GetAllTags(CancellationToken ct = default)
     {
-        return await _tagsRepository.GetAllTags();
+        return await _tagsRepository.GetAllTags(ct);
     }
 
     public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, CancellationToken ct = default)
     {
-        return await _tagsRepository.GetAllTagsById(ids);
+        return await _tagsRepository.GetAllTagsById(ids, ct);
     }
 
     public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<string> slugs, CancellationToken ct = default)
     {
-        return await _tagsRepository.GetAllTagsBySlug(slugs);
+        return await _tagsRepository.GetAllTagsBySlug(slugs, ct);
     }
 
     public async Task<List<Tag>> GetAllTags(IReadOnlyCollection<Guid> ids, IReadOnlyCollection<string> slugs,
         CancellationToken ct = default)
     {
-        return await _tagsRepository.GetAllTagsByIdOrSlug(ids, slugs);
+        return await _tagsRepository.GetAllTagsByIdOrSlug(ids, slugs, ct);
     }
 
     public async Task DeleteTag(Tag tag, CancellationToken ct = default)
     {
-        await _tagsRepository.DeleteTag(tag);
+        await _tagsRepository.DeleteTag(tag, ct);
     }
 
     public async Task UpdateTag(Tag tag, string? name, string? slug, CancellationToken ct = default)
@@ -65,12 +65,12 @@ public class TagsService : ITagsService
             tag.Slug = slug;
         }
 
-        await _tagsRepository.UpdateTag(tag);
+        await _tagsRepository.UpdateTag(tag, ct);
     }
 
     public async Task<Tag> CreateTag(Tag tag, CancellationToken ct = default)
     {
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, ct);
         return tag;
     }
 }
