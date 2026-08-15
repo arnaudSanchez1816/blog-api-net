@@ -1,0 +1,22 @@
+name: blog-api-net-dockploy
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Blog-Api/Dockerfile
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - AppAuthenticationOptions__JwtAccessSecret=${JWT_ACCESS_SECRET}
+      - AppAuthenticationOptions__JwtIssuerUri=${JWT_ISSUER_URI}
+      - AppAuthenticationOptions__JwtAudienceUri=${JWT_AUDIENCE_URI}
+      - DatabaseSeedingOptions__Enabled=${DATABASE_SEEDING_ENABLED}
+      - DatabaseSeedingOptions__AdminName=${DATABASE_SEEDING_ADMIN_NAME}
+      - DatabaseSeedingOptions__AdminEmail=${DATABASE_SEEDING_ADMIN_EMAIL}
+      - DatabaseSeedingOptions__AdminPassword=${DATABASE_SEEDING_ADMIN_PASSWORD}
+    volumes:
+      - dataprotection-keys:/home/app/keys
+volumes:
+  dataprotection-keys:
