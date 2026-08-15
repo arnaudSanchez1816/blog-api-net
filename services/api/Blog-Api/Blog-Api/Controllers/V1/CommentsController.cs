@@ -95,6 +95,6 @@ public class CommentsController : ControllerBase
         }
 
         await _commentsService.DeleteComment(comment);
-        return Ok(comment);
+        return Ok(comment.ToCommentResponse());
     }
 }
