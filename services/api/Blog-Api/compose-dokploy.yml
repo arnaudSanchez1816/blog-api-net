@@ -9,6 +9,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - OpenApiOptions__Enable=${OPEN_API_ENABLED}
       - AppAuthenticationOptions__JwtAccessSecret=${JWT_ACCESS_SECRET}
       - AppAuthenticationOptions__JwtIssuerUri=${JWT_ISSUER_URI}
       - AppAuthenticationOptions__JwtAudienceUri=${JWT_AUDIENCE_URI}
@@ -16,6 +17,8 @@ services:
       - DatabaseSeedingOptions__AdminName=${DATABASE_SEEDING_ADMIN_NAME}
       - DatabaseSeedingOptions__AdminEmail=${DATABASE_SEEDING_ADMIN_EMAIL}
       - DatabaseSeedingOptions__AdminPassword=${DATABASE_SEEDING_ADMIN_PASSWORD}
+      - CorsOptions__AllowedOrigins__0=${WEB_ORIGIN}
+      - CorsOptions__AllowedOrigins__1=${CMS_ORIGIN}
     volumes:
       - dataprotection-keys:/home/app/keys
 volumes:
