@@ -1,5 +1,5 @@
 {
-    "name": "blog-api-spring",
+    "name": "blog-api-net",
     "private": true,
     "scripts": {
         "build": "turbo run build",
