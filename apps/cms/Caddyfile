@@ -1,6 +1,6 @@
 :{$PORT}
 
-root * apps/web/dist
+root * apps/cms/dist
 encode gzip
 file_server
 try_files {path} /index.html
