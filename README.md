@@ -48,7 +48,7 @@ This is a reimplementation of the back-end API of my already existing [Node.js/E
 
 ### Content management system (post editor)
 
-<!-- TODO: add CMS post-edit screenshot -->
+<img width="1301" height="897" alt="cms" src="https://github.com/user-attachments/assets/9f11ace1-4821-4277-bdee-2b75230a4968" />
 
 ## Prerequisites
 
