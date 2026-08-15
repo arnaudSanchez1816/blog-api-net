@@ -95,7 +95,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string email = "admin@email.com";
         const string password = "Password1234";
-        AuthenticationResult registerResult = await _authService.Register(username, email, password);
+        AuthenticationResult registerResult = await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         LoginRequest request = new LoginRequest
         {
@@ -121,7 +121,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string email = "admin@email.com";
         const string password = "Password1234";
-        await _authService.Register(username, email, password);
+        await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         LoginRequest request = new LoginRequest
         {
@@ -159,7 +159,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string password = "Password1234";
         const string email = "admin@email.com";
-        await _authService.Register(username, email, password);
+        await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         LoginRequest request = new LoginRequest
         {
@@ -190,7 +190,7 @@ public class AuthControllerTests : IntegrationTestBase
     {
         const string username = "admin";
         const string password = "Password1234";
-        await _authService.Register(username, "admin@email.com", password);
+        await _authService.Register(username, "admin@email.com", password, ct: TestContext.Current.CancellationToken);
 
         LoginRequest request = new LoginRequest
         {
@@ -209,7 +209,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string email = "admin@email.com";
         const string password = "Password1234";
-        await _authService.Register(username, email, password);
+        await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.PostAsJsonAsync("api/v1/auth/login",
@@ -225,7 +225,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string password = "Password1234";
         const string email = "admin@email.com";
-        await _authService.Register(username, email, password);
+        await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         LoginRequest request = new LoginRequest
         {
@@ -244,7 +244,7 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string password = "Password1234";
         const string email = "admin@email.com";
-        await _authService.Register(username, email, password);
+        await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.PostAsJsonAsync("api/v1/auth/login", new { email }, TestContext.Current.CancellationToken);
@@ -299,7 +299,7 @@ public class AuthControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        RefreshToken? refreshToken = await _tokensService.GetRefreshToken(decodedToken);
+        RefreshToken? refreshToken = await _tokensService.GetRefreshToken(decodedToken, ct: TestContext.Current.CancellationToken);
         refreshToken.Should().NotBeNull();
         refreshToken.Invalidated.Should().BeTrue();
         refreshToken.IsActive(Factory.TimeProvider.GetUtcNow()).Should().BeFalse();
@@ -424,7 +424,7 @@ public class AuthControllerTests : IntegrationTestBase
         (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
         // Change Token expiration date manually (because there is no setter)
         string decodedToken = Uri.UnescapeDataString(refreshTokenCookieValue);
-        RefreshToken? token = await _tokensService.GetRefreshToken(decodedToken);
+        RefreshToken? token = await _tokensService.GetRefreshToken(decodedToken, ct: TestContext.Current.CancellationToken);
         token.Should().NotBeNull();
         _context.Entry(token).Property(x => x.ExpirationDate).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-1);
         await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -517,7 +517,7 @@ public class AuthControllerTests : IntegrationTestBase
         string secondChildToken = ExtractRefreshTokenCookieValue(responses[1]);
         firstChildToken.Should().Be(secondChildToken);
 
-        RefreshToken? originalToken = await _tokensService.GetRefreshToken(decodedOriginalToken);
+        RefreshToken? originalToken = await _tokensService.GetRefreshToken(decodedOriginalToken, ct: TestContext.Current.CancellationToken);
         originalToken.Should().NotBeNull();
         originalToken.ReplacedByToken.Should().NotBeNull();
         originalToken.ReplacedByToken!.Token.Should().Be(Uri.UnescapeDataString(firstChildToken));

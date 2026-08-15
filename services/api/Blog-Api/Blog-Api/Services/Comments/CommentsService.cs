@@ -12,17 +12,17 @@ public class CommentsService : ICommentsService
         _commentsRepository = commentsRepository;
     }
 
-    public async Task<Comment?> GetCommentById(Guid id)
+    public async Task<Comment?> GetCommentById(Guid id, CancellationToken ct = default)
     {
-        return await _commentsRepository.GetCommentById(id);
+        return await _commentsRepository.GetCommentById(id, ct);
     }
 
-    public async Task<List<Comment>> GetAllCommentsWithPostId(Guid postId)
+    public async Task<List<Comment>> GetAllCommentsWithPostId(Guid postId, CancellationToken ct = default)
     {
-        return await _commentsRepository.GetAllCommentsWithPostId(postId);
+        return await _commentsRepository.GetAllCommentsWithPostId(postId, ct);
     }
 
-    public async Task<Comment> CreateComment(string username, string body, Guid postId)
+    public async Task<Comment> CreateComment(string username, string body, Guid postId, CancellationToken ct = default)
     {
         Comment newComment = new Comment
         {
@@ -32,16 +32,16 @@ public class CommentsService : ICommentsService
             PostId = postId
         };
 
-        await _commentsRepository.AddComment(newComment);
+        await _commentsRepository.AddComment(newComment, ct);
         return newComment;
     }
 
-    public async Task DeleteComment(Comment comment)
+    public async Task DeleteComment(Comment comment, CancellationToken ct = default)
     {
-        await _commentsRepository.DeleteComment(comment);
+        await _commentsRepository.DeleteComment(comment, ct);
     }
 
-    public async Task UpdateComment(Comment comment, string? username, string? body)
+    public async Task UpdateComment(Comment comment, string? username, string? body, CancellationToken ct = default)
     {
         if (username is null && body is null)
         {
@@ -58,6 +58,6 @@ public class CommentsService : ICommentsService
             comment.Body = body;
         }
 
-        await _commentsRepository.UpdateComment(comment);
+        await _commentsRepository.UpdateComment(comment, ct);
     }
 }

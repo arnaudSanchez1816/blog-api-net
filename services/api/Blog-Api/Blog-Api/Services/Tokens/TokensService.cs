@@ -71,31 +71,32 @@ public class TokensService : ITokensService
         return tokenHandler.CreateToken(jwtDescriptor);
     }
 
-    public async Task<RefreshToken> GenerateAndSaveRefreshToken(BlogUser user)
+    public async Task<RefreshToken> GenerateAndSaveRefreshToken(BlogUser user, CancellationToken ct = default)
     {
         RefreshToken refreshToken = CreateRefreshToken(user);
 
-        await _refreshTokensRepository.AddToken(refreshToken);
+        await _refreshTokensRepository.AddToken(refreshToken, ct);
 
         return refreshToken;
     }
 
-    public async Task<RefreshToken?> GetRefreshToken(string token, bool forceFetchFromDatabase = false)
+    public async Task<RefreshToken?> GetRefreshToken(string token, bool forceFetchFromDatabase = false,
+        CancellationToken ct = default)
     {
-        return await _refreshTokensRepository.GetToken(token, forceFetchFromDatabase);
+        return await _refreshTokensRepository.GetToken(token, forceFetchFromDatabase, ct);
     }
 
-    public async Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken)
+    public async Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken, CancellationToken ct = default)
     {
         token.Used = true;
         token.UsedDate = _timeProvider.GetUtcNow();
         token.ReplacedByToken = replacedByToken;
-        await _refreshTokensRepository.RotateToken(token, replacedByToken);
+        await _refreshTokensRepository.RotateToken(token, replacedByToken, ct);
     }
 
-    public async Task RevokeRefreshToken(RefreshToken token)
+    public async Task RevokeRefreshToken(RefreshToken token, CancellationToken ct = default)
     {
         token.Invalidated = true;
-        await _refreshTokensRepository.UpdateToken(token);
+        await _refreshTokensRepository.UpdateToken(token, ct);
     }
 }

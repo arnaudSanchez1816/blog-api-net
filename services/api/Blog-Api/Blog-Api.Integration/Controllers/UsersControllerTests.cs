@@ -87,7 +87,7 @@ public class UsersControllerTests : IntegrationTestBase
     [Fact]
     public async Task GetCurrentUserPosts_ReturnsEmpty_WhenUserHasNoPosts()
     {
-        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
             "api/v1.0/users/me/posts?pageNumber=1&pageSize=10",

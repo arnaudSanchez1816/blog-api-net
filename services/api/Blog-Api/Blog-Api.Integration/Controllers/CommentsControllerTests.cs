@@ -64,7 +64,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/comments/{comment.Id}", TestContext.Current.CancellationToken);
@@ -110,7 +110,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/comments/{comment.Id}",
@@ -135,7 +135,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         const string newCommentBody = "New comment body";
         const string newCommentUsername = "New comment username";
@@ -171,7 +171,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         const string newCommentBody = "New comment body";
         UpdateCommentRequest request = new UpdateCommentRequest
@@ -202,7 +202,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         const string newCommentUsername = "New comment username";
         UpdateCommentRequest request = new UpdateCommentRequest
@@ -267,7 +267,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         const string newCommentUsername = "";
         UpdateCommentRequest request = new UpdateCommentRequest
@@ -293,7 +293,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         UpdateCommentRequest request = new UpdateCommentRequest
         {
@@ -318,7 +318,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         UpdateCommentRequest request = new UpdateCommentRequest
         {
@@ -343,7 +343,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         UpdateCommentRequest request = new UpdateCommentRequest
         {
@@ -383,7 +383,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         UpdateCommentRequest request = new UpdateCommentRequest
         {
@@ -412,7 +412,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/comments/{comment.Id}",
@@ -476,7 +476,7 @@ public class CommentsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/comments/{comment.Id}",

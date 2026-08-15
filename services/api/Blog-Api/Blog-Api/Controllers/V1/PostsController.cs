@@ -44,6 +44,7 @@ public class PostsController : ControllerBase
     /// <param name="filterQuery"></param>
     /// <param name="paginationQuery"></param>
     /// <param name="includeUnpublished"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="403"></response>
@@ -53,7 +54,7 @@ public class PostsController : ControllerBase
     public async Task<ActionResult<GetPostsResponse>> GetPosts(
         [FromQuery] GetPostsFilterQuery filterQuery,
         [FromQuery] PaginationQuery paginationQuery,
-        [FromQuery(Name = "unpublished")] bool includeUnpublished)
+        [FromQuery(Name = "unpublished")] bool includeUnpublished, CancellationToken ct)
     {
         // Check that a user is authenticated and if it can read unpublished posts.
         AuthenticateResult authenticateResult =
@@ -73,7 +74,7 @@ public class PostsController : ControllerBase
             IncludeUnpublished = canReadDraftPosts && includeUnpublished
         };
 
-        PagedPostsResult result = await _postsService.GetPosts(filterQuery, paginationQuery);
+        PagedPostsResult result = await _postsService.GetPosts(filterQuery, paginationQuery, ct);
         List<PostResponse> mappedPosts = result.Posts.Select(p => p.ToPostResponse()).ToList();
 
         return Ok(GetPostsResponse.Create(mappedPosts, result.TotalCount, filterQuery, paginationQuery));
@@ -83,6 +84,7 @@ public class PostsController : ControllerBase
     /// Get a post by its slug.
     /// </summary>
     /// <param name="slug"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400">When slug is bad</response>
     /// <response code="403"></response>
@@ -92,9 +94,9 @@ public class PostsController : ControllerBase
     [HasPermission(Permissions.Posts.Read)]
     public async Task<ActionResult<PostResponse>> GetBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug)
+        string slug, CancellationToken ct)
     {
-        Post? post = await _postsService.GetPostBySlugWithTags(slug);
+        Post? post = await _postsService.GetPostBySlugWithTags(slug, ct);
 
         if (post is null)
         {
@@ -126,6 +128,7 @@ public class PostsController : ControllerBase
     /// Create a new post with the given title.
     /// </summary>
     /// <param name="request"></param>
+    /// <param name="ct"></param>
     /// <response code="201"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -133,9 +136,9 @@ public class PostsController : ControllerBase
     /// <returns></returns>
     [HttpPost(ApiRoutes.Posts.Create)]
     [HasPermission(Permissions.Posts.Create)]
-    public async Task<ActionResult<PostResponse>> CreatePost([FromBody] CreatePostRequest request)
+    public async Task<ActionResult<PostResponse>> CreatePost([FromBody] CreatePostRequest request, CancellationToken ct)
     {
-        string postSlug = await _postsService.GenerateUniqueSlugAsync(request.Title);
+        string postSlug = await _postsService.GenerateUniqueSlugAsync(request.Title, ct);
 
         Post newPost = new Post
         {
@@ -143,7 +146,7 @@ public class PostsController : ControllerBase
             Slug = postSlug,
             AuthorId = User.GetUserId()
         };
-        newPost = await _postsService.CreatePost(newPost);
+        newPost = await _postsService.CreatePost(newPost, ct);
 
         return CreatedAtAction(nameof(GetBySlug), new { slug = newPost.Slug }, newPost.ToPostResponse());
     }
@@ -162,9 +165,9 @@ public class PostsController : ControllerBase
     public async Task<ActionResult<PostResponse>> UpdatePost(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
         string slug,
-        [FromBody] UpdatePostRequest request)
+        [FromBody] UpdatePostRequest request, CancellationToken ct)
     {
-        Post? post = await _postsService.GetPostBySlugWithTags(slug);
+        Post? post = await _postsService.GetPostBySlugWithTags(slug, ct);
         if (post is null)
         {
             return NotFound();
@@ -178,7 +181,7 @@ public class PostsController : ControllerBase
             return Forbid();
         }
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct);
 
         return Ok(post.ToPostResponse());
     }
@@ -196,9 +199,9 @@ public class PostsController : ControllerBase
     [Authorize]
     public async Task<ActionResult<PostResponse>> DeletePost(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug)
+        string slug, CancellationToken ct)
     {
-        Post? post = await _postsService.GetPostBySlugWithTags(slug);
+        Post? post = await _postsService.GetPostBySlugWithTags(slug, ct);
         if (post is null)
         {
             return NotFound();
@@ -212,7 +215,7 @@ public class PostsController : ControllerBase
             return Forbid();
         }
 
-        await _postsService.DeletePost(post);
+        await _postsService.DeletePost(post, ct);
 
         return Ok(post.ToPostResponse());
     }
@@ -221,6 +224,7 @@ public class PostsController : ControllerBase
     /// Get the comments of a given post.
     /// </summary>
     /// <param name="slug"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="403"></response>
@@ -230,9 +234,9 @@ public class PostsController : ControllerBase
     [HasPermission(Permissions.Comments.Read)]
     public async Task<ActionResult<GetPostCommentsResponse>> GetPostCommentsBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug)
+        string slug, CancellationToken ct)
     {
-        Post? post = await _postsService.GetPostBySlugWithComments(slug);
+        Post? post = await _postsService.GetPostBySlugWithComments(slug, ct);
         if (post is null)
         {
             return NotFound();
@@ -267,6 +271,7 @@ public class PostsController : ControllerBase
     /// </summary>
     /// <param name="slug"></param>
     /// <param name="request"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="403"></response>
@@ -276,15 +281,15 @@ public class PostsController : ControllerBase
     [HasPermission(Permissions.Comments.Create)]
     public async Task<ActionResult<CommentResponse>> CreatePostComment(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug, [FromBody] CreatePostCommentRequest request)
+        string slug, [FromBody] CreatePostCommentRequest request, CancellationToken ct)
     {
-        Post? post = await _postsService.GetPostBySlug(slug);
+        Post? post = await _postsService.GetPostBySlug(slug, ct);
         if (post is null || !post.IsPublished)
         {
             return NotFound();
         }
 
-        Comment comment = await _postsService.CreateCommentForPost(post, request.Username, request.Body);
+        Comment comment = await _postsService.CreateCommentForPost(post, request.Username, request.Body, ct);
 
         return Ok(comment.ToCommentResponse());
     }

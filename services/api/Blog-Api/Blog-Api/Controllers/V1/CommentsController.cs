@@ -29,6 +29,7 @@ public class CommentsController : ControllerBase
     /// Get a comment with the given id.
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="403"></response>
@@ -36,9 +37,9 @@ public class CommentsController : ControllerBase
     /// <returns></returns>
     [HttpGet(ApiRoutes.Comments.GetById)]
     [HasPermission(Permissions.Comments.Read)]
-    public async Task<ActionResult<CommentResponse>> GetById([FromRoute] Guid id)
+    public async Task<ActionResult<CommentResponse>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
-        Comment? comment = await _commentsService.GetCommentById(id);
+        Comment? comment = await _commentsService.GetCommentById(id, ct);
         if (comment is null)
         {
             return NotFound();
@@ -52,6 +53,7 @@ public class CommentsController : ControllerBase
     /// </summary>
     /// <param name="id"></param>
     /// <param name="request"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -61,15 +63,15 @@ public class CommentsController : ControllerBase
     [HttpPut(ApiRoutes.Comments.UpdateById)]
     [HasPermission(Permissions.Comments.Update)]
     public async Task<ActionResult<CommentResponse>> UpdateById([FromRoute] Guid id,
-        [FromBody] UpdateCommentRequest request)
+        [FromBody] UpdateCommentRequest request, CancellationToken ct)
     {
-        Comment? comment = await _commentsService.GetCommentById(id);
+        Comment? comment = await _commentsService.GetCommentById(id, ct);
         if (comment is null)
         {
             return NotFound();
         }
 
-        await _commentsService.UpdateComment(comment, request.Username, request.Body);
+        await _commentsService.UpdateComment(comment, request.Username, request.Body, ct);
 
         return Ok(comment.ToCommentResponse());
     }
@@ -78,6 +80,7 @@ public class CommentsController : ControllerBase
     /// Delete a comment with the given id.
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -86,15 +89,15 @@ public class CommentsController : ControllerBase
     /// <returns></returns>
     [HttpDelete(ApiRoutes.Comments.DeleteById)]
     [HasPermission(Permissions.Comments.Delete)]
-    public async Task<ActionResult<CommentResponse>> DeleteById([FromRoute] Guid id)
+    public async Task<ActionResult<CommentResponse>> DeleteById([FromRoute] Guid id, CancellationToken ct)
     {
-        Comment? comment = await _commentsService.GetCommentById(id);
+        Comment? comment = await _commentsService.GetCommentById(id, ct);
         if (comment is null)
         {
             return NotFound();
         }
 
-        await _commentsService.DeleteComment(comment);
+        await _commentsService.DeleteComment(comment, ct);
         return Ok(comment.ToCommentResponse());
     }
 }

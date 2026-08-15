@@ -25,7 +25,7 @@ public class RefreshTokensCleanupService : BackgroundService
 
             IRefreshTokensRepository refreshTokensRepository =
                 scope.ServiceProvider.GetRequiredService<IRefreshTokensRepository>();
-            await refreshTokensRepository.DeleteExpiredTokens(_options.RefreshTokensExpirationBuffer);
+            await refreshTokensRepository.DeleteExpiredTokens(_options.RefreshTokensExpirationBuffer, stoppingToken);
         }
     }
 }

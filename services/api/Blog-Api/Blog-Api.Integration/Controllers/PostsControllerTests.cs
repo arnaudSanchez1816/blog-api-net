@@ -68,7 +68,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -95,7 +95,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -133,7 +133,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "post-to-comment-on",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -154,7 +154,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync(
@@ -188,7 +188,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
             new { Username = "commenter" },
@@ -207,7 +207,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
             new { Body = "Nice post!" },
@@ -226,7 +226,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         CreatePostCommentRequest request =
             new CreatePostCommentRequest { Username = "commenter", Body = CommentBodyOverMaxLength };
 
@@ -247,7 +247,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         CreatePostCommentRequest request =
             new CreatePostCommentRequest { Username = CommentUsernameOverMaxLength, Body = "Nice post!" };
 
@@ -272,7 +272,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
@@ -295,7 +295,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         Comment comment1 = new Comment
         {
@@ -311,8 +311,8 @@ public class PostsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = post.Id
         };
-        await _commentsRepository.AddComment(comment1);
-        await _commentsRepository.AddComment(comment2);
+        await _commentsRepository.AddComment(comment1, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment2, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
@@ -358,7 +358,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "post-without-comments",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
@@ -377,7 +377,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "post-without-comments",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -400,7 +400,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         Comment comment1 = new Comment
         {
@@ -409,7 +409,7 @@ public class PostsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = post.Id
         };
-        await _commentsRepository.AddComment(comment1);
+        await _commentsRepository.AddComment(comment1, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -437,7 +437,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         Comment comment1 = new Comment
         {
@@ -446,7 +446,7 @@ public class PostsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = post.Id
         };
-        await _commentsRepository.AddComment(comment1);
+        await _commentsRepository.AddComment(comment1, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -478,7 +478,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -509,7 +509,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -535,7 +535,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -598,7 +598,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
             bearerToken,
@@ -625,7 +625,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Original Body",
             AuthorId = user.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title", Body = "Updated Body" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -683,7 +683,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
             new UpdatePostRequest(),
@@ -704,7 +704,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = TitleOverMaxLength };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -726,7 +726,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Tags = ["java", "not@ValidSlug!"] };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -745,9 +745,9 @@ public class PostsControllerTests : IntegrationTestBase
         Tag tag1 = new Tag { Name = "Java", Slug = "java" };
         Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
         Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(tag1);
-        await _tagsRepository.AddTag(tag2);
-        await _tagsRepository.AddTag(tag3);
+        await _tagsRepository.AddTag(tag1, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag2, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag3, ct: TestContext.Current.CancellationToken);
 
         Post post = new Post
         {
@@ -756,7 +756,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id
         };
         post.Tags.Add(tag1);
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest { Tags = ["spring", "docker"] };
 
@@ -787,7 +787,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Original Body",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -815,7 +815,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Original Body",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Body = "Updated Body Only" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -837,7 +837,7 @@ public class PostsControllerTests : IntegrationTestBase
         (BlogUser author, string bearerToken) =
             await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
         Tag tag = new Tag { Name = "Java", Slug = "java" };
-        await _tagsRepository.AddTag(tag);
+        await _tagsRepository.AddTag(tag, ct: TestContext.Current.CancellationToken);
 
         Post post = new Post
         {
@@ -846,7 +846,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id
         };
         post.Tags.Add(tag);
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
 
@@ -875,7 +875,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
         DateTimeOffset before = DateTimeOffset.UtcNow;
 
@@ -905,7 +905,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -933,7 +933,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id,
             PublishedAt = originalPublishedAt
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -957,7 +957,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -983,7 +983,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -1009,7 +1009,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -1038,7 +1038,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = user.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -1212,7 +1212,7 @@ public class PostsControllerTests : IntegrationTestBase
             ReadingTime = 10,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
@@ -1239,8 +1239,8 @@ public class PostsControllerTests : IntegrationTestBase
     {
         Tag tag1 = new Tag { Name = "Java", Slug = "java" };
         Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
-        await _tagsRepository.AddTag(tag1);
-        await _tagsRepository.AddTag(tag2);
+        await _tagsRepository.AddTag(tag1, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag2, ct: TestContext.Current.CancellationToken);
 
         Post post = new Post
         {
@@ -1251,7 +1251,7 @@ public class PostsControllerTests : IntegrationTestBase
         };
         post.Tags.Add(tag1);
         post.Tags.Add(tag2);
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
@@ -1283,7 +1283,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "draft-post",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
@@ -1301,7 +1301,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "draft-post",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -1334,7 +1334,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             ReadingTime = 2
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -1372,7 +1372,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Test post body content",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -1425,7 +1425,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync("api/v1.0/posts?pageNumber=1&pageSize=10", TestContext.Current.CancellationToken);
@@ -1488,8 +1488,8 @@ public class PostsControllerTests : IntegrationTestBase
     {
         Tag javaTag = new Tag { Name = "Java", Slug = "java" };
         Tag dockerTag = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(javaTag);
-        await _tagsRepository.AddTag(dockerTag);
+        await _tagsRepository.AddTag(javaTag, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(dockerTag, ct: TestContext.Current.CancellationToken);
 
         Post postWithJavaTag = new Post
         {
@@ -1507,8 +1507,8 @@ public class PostsControllerTests : IntegrationTestBase
             PublishedAt = DateTimeOffset.UtcNow
         };
         postWithDockerTag.Tags.Add(dockerTag);
-        await _postsRepository.AddPost(postWithJavaTag);
-        await _postsRepository.AddPost(postWithDockerTag);
+        await _postsRepository.AddPost(postWithJavaTag, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithDockerTag, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync("api/v1.0/posts?tags=java", TestContext.Current.CancellationToken);
@@ -1540,8 +1540,8 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author2.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(postWithAuthor1);
-        await _postsRepository.AddPost(postWithAuthor2);
+        await _postsRepository.AddPost(postWithAuthor1, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor2, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts?author={author2.Id}", TestContext.Current.CancellationToken);
@@ -1564,7 +1564,7 @@ public class PostsControllerTests : IntegrationTestBase
                 Slug = $"post-{i}",
                 AuthorId = _author.Id,
                 PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-i)
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.GetAsync("api/v1.0/posts?pageNumber=2&pageSize=10",
             TestContext.Current.CancellationToken);
@@ -1589,7 +1589,7 @@ public class PostsControllerTests : IntegrationTestBase
                 Slug = $"post-{i}",
                 AuthorId = _author.Id,
                 PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-i)
-            });
+            }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.GetAsync("api/v1.0/posts?pageNumber=-50&pageSize=10",
             TestContext.Current.CancellationToken);
@@ -1638,7 +1638,7 @@ public class PostsControllerTests : IntegrationTestBase
             Title = "Draft post",
             Slug = "draft-post",
             AuthorId = user.Id
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts", bearerToken, TestContext.Current.CancellationToken);
@@ -1661,7 +1661,7 @@ public class PostsControllerTests : IntegrationTestBase
             Title = "Draft post",
             Slug = "draft-post",
             AuthorId = user.Id
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=false",
@@ -1685,7 +1685,7 @@ public class PostsControllerTests : IntegrationTestBase
             Title = "Draft post",
             Slug = "draft-post",
             AuthorId = user.Id
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=true",
@@ -1709,7 +1709,7 @@ public class PostsControllerTests : IntegrationTestBase
             Title = "Draft post",
             Slug = "draft-post",
             AuthorId = user.Id
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=true",
@@ -1732,7 +1732,7 @@ public class PostsControllerTests : IntegrationTestBase
             Title = "Draft post",
             Slug = "draft-post",
             AuthorId = user.Id
-        });
+        }, ct: TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts",

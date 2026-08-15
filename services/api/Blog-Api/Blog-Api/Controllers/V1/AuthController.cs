@@ -31,13 +31,14 @@ public class AuthController : ControllerBase
     /// Log in a user
     /// </summary>
     /// <param name="request"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <returns>A valid access token</returns>
     [HttpPost(ApiRoutes.Auth.Login)]
-    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request, CancellationToken ct)
     {
-        AuthenticationResult result = await _authService.Login(request.Email, request.Password);
+        AuthenticationResult result = await _authService.Login(request.Email, request.Password, ct);
 
         if (!result.Success)
         {
@@ -61,10 +62,11 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Log out a user, clears the refresh token cookie
     /// </summary>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Auth.Logout)]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
         // Try to authenticate with the Refresh token
         AuthenticateResult authenticateResult =
@@ -75,7 +77,7 @@ public class AuthController : ControllerBase
                 out object? tokenObject) && tokenObject is RefreshToken refreshToken)
         {
             // We could authenticate with the refresh token, revoke it.
-            await _authService.Logout(refreshToken);
+            await _authService.Logout(refreshToken, ct);
         }
 
         CookieOptions refreshTokenCookieOptions = GetRefreshTokenCookieOptions();
@@ -87,13 +89,14 @@ public class AuthController : ControllerBase
     /// <summary>
     /// Generate a new access token for the authenticated user
     /// </summary>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="401">Refresh token is invalid</response>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     [HttpGet(ApiRoutes.Auth.GetAccessToken)]
     [Authorize(AuthenticationSchemes = RefreshTokenAuthDefaults.RefreshTokenScheme)]
-    public async Task<ActionResult<GetAccessTokenResponse>> GetAccessToken()
+    public async Task<ActionResult<GetAccessTokenResponse>> GetAccessToken(CancellationToken ct)
     {
         if (!HttpContext.Items.TryGetValue(RefreshTokenAuthDefaults.RefreshTokenHttpContextItem,
                 out object? tokenObject) || tokenObject is not RefreshToken refreshToken)
@@ -101,7 +104,7 @@ public class AuthController : ControllerBase
             throw new InvalidOperationException($"Expected a {nameof(RefreshToken)} in HttpContext.Items.");
         }
 
-        AuthenticationResult result = await _authService.RefreshTokens(User, refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(User, refreshToken, ct);
         if (!result.Success)
         {
             return Problem(string.Join("\n", result.Errors!),

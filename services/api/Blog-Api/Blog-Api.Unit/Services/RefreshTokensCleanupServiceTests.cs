@@ -74,7 +74,7 @@ public class RefreshTokensCleanupServiceTests : IDisposable
         await WaitUntil(() => _refreshTokensRepository.Invocations.Count > 0, TimeSpan.FromSeconds(2));
         await service.StopAsync(CancellationToken.None);
 
-        _refreshTokensRepository.Verify(x => x.DeleteExpiredTokens(buffer), Times.AtLeastOnce);
+        _refreshTokensRepository.Verify(x => x.DeleteExpiredTokens(buffer, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]

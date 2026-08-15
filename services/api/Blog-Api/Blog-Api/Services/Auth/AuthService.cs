@@ -24,7 +24,7 @@ public class AuthService : IAuthService
         _timeProvider = timeProvider;
     }
 
-    public async Task<AuthenticationResult> Login(string email, string password)
+    public async Task<AuthenticationResult> Login(string email, string password, CancellationToken ct = default)
     {
         BlogUser? user = await _userManager.FindByEmailAsync(email);
         if (user is null)
@@ -46,16 +46,17 @@ public class AuthService : IAuthService
             };
         }
 
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user);
+        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct);
         return await GenerateAuthenticationResultForUser(user, refreshToken);
     }
 
-    public async Task Logout(RefreshToken token)
+    public async Task Logout(RefreshToken token, CancellationToken ct = default)
     {
-        await _tokensService.RevokeRefreshToken(token);
+        await _tokensService.RevokeRefreshToken(token, ct);
     }
 
-    public async Task<AuthenticationResult> RefreshTokens(ClaimsPrincipal principal, RefreshToken refreshToken)
+    public async Task<AuthenticationResult> RefreshTokens(ClaimsPrincipal principal, RefreshToken refreshToken,
+        CancellationToken ct = default)
     {
         BlogUser? user = await _userManager.GetUserAsync(principal);
         if (user is null)
@@ -101,7 +102,7 @@ public class AuthService : IAuthService
             newRefreshToken = _tokensService.CreateRefreshToken(user);
             try
             {
-                await _tokensService.UseRefreshToken(refreshToken, newRefreshToken);
+                await _tokensService.UseRefreshToken(refreshToken, newRefreshToken, ct);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -109,7 +110,7 @@ public class AuthService : IAuthService
                 // in-memory mutations we just made and failed to save, so a tracked re-query would hand
                 // those rejected values right back instead of the other request's real committed replacement.
                 RefreshToken? refreshedTokenInstance =
-                    await _tokensService.GetRefreshToken(refreshToken.Token, true);
+                    await _tokensService.GetRefreshToken(refreshToken.Token, true, ct);
                 if (refreshedTokenInstance is { ReplacedByToken: not null } &&
                     refreshedTokenInstance.IsWithinGracePeriod(_timeProvider.GetUtcNow()))
                 {
@@ -135,7 +136,7 @@ public class AuthService : IAuthService
     }
 
     public async Task<AuthenticationResult> Register(string displayName, string email, string password,
-        IReadOnlyCollection<string>? roles = null)
+        IReadOnlyCollection<string>? roles = null, CancellationToken ct = default)
     {
         BlogUser? user = await _userManager.FindByEmailAsync(email);
         if (user is not null)
@@ -169,7 +170,7 @@ public class AuthService : IAuthService
             await _userManager.AddToRolesAsync(newUser, roles);
         }
 
-        RefreshToken newRefreshToken = await _tokensService.GenerateAndSaveRefreshToken(newUser);
+        RefreshToken newRefreshToken = await _tokensService.GenerateAndSaveRefreshToken(newUser, ct);
         return await GenerateAuthenticationResultForUser(newUser, newRefreshToken);
     }
 

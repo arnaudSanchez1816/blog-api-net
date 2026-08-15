@@ -37,7 +37,7 @@ public class TagsServiceTests : IDisposable
 
         createdTag.Name.Should().Be(name);
         createdTag.Slug.Should().Be(slug);
-        _tagsRepository.Verify(x => x.AddTag(newTag), Times.Once);
+        _tagsRepository.Verify(x => x.AddTag(newTag, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class TagsServiceTests : IDisposable
 
         tag.Name.Should().Be(originalName);
         tag.Slug.Should().Be("new-slug");
-        _tagsRepository.Verify(x => x.UpdateTag(tag), Times.Once);
+        _tagsRepository.Verify(x => x.UpdateTag(tag, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class TagsServiceTests : IDisposable
 
         tag.Name.Should().Be("New name");
         tag.Slug.Should().Be(originalSlug);
-        _tagsRepository.Verify(x => x.UpdateTag(tag), Times.Once);
+        _tagsRepository.Verify(x => x.UpdateTag(tag, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class TagsServiceTests : IDisposable
 
         tag.Name.Should().Be("New name");
         tag.Slug.Should().Be("new-slug");
-        _tagsRepository.Verify(x => x.UpdateTag(tag), Times.Once);
+        _tagsRepository.Verify(x => x.UpdateTag(tag, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -109,6 +109,6 @@ public class TagsServiceTests : IDisposable
 
         tag.Name.Should().Be(originalName);
         tag.Slug.Should().Be(originalSlug);
-        _tagsRepository.Verify(x => x.UpdateTag(tag), Times.Never);
+        _tagsRepository.Verify(x => x.UpdateTag(tag, It.IsAny<CancellationToken>()), Times.Never);
     }
 }

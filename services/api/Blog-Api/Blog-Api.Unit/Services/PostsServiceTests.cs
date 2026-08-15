@@ -34,7 +34,7 @@ public class PostsServiceTests : IDisposable
             _textService.Object,
             _commentsService.Object);
 
-        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(It.IsAny<string>()))
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>());
     }
 
@@ -74,7 +74,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Body = markdownBody };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Body.Should().Be(markdownBody);
         post.Description.Should().Be(firstWords + "…");
@@ -94,7 +94,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Body = post.Body };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Body.Should().Be(originalBody);
         post.Description.Should().Be(originalDescription);
@@ -112,7 +112,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Body = null };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Body.Should().Be(originalBody);
         post.Description.Should().Be(originalDescription);
@@ -129,7 +129,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         DateTimeOffset after = DateTimeOffset.UtcNow;
         post.PublishedAt.Should().NotBeNull();
@@ -144,7 +144,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.PublishedAt.Should().BeNull();
     }
@@ -158,7 +158,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.PublishedAt.Should().Be(originalPublishedAt);
     }
@@ -171,7 +171,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.PublishedAt.Should().BeNull();
     }
@@ -185,7 +185,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = null };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.PublishedAt.Should().Be(originalPublishedAt);
     }
@@ -199,7 +199,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Title = title };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Title.Should().Be(title);
         post.Slug.Should().Be(expectedSlug);
@@ -214,7 +214,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Title = originalTitle };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Title.Should().Be(originalTitle);
         post.Slug.Should().Be(originalSlug);
@@ -229,7 +229,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Title = null };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Title.Should().Be(originalTitle);
         post.Slug.Should().Be(originalSlug);
@@ -242,7 +242,7 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>
             {
                 $"{baseSlug}-1",
@@ -251,7 +251,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Title = title };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Slug.Should().Be($"{baseSlug}-3");
     }
@@ -263,7 +263,7 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>
             {
                 baseSlug
@@ -271,7 +271,7 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Title = title };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Slug.Should().Be($"{baseSlug}-2");
     }
@@ -289,11 +289,11 @@ public class PostsServiceTests : IDisposable
         };
         List<string> tagSlugs = new List<string> { "new-tag-1", "new-tag-2" };
 
-        _tagsService.Setup(x => x.GetAllTags(tagSlugs)).ReturnsAsync(newTags);
+        _tagsService.Setup(x => x.GetAllTags(tagSlugs, It.IsAny<CancellationToken>())).ReturnsAsync(newTags);
 
         UpdatePostRequest request = new UpdatePostRequest { Tags = tagSlugs };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Tags.Should().BeEquivalentTo(newTags);
     }
@@ -307,10 +307,10 @@ public class PostsServiceTests : IDisposable
 
         UpdatePostRequest request = new UpdatePostRequest { Tags = null };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
         post.Tags.Should().BeEquivalentTo(new[] { originalTag });
-        _tagsService.Verify(x => x.GetAllTags(It.IsAny<IReadOnlyCollection<string>>()), Times.Never);
+        _tagsService.Verify(x => x.GetAllTags(It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -319,9 +319,9 @@ public class PostsServiceTests : IDisposable
         Post post = CreatePost();
         UpdatePostRequest request = new UpdatePostRequest { Title = "New title" };
 
-        await _postsService.UpdatePost(post, request);
+        await _postsService.UpdatePost(post, request, ct: TestContext.Current.CancellationToken);
 
-        _postsRepository.Verify(x => x.UpdatePost(post), Times.Once);
+        _postsRepository.Verify(x => x.UpdatePost(post, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -330,7 +330,7 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        string slug = await _postsService.GenerateUniqueSlugAsync(title);
+        string slug = await _postsService.GenerateUniqueSlugAsync(title, ct: TestContext.Current.CancellationToken);
 
         slug.Should().Be(baseSlug);
     }
@@ -341,13 +341,13 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>
             {
                 baseSlug
             });
 
-        string slug = await _postsService.GenerateUniqueSlugAsync(title);
+        string slug = await _postsService.GenerateUniqueSlugAsync(title, ct: TestContext.Current.CancellationToken);
 
         slug.Should().Be($"{baseSlug}-2");
     }
@@ -358,14 +358,14 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>
             {
                 $"{baseSlug}-1",
                 $"{baseSlug}-5"
             });
 
-        string slug = await _postsService.GenerateUniqueSlugAsync(title);
+        string slug = await _postsService.GenerateUniqueSlugAsync(title, ct: TestContext.Current.CancellationToken);
 
         slug.Should().Be($"{baseSlug}-6");
     }
@@ -376,14 +376,14 @@ public class PostsServiceTests : IDisposable
         const string title = "A Brand New Title";
         string baseSlug = SlugGenerator.Generate(title);
 
-        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug))
+        _postsRepository.Setup(x => x.GetSlugsStartingWithSlug(baseSlug, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<string>
             {
                 $"{baseSlug}-abc",
                 $"{baseSlug}-1"
             });
 
-        string slug = await _postsService.GenerateUniqueSlugAsync(title);
+        string slug = await _postsService.GenerateUniqueSlugAsync(title, ct: TestContext.Current.CancellationToken);
 
         slug.Should().Be($"{baseSlug}-2");
     }
@@ -402,11 +402,11 @@ public class PostsServiceTests : IDisposable
             PostId = post.Id
         };
 
-        _commentsService.Setup(x => x.CreateComment(username, body, post.Id)).ReturnsAsync(expectedComment);
+        _commentsService.Setup(x => x.CreateComment(username, body, post.Id, It.IsAny<CancellationToken>())).ReturnsAsync(expectedComment);
 
-        Comment comment = await _postsService.CreateCommentForPost(post, username, body);
+        Comment comment = await _postsService.CreateCommentForPost(post, username, body, ct: TestContext.Current.CancellationToken);
 
         comment.Should().Be(expectedComment);
-        _commentsService.Verify(x => x.CreateComment(username, body, post.Id), Times.Once);
+        _commentsService.Verify(x => x.CreateComment(username, body, post.Id, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

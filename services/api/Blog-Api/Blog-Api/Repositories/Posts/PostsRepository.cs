@@ -16,7 +16,8 @@ public class PostsRepository : IPostsRepository
         _context = context;
     }
 
-    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
+    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
+        CancellationToken ct = default)
     {
         IQueryable<Post> postsQuery = _context.Posts.AsQueryable()
             .Include(p => p.Author)
@@ -27,11 +28,11 @@ public class PostsRepository : IPostsRepository
         // Filters
         postsQuery = ApplyGetPostsFilters(filter, postsQuery);
 
-        int totalCount = await postsQuery.CountAsync();
+        int totalCount = await postsQuery.CountAsync(ct);
 
         if (pagination is null)
         {
-            List<Post> allPosts = await ToPostsWithCommentsCountAsync(postsQuery);
+            List<Post> allPosts = await ToPostsWithCommentsCountAsync(postsQuery, ct);
 
             return new PagedPostsResult { Posts = allPosts, TotalCount = totalCount };
         }
@@ -40,32 +41,34 @@ public class PostsRepository : IPostsRepository
         (int pageNumber, int pageSize) = pagination;
         int skip = (pageNumber - 1) * pageSize;
 
-        List<Post> pagedPosts = await ToPostsWithCommentsCountAsync(postsQuery.Skip(skip).Take(pageSize));
+        List<Post> pagedPosts = await ToPostsWithCommentsCountAsync(postsQuery.Skip(skip).Take(pageSize), ct);
 
         return new PagedPostsResult { Posts = pagedPosts, TotalCount = totalCount };
     }
 
-    public async Task<Post?> GetPostBySlug(string slug)
+    public async Task<Post?> GetPostBySlug(string slug, CancellationToken ct = default)
     {
         return await ToPostWithCommentsCountAsync(_context.Posts
                 .Include(x => x.Author),
-            x => x.Slug == slug);
+            x => x.Slug == slug,
+            ct);
     }
 
-    public async Task<Post?> GetPostBySlugWithTags(string slug)
+    public async Task<Post?> GetPostBySlugWithTags(string slug, CancellationToken ct = default)
     {
         return await ToPostWithCommentsCountAsync(_context.Posts
                 .Include(x => x.Author)
                 .Include(x => x.Tags),
-            x => x.Slug == slug);
+            x => x.Slug == slug,
+            ct);
     }
 
-    public async Task<Post?> GetPostBySlugWithComments(string slug)
+    public async Task<Post?> GetPostBySlugWithComments(string slug, CancellationToken ct = default)
     {
         Post? post = await _context.Posts
             .Include(x => x.Author)
             .Include(x => x.Comments.OrderBy(c => c.CreatedAt))
-            .SingleOrDefaultAsync(x => x.Slug == slug);
+            .SingleOrDefaultAsync(x => x.Slug == slug, ct);
         if (post == null)
         {
             return null;
@@ -75,31 +78,31 @@ public class PostsRepository : IPostsRepository
         return post;
     }
 
-    public async Task<IReadOnlyCollection<string>> GetSlugsStartingWithSlug(string slug)
+    public async Task<IReadOnlyCollection<string>> GetSlugsStartingWithSlug(string slug, CancellationToken ct = default)
     {
         return await _context.Posts
             .Where(p => p.Slug == slug || EF.Functions.Like(p.Slug, slug + "-%"))
             .Select(p => p.Slug)
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
-    public async Task AddPost(Post post)
+    public async Task AddPost(Post post, CancellationToken ct = default)
     {
         _context.Posts.Add(post);
-        await _context.SaveChangesAsync();
-        await _context.Entry(post).Reference(p => p.Author).LoadAsync();
+        await _context.SaveChangesAsync(ct);
+        await _context.Entry(post).Reference(p => p.Author).LoadAsync(ct);
     }
 
-    public async Task UpdatePost(Post post)
+    public async Task UpdatePost(Post post, CancellationToken ct = default)
     {
         _context.Posts.Update(post);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
-    public async Task DeletePost(Post post)
+    public async Task DeletePost(Post post, CancellationToken ct = default)
     {
         _context.Posts.Remove(post);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 
     private static IQueryable<Post> ApplyGetPostsFilters(GetPostsFilterQuery filter, IQueryable<Post> postsQuery)
@@ -141,11 +144,12 @@ public class PostsRepository : IPostsRepository
         return postsQuery;
     }
 
-    private static async Task<List<Post>> ToPostsWithCommentsCountAsync(IQueryable<Post> query)
+    private static async Task<List<Post>> ToPostsWithCommentsCountAsync(IQueryable<Post> query,
+        CancellationToken ct = default)
     {
         var projected = await query
             .Select(p => new { Post = p, CommentsCount = p.Comments.Count() })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         foreach (var p in projected)
         {
@@ -156,12 +160,12 @@ public class PostsRepository : IPostsRepository
     }
 
     private static async Task<Post?> ToPostWithCommentsCountAsync(
-        IQueryable<Post> query, Expression<Func<Post, bool>> predicate)
+        IQueryable<Post> query, Expression<Func<Post, bool>> predicate, CancellationToken ct = default)
     {
         var result = await query
             .Where(predicate)
             .Select(p => new { Post = p, CommentsCount = p.Comments.Count() })
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(ct);
 
         if (result is null)
         {

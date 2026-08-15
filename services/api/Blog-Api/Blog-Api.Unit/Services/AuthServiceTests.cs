@@ -44,8 +44,8 @@ public class AuthServiceTests : IDisposable
         _tokensService = new Mock<ITokensService>();
         _tokensService.Setup(x => x.GenerateAccessToken(It.IsAny<BlogUser>(), It.IsAny<IReadOnlyCollection<Claim>>()))
             .Returns("access-token");
-        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(It.IsAny<BlogUser>()))
-            .ReturnsAsync((BlogUser user) => MakeRefreshToken(user.Id));
+        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(It.IsAny<BlogUser>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((BlogUser user, CancellationToken _) => MakeRefreshToken(user.Id));
         _tokensService.Setup(x => x.CreateRefreshToken(It.IsAny<BlogUser>()))
             .Returns((BlogUser user) => MakeRefreshToken(user.Id));
 
@@ -91,7 +91,7 @@ public class AuthServiceTests : IDisposable
     {
         _userManager.Setup(x => x.FindByEmailAsync("user@example.com")).ReturnsAsync((BlogUser?)null);
 
-        AuthenticationResult result = await _authService.Login("user@example.com", "password");
+        AuthenticationResult result = await _authService.Login("user@example.com", "password", ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.User.Should().BeNull();
@@ -106,7 +106,7 @@ public class AuthServiceTests : IDisposable
         _userManager.Setup(x => x.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
         _userManager.Setup(x => x.CheckPasswordAsync(user, "wrong-password")).ReturnsAsync(false);
 
-        AuthenticationResult result = await _authService.Login(user.Email!, "wrong-password");
+        AuthenticationResult result = await _authService.Login(user.Email!, "wrong-password", ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNullOrEmpty();
@@ -121,10 +121,10 @@ public class AuthServiceTests : IDisposable
         RefreshToken refreshToken = MakeRefreshToken(user.Id);
         _userManager.Setup(x => x.FindByEmailAsync(user.Email!)).ReturnsAsync(user);
         _userManager.Setup(x => x.CheckPasswordAsync(user, "password")).ReturnsAsync(true);
-        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(user))
+        _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(user, It.IsAny<CancellationToken>()))
             .ReturnsAsync(refreshToken);
 
-        AuthenticationResult result = await _authService.Login(user.Email!, "password");
+        AuthenticationResult result = await _authService.Login(user.Email!, "password", ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
@@ -141,7 +141,7 @@ public class AuthServiceTests : IDisposable
         _userManager.Setup(x => x.CheckPasswordAsync(user, "password")).ReturnsAsync(true);
         _userManager.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { "Admin", "Editor" });
 
-        await _authService.Login(user.Email!, "password");
+        await _authService.Login(user.Email!, "password", ct: TestContext.Current.CancellationToken);
 
         _tokensService.Verify(x => x.GenerateAccessToken(user,
                 It.Is<IReadOnlyCollection<Claim>>(claims =>
@@ -156,7 +156,7 @@ public class AuthServiceTests : IDisposable
         BlogUser existingUser = MakeUser();
         _userManager.Setup(x => x.FindByEmailAsync(existingUser.Email!)).ReturnsAsync(existingUser);
 
-        AuthenticationResult result = await _authService.Register("newuser", existingUser.Email!, "password");
+        AuthenticationResult result = await _authService.Register("newuser", existingUser.Email!, "password", ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNullOrEmpty();
@@ -171,7 +171,7 @@ public class AuthServiceTests : IDisposable
             IdentityResult.Failed(new IdentityError { Description = "Password too weak." });
         _userManager.Setup(x => x.CreateAsync(It.IsAny<BlogUser>(), "weak")).ReturnsAsync(failedResult);
 
-        AuthenticationResult result = await _authService.Register("newuser", "newuser@example.com", "weak");
+        AuthenticationResult result = await _authService.Register("newuser", "newuser@example.com", "weak", ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain("Password too weak.");
@@ -189,10 +189,10 @@ public class AuthServiceTests : IDisposable
         RefreshToken refreshToken = MakeRefreshToken(Guid.NewGuid());
         _tokensService.Setup(x => x.GenerateAndSaveRefreshToken(It.Is<BlogUser>(u =>
                 u.UserName == "newuser@example.com" && u.Email == "newuser@example.com" &&
-                u.DisplayName == "newuser")))
+                u.DisplayName == "newuser"), It.IsAny<CancellationToken>()))
             .ReturnsAsync(refreshToken);
 
-        AuthenticationResult result = await _authService.Register("newuser", "newuser@example.com", "password");
+        AuthenticationResult result = await _authService.Register("newuser", "newuser@example.com", "password", ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
@@ -213,7 +213,7 @@ public class AuthServiceTests : IDisposable
 
         List<string> userRoles = ["Admin"];
         AuthenticationResult result =
-            await _authService.Register(displayName, email, "password", userRoles);
+            await _authService.Register(displayName, email, "password", userRoles, ct: TestContext.Current.CancellationToken);
 
 
         result.Success.Should().BeTrue();
@@ -237,7 +237,7 @@ public class AuthServiceTests : IDisposable
             .ReturnsAsync(IdentityResult.Success);
 
         AuthenticationResult result =
-            await _authService.Register(displayName, email, "password");
+            await _authService.Register(displayName, email, "password", ct: TestContext.Current.CancellationToken);
 
 
         result.Success.Should().BeTrue();
@@ -254,10 +254,10 @@ public class AuthServiceTests : IDisposable
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync((BlogUser?)null);
         RefreshToken refreshToken = MakeRefreshToken(Guid.NewGuid());
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -267,10 +267,10 @@ public class AuthServiceTests : IDisposable
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
         RefreshToken refreshToken = MakeRefreshToken(user.Id, true);
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -281,10 +281,10 @@ public class AuthServiceTests : IDisposable
         RefreshToken refreshToken =
             MakeRefreshToken(user.Id, expirationDate: DateTimeOffset.UtcNow.AddMinutes(-1));
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -294,10 +294,10 @@ public class AuthServiceTests : IDisposable
         _userManager.Setup(x => x.GetUserAsync(It.IsAny<ClaimsPrincipal>())).ReturnsAsync(user);
         RefreshToken refreshToken = MakeRefreshToken(user.Id, invalidated: true);
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
-        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>()), Times.Never);
+        _tokensService.Verify(x => x.UseRefreshToken(It.IsAny<RefreshToken>(), It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -309,12 +309,12 @@ public class AuthServiceTests : IDisposable
         RefreshToken replacementToken = MakeRefreshToken(user.Id);
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
         result.RefreshToken.Should().Be(replacementToken.Token);
-        _tokensService.Verify(x => x.UseRefreshToken(refreshToken, replacementToken), Times.Once);
+        _tokensService.Verify(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -325,19 +325,19 @@ public class AuthServiceTests : IDisposable
         RefreshToken refreshToken = MakeRefreshToken(user.Id);
         RefreshToken replacementToken = MakeRefreshToken(user.Id);
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
-            .Callback<RefreshToken, RefreshToken>((t, r) =>
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()))
+            .Callback<RefreshToken, RefreshToken, CancellationToken>((t, r, _) =>
             {
                 t.Used = true;
                 t.UsedDate = _timeProvider.GetUtcNow();
                 t.ReplacedByToken = r;
             });
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
         result.Success.Should().BeTrue();
 
         _timeProvider.Advance(RefreshToken.UsedGracePeriod - TimeSpan.FromMilliseconds(100));
-        result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
         result.Success.Should().BeTrue();
     }
 
@@ -349,19 +349,19 @@ public class AuthServiceTests : IDisposable
         RefreshToken refreshToken = MakeRefreshToken(user.Id);
         RefreshToken replacementToken = MakeRefreshToken(user.Id);
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
-            .Callback<RefreshToken, RefreshToken>((t, r) =>
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()))
+            .Callback<RefreshToken, RefreshToken, CancellationToken>((t, r, _) =>
             {
                 t.Used = true;
                 t.UsedDate = _timeProvider.GetUtcNow();
                 t.ReplacedByToken = r;
             });
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
         result.Success.Should().BeTrue();
 
         _timeProvider.Advance(RefreshToken.UsedGracePeriod + TimeSpan.FromMilliseconds(100));
-        result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
         result.Success.Should().BeFalse();
     }
 
@@ -378,11 +378,11 @@ public class AuthServiceTests : IDisposable
         refetchedToken.ReplacedByToken = winningReplacement;
 
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync(refetchedToken);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true, It.IsAny<CancellationToken>())).ReturnsAsync(refetchedToken);
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeTrue();
         result.AccessToken.Should().Be("access-token");
@@ -400,11 +400,11 @@ public class AuthServiceTests : IDisposable
         RefreshToken refetchedToken = MakeRefreshToken(user.Id);
 
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync(refetchedToken);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true, It.IsAny<CancellationToken>())).ReturnsAsync(refetchedToken);
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNullOrEmpty();
@@ -423,12 +423,12 @@ public class AuthServiceTests : IDisposable
         refetchedToken.ReplacedByToken = winningReplacement;
 
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync(refetchedToken);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true, It.IsAny<CancellationToken>())).ReturnsAsync(refetchedToken);
 
         _timeProvider.Advance(RefreshToken.UsedGracePeriod + TimeSpan.FromMilliseconds(100));
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNullOrEmpty();
@@ -443,11 +443,11 @@ public class AuthServiceTests : IDisposable
         RefreshToken replacementToken = MakeRefreshToken(user.Id);
 
         _tokensService.Setup(x => x.CreateRefreshToken(user)).Returns(replacementToken);
-        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken))
+        _tokensService.Setup(x => x.UseRefreshToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DbUpdateConcurrencyException());
-        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true)).ReturnsAsync((RefreshToken?)null);
+        _tokensService.Setup(x => x.GetRefreshToken(refreshToken.Token, true, It.IsAny<CancellationToken>())).ReturnsAsync((RefreshToken?)null);
 
-        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken);
+        AuthenticationResult result = await _authService.RefreshTokens(new ClaimsPrincipal(), refreshToken, ct: TestContext.Current.CancellationToken);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().NotBeNullOrEmpty();
@@ -472,8 +472,8 @@ public class AuthServiceTests : IDisposable
     {
         RefreshToken refreshToken = MakeRefreshToken(Guid.NewGuid());
 
-        await _authService.Logout(refreshToken);
+        await _authService.Logout(refreshToken, ct: TestContext.Current.CancellationToken);
 
-        _tokensService.Verify(x => x.RevokeRefreshToken(refreshToken), Times.Once);
+        _tokensService.Verify(x => x.RevokeRefreshToken(refreshToken, It.IsAny<CancellationToken>()), Times.Once);
     }
 }

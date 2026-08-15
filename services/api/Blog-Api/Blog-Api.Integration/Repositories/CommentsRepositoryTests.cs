@@ -59,9 +59,9 @@ public class CommentsRepositoryTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
-        Comment? foundComment = await _commentsRepository.GetCommentById(comment.Id);
+        Comment? foundComment = await _commentsRepository.GetCommentById(comment.Id, ct: TestContext.Current.CancellationToken);
 
         foundComment.Should().NotBeNull();
         foundComment.Should().BeEquivalentTo(comment);
@@ -70,7 +70,7 @@ public class CommentsRepositoryTests : IntegrationTestBase
     [Fact]
     public async Task GetCommentById_ReturnsNull_WhenCommentDoesNotExists()
     {
-        Comment? foundComment = await _commentsRepository.GetCommentById(Guid.NewGuid());
+        Comment? foundComment = await _commentsRepository.GetCommentById(Guid.NewGuid(), ct: TestContext.Current.CancellationToken);
 
         foundComment.Should().BeNull();
     }
@@ -92,10 +92,10 @@ public class CommentsRepositoryTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow.AddDays(10),
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
-        await _commentsRepository.AddComment(comment2);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment2, ct: TestContext.Current.CancellationToken);
 
-        List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(_post.Id);
+        List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(_post.Id, ct: TestContext.Current.CancellationToken);
 
         comments.Should().HaveCount(2);
         comments.Should().ContainEquivalentOf(comment);
@@ -105,7 +105,7 @@ public class CommentsRepositoryTests : IntegrationTestBase
     [Fact]
     public async Task GetAllCommentsWithPostId_ReturnEmpty_WhenPostHasNoComments()
     {
-        List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(_post.Id);
+        List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(_post.Id, ct: TestContext.Current.CancellationToken);
 
         comments.Should().BeEmpty();
     }
@@ -113,7 +113,7 @@ public class CommentsRepositoryTests : IntegrationTestBase
     [Fact]
     public async Task GetAllCommentsWithPostId_ReturnEmpty_WhenPostDoestNotExists()
     {
-        List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(Guid.NewGuid());
+        List<Comment> comments = await _commentsRepository.GetAllCommentsWithPostId(Guid.NewGuid(), ct: TestContext.Current.CancellationToken);
 
         comments.Should().BeEmpty();
     }
@@ -129,9 +129,9 @@ public class CommentsRepositoryTests : IntegrationTestBase
             PostId = _post.Id
         };
 
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
-        Comment? commentAdded = await _commentsRepository.GetCommentById(comment.Id);
+        Comment? commentAdded = await _commentsRepository.GetCommentById(comment.Id, ct: TestContext.Current.CancellationToken);
         commentAdded.Should().NotBeNull();
         commentAdded.Should().BeEquivalentTo(comment);
     }
@@ -178,12 +178,12 @@ public class CommentsRepositoryTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
         comment.Body = "Update comment body";
-        await _commentsRepository.UpdateComment(comment);
+        await _commentsRepository.UpdateComment(comment, ct: TestContext.Current.CancellationToken);
 
-        Comment? updatedComment = await _commentsRepository.GetCommentById(comment.Id);
+        Comment? updatedComment = await _commentsRepository.GetCommentById(comment.Id, ct: TestContext.Current.CancellationToken);
         updatedComment.Should().BeEquivalentTo(comment);
     }
 
@@ -249,11 +249,11 @@ public class CommentsRepositoryTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = _post.Id
         };
-        await _commentsRepository.AddComment(comment);
+        await _commentsRepository.AddComment(comment, ct: TestContext.Current.CancellationToken);
 
-        await _commentsRepository.DeleteComment(comment);
+        await _commentsRepository.DeleteComment(comment, ct: TestContext.Current.CancellationToken);
 
-        Comment? deletedComment = await _commentsRepository.GetCommentById(comment.Id);
+        Comment? deletedComment = await _commentsRepository.GetCommentById(comment.Id, ct: TestContext.Current.CancellationToken);
         deletedComment.Should().BeNull();
     }
 

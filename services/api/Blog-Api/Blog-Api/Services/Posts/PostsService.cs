@@ -29,33 +29,34 @@ public class PostsService : IPostsService
         _commentsService = commentsService;
     }
 
-    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination)
+    public async Task<PagedPostsResult> GetPosts(GetPostsFilterQuery? filter, PaginationQuery? pagination,
+        CancellationToken ct = default)
     {
-        return await _postsRepository.GetPosts(filter, pagination);
+        return await _postsRepository.GetPosts(filter, pagination, ct);
     }
 
-    public async Task<Post?> GetPostBySlug(string slug)
+    public async Task<Post?> GetPostBySlug(string slug, CancellationToken ct = default)
     {
-        return await _postsRepository.GetPostBySlug(slug);
+        return await _postsRepository.GetPostBySlug(slug, ct);
     }
 
-    public async Task<Post?> GetPostBySlugWithTags(string slug)
+    public async Task<Post?> GetPostBySlugWithTags(string slug, CancellationToken ct = default)
     {
-        return await _postsRepository.GetPostBySlugWithTags(slug);
+        return await _postsRepository.GetPostBySlugWithTags(slug, ct);
     }
 
-    public async Task<Post?> GetPostBySlugWithComments(string slug)
+    public async Task<Post?> GetPostBySlugWithComments(string slug, CancellationToken ct = default)
     {
-        return await _postsRepository.GetPostBySlugWithComments(slug);
+        return await _postsRepository.GetPostBySlugWithComments(slug, ct);
     }
 
-    public async Task<Post> CreatePost(Post post)
+    public async Task<Post> CreatePost(Post post, CancellationToken ct = default)
     {
-        await _postsRepository.AddPost(post);
+        await _postsRepository.AddPost(post, ct);
         return post;
     }
 
-    public async Task UpdatePost(Post post, UpdatePostRequest updatePostDto)
+    public async Task UpdatePost(Post post, UpdatePostRequest updatePostDto, CancellationToken ct = default)
     {
         string? body = updatePostDto.Body;
         if (body is not null && body != post.Body)
@@ -71,14 +72,14 @@ public class PostsService : IPostsService
         if (title is not null && title != post.Title)
         {
             post.Title = title;
-            post.Slug = await GenerateUniqueSlugAsync(title);
+            post.Slug = await GenerateUniqueSlugAsync(title, ct);
         }
 
         IReadOnlyCollection<string>? tagSlugs = updatePostDto.Tags;
         if (tagSlugs is not null)
         {
             // Replace tags
-            List<Tag> tags = await _tagsService.GetAllTags(tagSlugs);
+            List<Tag> tags = await _tagsService.GetAllTags(tagSlugs, ct);
             post.Tags.Clear();
             foreach (Tag tag in tags)
             {
@@ -100,19 +101,19 @@ public class PostsService : IPostsService
             }
         }
 
-        await _postsRepository.UpdatePost(post);
+        await _postsRepository.UpdatePost(post, ct);
     }
 
-    public async Task DeletePost(Post post)
+    public async Task DeletePost(Post post, CancellationToken ct = default)
     {
-        await _postsRepository.DeletePost(post);
+        await _postsRepository.DeletePost(post, ct);
     }
 
-    public async Task<string> GenerateUniqueSlugAsync(string title)
+    public async Task<string> GenerateUniqueSlugAsync(string title, CancellationToken ct = default)
     {
         string baseSlug = SlugGenerator.Generate(title);
 
-        IReadOnlyCollection<string> takenSlugs = await _postsRepository.GetSlugsStartingWithSlug(baseSlug);
+        IReadOnlyCollection<string> takenSlugs = await _postsRepository.GetSlugsStartingWithSlug(baseSlug, ct);
 
         if (takenSlugs.Count == 0)
         {
@@ -130,8 +131,9 @@ public class PostsService : IPostsService
         return $"{baseSlug}-{nextSuffix}";
     }
 
-    public async Task<Comment> CreateCommentForPost(Post post, string username, string body)
+    public async Task<Comment> CreateCommentForPost(Post post, string username, string body,
+        CancellationToken ct = default)
     {
-        return await _commentsService.CreateComment(username, body, post.Id);
+        return await _commentsService.CreateComment(username, body, post.Id, ct);
     }
 }

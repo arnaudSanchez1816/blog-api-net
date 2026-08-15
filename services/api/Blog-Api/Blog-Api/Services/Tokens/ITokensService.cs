@@ -8,9 +8,11 @@ public interface ITokensService
     public RefreshToken CreateRefreshToken(BlogUser user);
     public string GenerateAccessToken(BlogUser user, IReadOnlyCollection<Claim>? additionalClaims = null);
 
-    public Task<RefreshToken> GenerateAndSaveRefreshToken(BlogUser user);
+    public Task<RefreshToken> GenerateAndSaveRefreshToken(BlogUser user, CancellationToken ct = default);
 
-    public Task<RefreshToken?> GetRefreshToken(string token, bool forceFetchFromDatabase = false);
-    public Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken);
-    public Task RevokeRefreshToken(RefreshToken token);
+    public Task<RefreshToken?> GetRefreshToken(string token, bool forceFetchFromDatabase = false,
+        CancellationToken ct = default);
+
+    public Task UseRefreshToken(RefreshToken token, RefreshToken replacedByToken, CancellationToken ct = default);
+    public Task RevokeRefreshToken(RefreshToken token, CancellationToken ct = default);
 }

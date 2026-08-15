@@ -33,13 +33,14 @@ public class UsersController : ControllerBase
     /// <summary>
     /// Returns the user details of the authenticated user.
     /// </summary>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="401"></response>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
     [HttpGet(ApiRoutes.Users.GetCurrentUser)]
     [Authorize]
-    public async Task<ActionResult<UserResponse>> GetCurrentUser()
+    public async Task<ActionResult<UserResponse>> GetCurrentUser(CancellationToken ct)
     {
         BlogUser? user = await _userManager.GetUserAsync(User);
         if (user is null)
@@ -55,6 +56,7 @@ public class UsersController : ControllerBase
     /// </summary>
     /// <param name="filterQuery"></param>
     /// <param name="paginationQuery"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -63,12 +65,12 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<ActionResult<GetPostsResponse>> GetCurrentUserPosts(
         [FromQuery] GetPostsFilterQuery filterQuery,
-        [FromQuery] PaginationQuery paginationQuery)
+        [FromQuery] PaginationQuery paginationQuery, CancellationToken ct)
     {
         Guid userId = User.GetUserId();
         // Always include unpublished when getting user posts
         filterQuery = filterQuery with { IncludeUnpublished = true, Author = userId };
-        PagedPostsResult pagedPostsResult = await _postsService.GetPosts(filterQuery, paginationQuery);
+        PagedPostsResult pagedPostsResult = await _postsService.GetPosts(filterQuery, paginationQuery, ct);
 
         List<PostResponse> mappedPosts = pagedPostsResult.Posts.Select(p => p.ToPostResponse()).ToList();
         return Ok(GetPostsResponse.Create(mappedPosts, pagedPostsResult.TotalCount, filterQuery, paginationQuery));

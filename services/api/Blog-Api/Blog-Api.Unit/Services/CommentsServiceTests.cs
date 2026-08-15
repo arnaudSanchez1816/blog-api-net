@@ -34,12 +34,12 @@ public class CommentsServiceTests : IDisposable
             PostId = Guid.NewGuid()
         };
 
-        _commentsRepository.Setup(x => x.GetCommentById(id)).ReturnsAsync(comment);
+        _commentsRepository.Setup(x => x.GetCommentById(id, It.IsAny<CancellationToken>())).ReturnsAsync(comment);
 
-        Comment? result = await _commentsService.GetCommentById(id);
+        Comment? result = await _commentsService.GetCommentById(id, ct: TestContext.Current.CancellationToken);
 
         result.Should().Be(comment);
-        _commentsRepository.Verify(x => x.GetCommentById(id), Times.Once);
+        _commentsRepository.Verify(x => x.GetCommentById(id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -47,12 +47,12 @@ public class CommentsServiceTests : IDisposable
     {
         Guid id = Guid.NewGuid();
 
-        _commentsRepository.Setup(x => x.GetCommentById(id)).ReturnsAsync((Comment?)null);
+        _commentsRepository.Setup(x => x.GetCommentById(id, It.IsAny<CancellationToken>())).ReturnsAsync((Comment?)null);
 
-        Comment? result = await _commentsService.GetCommentById(id);
+        Comment? result = await _commentsService.GetCommentById(id, ct: TestContext.Current.CancellationToken);
 
         result.Should().BeNull();
-        _commentsRepository.Verify(x => x.GetCommentById(id), Times.Once);
+        _commentsRepository.Verify(x => x.GetCommentById(id, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -77,12 +77,12 @@ public class CommentsServiceTests : IDisposable
             }
         };
 
-        _commentsRepository.Setup(x => x.GetAllCommentsWithPostId(postId)).ReturnsAsync(comments);
+        _commentsRepository.Setup(x => x.GetAllCommentsWithPostId(postId, It.IsAny<CancellationToken>())).ReturnsAsync(comments);
 
-        List<Comment> result = await _commentsService.GetAllCommentsWithPostId(postId);
+        List<Comment> result = await _commentsService.GetAllCommentsWithPostId(postId, ct: TestContext.Current.CancellationToken);
 
         result.Should().BeEquivalentTo(comments);
-        _commentsRepository.Verify(x => x.GetAllCommentsWithPostId(postId), Times.Once);
+        _commentsRepository.Verify(x => x.GetAllCommentsWithPostId(postId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -90,12 +90,12 @@ public class CommentsServiceTests : IDisposable
     {
         Guid postId = Guid.NewGuid();
 
-        _commentsRepository.Setup(x => x.GetAllCommentsWithPostId(postId)).ReturnsAsync(new List<Comment>());
+        _commentsRepository.Setup(x => x.GetAllCommentsWithPostId(postId, It.IsAny<CancellationToken>())).ReturnsAsync(new List<Comment>());
 
-        List<Comment> result = await _commentsService.GetAllCommentsWithPostId(postId);
+        List<Comment> result = await _commentsService.GetAllCommentsWithPostId(postId, ct: TestContext.Current.CancellationToken);
 
         result.Should().BeEmpty();
-        _commentsRepository.Verify(x => x.GetAllCommentsWithPostId(postId), Times.Once);
+        _commentsRepository.Verify(x => x.GetAllCommentsWithPostId(postId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public class CommentsServiceTests : IDisposable
         Guid postId = Guid.NewGuid();
         DateTimeOffset before = DateTimeOffset.UtcNow;
 
-        Comment createdComment = await _commentsService.CreateComment(username, body, postId);
+        Comment createdComment = await _commentsService.CreateComment(username, body, postId, ct: TestContext.Current.CancellationToken);
 
         DateTimeOffset after = DateTimeOffset.UtcNow;
 
@@ -114,7 +114,7 @@ public class CommentsServiceTests : IDisposable
         createdComment.Body.Should().Be(body);
         createdComment.PostId.Should().Be(postId);
         createdComment.CreatedAt.Should().BeOnOrAfter(before).And.BeOnOrBefore(after);
-        _commentsRepository.Verify(x => x.AddComment(createdComment), Times.Once);
+        _commentsRepository.Verify(x => x.AddComment(createdComment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -128,9 +128,9 @@ public class CommentsServiceTests : IDisposable
             PostId = Guid.NewGuid()
         };
 
-        await _commentsService.DeleteComment(comment);
+        await _commentsService.DeleteComment(comment, ct: TestContext.Current.CancellationToken);
 
-        _commentsRepository.Verify(x => x.DeleteComment(comment), Times.Once);
+        _commentsRepository.Verify(x => x.DeleteComment(comment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -145,11 +145,11 @@ public class CommentsServiceTests : IDisposable
             PostId = Guid.NewGuid()
         };
 
-        await _commentsService.UpdateComment(comment, "new-user", null);
+        await _commentsService.UpdateComment(comment, "new-user", null, ct: TestContext.Current.CancellationToken);
 
         comment.Username.Should().Be("new-user");
         comment.Body.Should().Be(originalBody);
-        _commentsRepository.Verify(x => x.UpdateComment(comment), Times.Once);
+        _commentsRepository.Verify(x => x.UpdateComment(comment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -164,11 +164,11 @@ public class CommentsServiceTests : IDisposable
             PostId = Guid.NewGuid()
         };
 
-        await _commentsService.UpdateComment(comment, null, "new body");
+        await _commentsService.UpdateComment(comment, null, "new body", ct: TestContext.Current.CancellationToken);
 
         comment.Username.Should().Be(originalUsername);
         comment.Body.Should().Be("new body");
-        _commentsRepository.Verify(x => x.UpdateComment(comment), Times.Once);
+        _commentsRepository.Verify(x => x.UpdateComment(comment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -182,11 +182,11 @@ public class CommentsServiceTests : IDisposable
             PostId = Guid.NewGuid()
         };
 
-        await _commentsService.UpdateComment(comment, "new-user", "new body");
+        await _commentsService.UpdateComment(comment, "new-user", "new body", ct: TestContext.Current.CancellationToken);
 
         comment.Username.Should().Be("new-user");
         comment.Body.Should().Be("new body");
-        _commentsRepository.Verify(x => x.UpdateComment(comment), Times.Once);
+        _commentsRepository.Verify(x => x.UpdateComment(comment, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -202,10 +202,10 @@ public class CommentsServiceTests : IDisposable
             PostId = Guid.NewGuid()
         };
 
-        await _commentsService.UpdateComment(comment, null, null);
+        await _commentsService.UpdateComment(comment, null, null, ct: TestContext.Current.CancellationToken);
 
         comment.Username.Should().Be(originalUsername);
         comment.Body.Should().Be(originalBody);
-        _commentsRepository.Verify(x => x.UpdateComment(comment), Times.Never);
+        _commentsRepository.Verify(x => x.UpdateComment(comment, It.IsAny<CancellationToken>()), Times.Never);
     }
 }
