@@ -9,10 +9,10 @@ namespace BlogApi.Integration;
 
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
-    private IAuthService _authService;
-    private RoleManager<BlogRole> _roleManager;
+    private IAuthService _authService = null!;
+    private RoleManager<BlogRole> _roleManager = null!;
     private AsyncServiceScope _scope;
-    private UserManager<BlogUser> _userManager;
+    private UserManager<BlogUser> _userManager = null!;
 
     protected BlogApiFactory Factory { get; }
 

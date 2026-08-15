@@ -11,7 +11,7 @@ namespace BlogApi.Integration.Controllers;
 [Collection(nameof(TestsCollection))]
 public class UsersControllerTests : IntegrationTestBase
 {
-    private IPostsRepository _postsRepository;
+    private IPostsRepository _postsRepository = null!;
 
     public UsersControllerTests(BlogApiFactory factory) : base(factory)
     {
@@ -45,7 +45,8 @@ public class UsersControllerTests : IntegrationTestBase
         (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
 
         HttpResponseMessage response =
-            await HttpClient.GetWithBearerAsync("api/v1.0/users/me", bearerToken,
+            await HttpClient.GetWithBearerAsync("api/v1.0/users/me",
+                bearerToken,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -61,7 +62,8 @@ public class UsersControllerTests : IntegrationTestBase
     public async Task GetCurrentUser_Returns401_WhenNoTokenProvided()
     {
         HttpResponseMessage response =
-            await HttpClient.GetWithBearerAsync("api/v1.0/users/me", null,
+            await HttpClient.GetWithBearerAsync("api/v1.0/users/me",
+                null,
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -71,7 +73,8 @@ public class UsersControllerTests : IntegrationTestBase
     public async Task GetCurrentUser_Returns401_WhenTokenIsInvalid()
     {
         HttpResponseMessage response =
-            await HttpClient.GetWithBearerAsync("api/v1.0/users/me", "badTokenOk",
+            await HttpClient.GetWithBearerAsync("api/v1.0/users/me",
+                "badTokenOk",
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -87,7 +90,8 @@ public class UsersControllerTests : IntegrationTestBase
         (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts?pageNumber=1&pageSize=10", bearerToken,
+            "api/v1.0/users/me/posts?pageNumber=1&pageSize=10",
+            bearerToken,
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -109,7 +113,9 @@ public class UsersControllerTests : IntegrationTestBase
         await CreatePost(otherUser.Id, "other-users-post");
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts", bearerToken, TestContext.Current.CancellationToken);
+            "api/v1.0/users/me/posts",
+            bearerToken,
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         GetPostsResponse? body =
@@ -128,7 +134,9 @@ public class UsersControllerTests : IntegrationTestBase
         await CreatePost(otherUser.Id, "other-users-post");
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            $"api/v1.0/users/me/posts?author={otherUser.Id}", bearerToken, TestContext.Current.CancellationToken);
+            $"api/v1.0/users/me/posts?author={otherUser.Id}",
+            bearerToken,
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         GetPostsResponse? body =
@@ -145,7 +153,9 @@ public class UsersControllerTests : IntegrationTestBase
         Post draftPost = await CreatePost(user.Id, "draft-post", false);
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts", bearerToken, TestContext.Current.CancellationToken);
+            "api/v1.0/users/me/posts",
+            bearerToken,
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         GetPostsResponse? body =
@@ -163,7 +173,8 @@ public class UsersControllerTests : IntegrationTestBase
             await CreatePost(user.Id, $"post-{i}");
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts?pageNumber=2&pageSize=10", bearerToken,
+            "api/v1.0/users/me/posts?pageNumber=2&pageSize=10",
+            bearerToken,
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -182,7 +193,8 @@ public class UsersControllerTests : IntegrationTestBase
         (_, string bearerToken) = await RegisterAuthenticatedUser();
 
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts?sortBy=invalidSortBy", bearerToken,
+            "api/v1.0/users/me/posts?sortBy=invalidSortBy",
+            bearerToken,
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -192,7 +204,9 @@ public class UsersControllerTests : IntegrationTestBase
     public async Task GetCurrentUserPosts_Returns401_WhenNoTokenProvided()
     {
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts", null, TestContext.Current.CancellationToken);
+            "api/v1.0/users/me/posts",
+            null,
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -201,7 +215,9 @@ public class UsersControllerTests : IntegrationTestBase
     public async Task GetCurrentUserPosts_Returns401_WhenTokenIsInvalid()
     {
         HttpResponseMessage response = await HttpClient.GetWithBearerAsync(
-            "api/v1.0/users/me/posts", "badTokenOk", TestContext.Current.CancellationToken);
+            "api/v1.0/users/me/posts",
+            "badTokenOk",
+            TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
