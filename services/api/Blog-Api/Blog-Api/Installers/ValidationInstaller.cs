@@ -9,18 +9,16 @@ public static class ValidationInstaller
 {
     public static IServiceCollection InstallFluentValidation(this IServiceCollection services)
     {
-        services.Configure<ApiBehaviorOptions>(options =>
+        services.Configure<ApiBehaviorOptions>(_ =>
         {
-            // options.SuppressModelStateInvalidFilter = true;
         });
 
         ValidatorOptions.Global.DisplayNameResolver = CamelCasePropertyNameResolver.ResolvePropertyName;
 
         services.AddValidatorsFromAssemblyContaining<IApiMarker>();
 
-        services.AddFluentValidationAutoValidation(configuration =>
+        services.AddFluentValidationAutoValidation(_ =>
         {
-            // configuration.DisableBuiltInModelValidation = true;
         });
 
         return services;
