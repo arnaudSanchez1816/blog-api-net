@@ -33,6 +33,7 @@ public class TagsController : ControllerBase
     /// <summary>
     /// Get all tags
     /// </summary>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="403"></response>
     /// <returns>A list of all tags in the application</returns>
@@ -40,7 +41,7 @@ public class TagsController : ControllerBase
     [HasPermission(Permissions.Tags.Read)]
     public async Task<ActionResult<GetTagsResponse>> GetAllTags(CancellationToken ct)
     {
-        List<Tag> tags = await _tagsService.GetAllTags();
+        List<Tag> tags = await _tagsService.GetAllTags(ct);
 
         GetTagsResponse response = new GetTagsResponse
         {
@@ -56,6 +57,7 @@ public class TagsController : ControllerBase
     /// <summary>
     /// </summary>
     /// <param name="slug"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400">Invalid slug</response>
     /// <response code="403"></response>
@@ -65,9 +67,9 @@ public class TagsController : ControllerBase
     [HasPermission(Permissions.Tags.Read)]
     public async Task<ActionResult<TagResponse>> GetBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug)
+        string slug, CancellationToken ct)
     {
-        Tag? tag = await _tagsService.GetTag(slug);
+        Tag? tag = await _tagsService.GetTag(slug, ct);
         if (tag == null)
         {
             return NotFound();
@@ -79,15 +81,16 @@ public class TagsController : ControllerBase
     /// <summary>
     /// </summary>
     /// <param name="id"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="403"></response>
     /// <response code="404"></response>
     /// <returns></returns>
     [HttpGet(ApiRoutes.Tags.GetById)]
     [HasPermission(Permissions.Tags.Read)]
-    public async Task<ActionResult<TagResponse>> GetById([FromRoute] Guid id)
+    public async Task<ActionResult<TagResponse>> GetById([FromRoute] Guid id, CancellationToken ct)
     {
-        Tag? tag = await _tagsService.GetTag(id);
+        Tag? tag = await _tagsService.GetTag(id, ct);
         if (tag == null)
         {
             return NotFound();
@@ -99,6 +102,7 @@ public class TagsController : ControllerBase
     /// <summary>
     /// </summary>
     /// <param name="request"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -106,10 +110,10 @@ public class TagsController : ControllerBase
     /// <returns></returns>
     [HttpPost(ApiRoutes.Tags.Create)]
     [HasPermission(Permissions.Tags.Create)]
-    public async Task<ActionResult<TagResponse>> Create([FromBody] CreateTagRequest request)
+    public async Task<ActionResult<TagResponse>> Create([FromBody] CreateTagRequest request, CancellationToken ct)
     {
         Tag newTag = request.ToTag();
-        newTag = await _tagsService.CreateTag(newTag);
+        newTag = await _tagsService.CreateTag(newTag, ct);
 
         return CreatedAtAction(nameof(GetBySlug), new { slug = newTag.Slug }, newTag.ToTagResponse());
     }
@@ -118,6 +122,7 @@ public class TagsController : ControllerBase
     /// </summary>
     /// <param name="slug"></param>
     /// <param name="request"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -128,15 +133,15 @@ public class TagsController : ControllerBase
     [HasPermission(Permissions.Tags.Update)]
     public async Task<ActionResult<TagResponse>> UpdateBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug, [FromBody] UpdateTagRequest request)
+        string slug, [FromBody] UpdateTagRequest request, CancellationToken ct)
     {
-        Tag? tag = await _tagsService.GetTag(slug);
+        Tag? tag = await _tagsService.GetTag(slug, ct);
         if (tag is null)
         {
             return NotFound();
         }
 
-        await _tagsService.UpdateTag(tag, request.Name, request.Slug);
+        await _tagsService.UpdateTag(tag, request.Name, request.Slug, ct);
 
         return Ok(tag.ToTagResponse());
     }
@@ -144,6 +149,7 @@ public class TagsController : ControllerBase
     /// <summary>
     /// </summary>
     /// <param name="slug"></param>
+    /// <param name="ct"></param>
     /// <response code="200"></response>
     /// <response code="400"></response>
     /// <response code="401"></response>
@@ -154,15 +160,15 @@ public class TagsController : ControllerBase
     [HasPermission(Permissions.Tags.Delete)]
     public async Task<ActionResult<TagResponse>> DeleteBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug)
+        string slug, CancellationToken ct)
     {
-        Tag? tag = await _tagsService.GetTag(slug);
+        Tag? tag = await _tagsService.GetTag(slug, ct);
         if (tag is null)
         {
             return NotFound();
         }
 
-        await _tagsService.DeleteTag(tag);
+        await _tagsService.DeleteTag(tag, ct);
         return Ok(tag.ToTagResponse());
     }
 }
