@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using BlogApi.Domain;
+using BlogApi.Exceptions;
 using BlogApi.Repositories.Tags;
 using Microsoft.EntityFrameworkCore;
 
@@ -85,6 +86,27 @@ public class TagsRepositoryTests : IntegrationTestBase
 
         // Assert
         await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task UpdateTag_ShouldThrow_WhenNewSlugAlreadyExists()
+    {
+        // Arrange
+        Tag tag = new Tag { Name = "Spring", Slug = "spring" };
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
+        Tag otherTag = new Tag { Name = "Dotnet", Slug = "dotnet" };
+        await _tagsRepository.AddTag(otherTag, TestContext.Current.CancellationToken);
+
+        // Act
+        Tag? tagToUpdate = await _tagsRepository.GetTagById(tag.Id, TestContext.Current.CancellationToken);
+        tagToUpdate.Should().NotBeNull();
+        tagToUpdate.Name = otherTag.Name;
+        tagToUpdate.Slug = otherTag.Slug;
+        Func<Task> act = async () =>
+            await _tagsRepository.UpdateTag(tagToUpdate, TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.Should().ThrowAsync<SlugConflictException>();
     }
 
     [Fact]
@@ -274,7 +296,7 @@ public class TagsRepositoryTests : IntegrationTestBase
 
         Func<Task> act = async () => await _tagsRepository.AddTag(newTag, TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<DbUpdateException>();
+        await act.Should().ThrowAsync<SlugConflictException>();
     }
 
     [Fact]

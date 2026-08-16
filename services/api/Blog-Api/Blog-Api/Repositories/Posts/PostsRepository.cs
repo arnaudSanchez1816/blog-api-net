@@ -4,6 +4,8 @@ using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Data;
 using BlogApi.Domain;
+using BlogApi.Exceptions;
+using EntityFramework.Exceptions.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Repositories.Posts;
@@ -97,15 +99,41 @@ public class PostsRepository : IPostsRepository
 
     public async Task AddPost(Post post, CancellationToken ct = default)
     {
-        _context.Posts.Add(post);
-        await _context.SaveChangesAsync(ct);
-        await _context.Entry(post).Reference(p => p.Author).LoadAsync(ct);
+        try
+        {
+            _context.Posts.Add(post);
+            await _context.SaveChangesAsync(ct);
+            await _context.Entry(post).Reference(p => p.Author).LoadAsync(ct);
+        }
+        catch (UniqueConstraintException e)
+        {
+            bool isUniqueSlugConstraint = e.ConstraintProperties.Contains(nameof(Post.Slug));
+            if (!isUniqueSlugConstraint)
+            {
+                throw;
+            }
+
+            throw new SlugConflictException(post.Slug, e);
+        }
     }
 
     public async Task UpdatePost(Post post, CancellationToken ct = default)
     {
-        _context.Posts.Update(post);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            _context.Posts.Update(post);
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (UniqueConstraintException e)
+        {
+            bool isUniqueSlugConstraint = e.ConstraintProperties.Contains(nameof(Post.Slug));
+            if (!isUniqueSlugConstraint)
+            {
+                throw;
+            }
+
+            throw new SlugConflictException(post.Slug, e);
+        }
     }
 
     public async Task DeletePost(Post post, CancellationToken ct = default)
@@ -151,21 +179,6 @@ public class PostsRepository : IPostsRepository
         };
 
         return postsQuery;
-    }
-
-    private static async Task<List<Post>> ToPostsWithCommentsCountAsync(IQueryable<Post> query,
-        CancellationToken ct = default)
-    {
-        var projected = await query
-            .Select(p => new { Post = p, CommentsCount = p.Comments.Count() })
-            .ToListAsync(ct);
-
-        foreach (var p in projected)
-        {
-            p.Post.CommentsCount = p.CommentsCount;
-        }
-
-        return projected.Select(x => x.Post).ToList();
     }
 
     private static async Task<Post?> ToPostWithCommentsCountAsync(

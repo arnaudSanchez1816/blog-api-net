@@ -4,6 +4,7 @@ using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Contracts.V1.Responses;
 using BlogApi.Data;
 using BlogApi.Domain;
+using BlogApi.Exceptions;
 using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
 using Microsoft.EntityFrameworkCore;
@@ -225,7 +226,7 @@ public class PostsRepositoryTests : IntegrationTestBase
         Func<Task> act = async () => await _postsRepository.AddPost(duplicatePost);
 
         // Assert
-        await act.Should().ThrowAsync<DbUpdateException>();
+        await act.Should().ThrowAsync<SlugConflictException>();
     }
 
     #endregion
@@ -316,6 +317,33 @@ public class PostsRepositoryTests : IntegrationTestBase
 
         // Assert
         await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task UpdatePost_Fail_WhenNewSlugAlreadyExists()
+    {
+        // Arrange
+        Post post = new Post
+        {
+            Title = "Original title",
+            Slug = "original-slug",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
+        Post otherPost = new Post
+        {
+            Title = "Other title",
+            Slug = "other-slug",
+            AuthorId = _author.Id
+        };
+        await _postsRepository.AddPost(otherPost, TestContext.Current.CancellationToken);
+
+        // Act
+        post.Slug = otherPost.Slug;
+        Func<Task> act = async () => await _postsRepository.UpdatePost(post);
+
+        // Assert
+        await act.Should().ThrowAsync<SlugConflictException>();
     }
 
     [Fact]

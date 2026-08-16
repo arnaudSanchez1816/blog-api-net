@@ -1,5 +1,7 @@
 using BlogApi.Data;
 using BlogApi.Domain;
+using BlogApi.Exceptions;
+using EntityFramework.Exceptions.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlogApi.Repositories.Tags;
@@ -35,14 +37,40 @@ public class TagsRepository : ITagsRepository
 
     public async Task AddTag(Tag newTag, CancellationToken ct = default)
     {
-        _context.Tags.Add(newTag);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            _context.Tags.Add(newTag);
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (UniqueConstraintException e)
+        {
+            bool isUniqueSlugConstraint = e.ConstraintProperties.Contains(nameof(Tag.Slug));
+            if (!isUniqueSlugConstraint)
+            {
+                throw;
+            }
+
+            throw new SlugConflictException(newTag.Slug, e);
+        }
     }
 
     public async Task UpdateTag(Tag tagToUpdate, CancellationToken ct = default)
     {
-        _context.Tags.Update(tagToUpdate);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            _context.Tags.Update(tagToUpdate);
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (UniqueConstraintException e)
+        {
+            bool isUniqueSlugConstraint = e.ConstraintProperties.Contains(nameof(Tag.Slug));
+            if (!isUniqueSlugConstraint)
+            {
+                throw;
+            }
+
+            throw new SlugConflictException(tagToUpdate.Slug, e);
+        }
     }
 
     public async Task DeleteTag(Tag tagToDelete, CancellationToken ct = default)
