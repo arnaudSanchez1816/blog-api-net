@@ -1,6 +1,7 @@
 using BlogApi.Contracts.V1.Requests;
 using BlogApi.Contracts.V1.Requests.Queries;
 using BlogApi.Domain;
+using BlogApi.Exceptions;
 using BlogApi.Repositories.Posts;
 using BlogApi.Services.Comments;
 using BlogApi.Services.Markdown;
@@ -56,6 +57,35 @@ public class PostsService : IPostsService
         return post;
     }
 
+    public async Task<Post> CreatePost(string title, Guid authorId, CancellationToken ct = default)
+    {
+        string postSlug = await GenerateUniqueSlugAsync(title, ct);
+
+        Post newPost = new Post
+        {
+            Title = title,
+            Slug = postSlug,
+            AuthorId = authorId
+        };
+
+        const int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await _postsRepository.AddPost(newPost, ct);
+                break;
+            }
+            catch (SlugConflictException) when (attempt < maxAttempts)
+            {
+                // Try regenerating the slug
+                newPost.Slug = await GenerateUniqueSlugAsync(title, ct);
+            }
+        }
+
+        return newPost;
+    }
+
     public async Task UpdatePost(Post post, UpdatePostRequest updatePostDto, CancellationToken ct = default)
     {
         string? body = updatePostDto.Body;
@@ -101,7 +131,20 @@ public class PostsService : IPostsService
             }
         }
 
-        await _postsRepository.UpdatePost(post, ct);
+        const int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await _postsRepository.UpdatePost(post, ct);
+                break;
+            }
+            catch (SlugConflictException) when (attempt < maxAttempts)
+            {
+                // Try regenerating the slug
+                post.Slug = await GenerateUniqueSlugAsync(title!, ct);
+            }
+        }
     }
 
     public async Task DeletePost(Post post, CancellationToken ct = default)

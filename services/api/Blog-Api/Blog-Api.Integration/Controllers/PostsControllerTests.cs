@@ -1056,6 +1056,54 @@ public class PostsControllerTests : IntegrationTestBase
         postResponse.Body.Should().Be(request.Body);
     }
 
+    [Fact]
+    public async Task UpdatePost_AllSucceedWithDistinctSlugs_WhenTitleChangedConcurrentlyToSameValue()
+    {
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
+
+        Post postA = new Post
+        {
+            Title = "Original Title A",
+            Slug = "original-title-a",
+            AuthorId = user.Id
+        };
+        Post postB = new Post
+        {
+            Title = "Original Title B",
+            Slug = "original-title-b",
+            AuthorId = user.Id
+        };
+        await _postsRepository.AddPost(postA, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postB, ct: TestContext.Current.CancellationToken);
+
+        UpdatePostRequest request = new UpdatePostRequest { Title = "Concurrent update title" };
+
+        Task<HttpResponseMessage> taskA = HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{postA.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+        Task<HttpResponseMessage> taskB = HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{postB.Slug}",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        HttpResponseMessage[] responses = await Task.WhenAll(taskA, taskB);
+
+        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.OK);
+
+        List<string> slugs = new List<string>();
+        foreach (HttpResponseMessage response in responses)
+        {
+            PostResponse? body =
+                await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+            body.Should().NotBeNull();
+            slugs.Add(body.Slug);
+        }
+
+        slugs.Should().OnlyHaveUniqueItems();
+    }
+
     #endregion
 
     #region CreatePost
@@ -1191,6 +1239,36 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task CreatePost_AllSucceedWithDistinctSlugs_WhenCreatedConcurrentlyWithSameTitle()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
+        CreatePostRequest request = new CreatePostRequest { Title = "Concurrent post title" };
+        const int concurrentRequests = 3;
+
+        Task<HttpResponseMessage>[] tasks = Enumerable.Range(0, concurrentRequests)
+            .Select(_ => HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
+                request,
+                bearerToken,
+                TestContext.Current.CancellationToken))
+            .ToArray();
+
+        HttpResponseMessage[] responses = await Task.WhenAll(tasks);
+
+        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
+
+        List<string> slugs = new List<string>();
+        foreach (HttpResponseMessage response in responses)
+        {
+            PostResponse? body =
+                await response.Content.ReadFromJsonAsync<PostResponse>(TestContext.Current.CancellationToken);
+            body.Should().NotBeNull();
+            slugs.Add(body.Slug);
+        }
+
+        slugs.Should().OnlyHaveUniqueItems();
     }
 
     #endregion

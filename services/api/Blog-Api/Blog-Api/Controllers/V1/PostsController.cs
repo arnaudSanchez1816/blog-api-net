@@ -137,15 +137,7 @@ public class PostsController : ControllerBase
     [HasPermission(Permissions.Posts.Create)]
     public async Task<ActionResult<PostResponse>> CreatePost([FromBody] CreatePostRequest request, CancellationToken ct)
     {
-        string postSlug = await _postsService.GenerateUniqueSlugAsync(request.Title, ct);
-
-        Post newPost = new Post
-        {
-            Title = request.Title,
-            Slug = postSlug,
-            AuthorId = User.GetUserId()
-        };
-        newPost = await _postsService.CreatePost(newPost, ct);
+        Post newPost = await _postsService.CreatePost(request.Title, User.GetUserId(), ct);
 
         return CreatedAtAction(nameof(GetBySlug), new { slug = newPost.Slug }, newPost.ToPostResponse());
     }

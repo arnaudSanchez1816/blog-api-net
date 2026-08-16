@@ -14,6 +14,7 @@ public interface IPostsService
     public Task<Post?> GetPostBySlugWithTags(string slug, CancellationToken ct = default);
     public Task<Post?> GetPostBySlugWithComments(string slug, CancellationToken ct = default);
     public Task<Post> CreatePost(Post post, CancellationToken ct = default);
+    public Task<Post> CreatePost(string title, Guid authorId, CancellationToken ct = default);
     public Task UpdatePost(Post post, UpdatePostRequest updatePostDto, CancellationToken ct = default);
     public Task DeletePost(Post post, CancellationToken ct = default);
     public Task<string> GenerateUniqueSlugAsync(string title, CancellationToken ct = default);
