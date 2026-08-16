@@ -10,6 +10,8 @@ using BlogApi.Integration.Extensions;
 using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
 using BlogApi.Repositories.Tags;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Integration.Controllers;
 
@@ -68,7 +70,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -95,7 +97,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -122,6 +124,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -133,7 +140,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "post-to-comment-on",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -141,6 +148,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -154,7 +166,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
 
         HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync(
@@ -164,6 +176,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -176,6 +193,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("slug");
     }
 
     [Fact]
@@ -188,13 +211,19 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
             new { Username = "commenter" },
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("$");
     }
 
     [Fact]
@@ -207,13 +236,19 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"api/v1.0/posts/{post.Slug}/comments",
             new { Body = "Nice post!" },
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("$");
     }
 
     [Fact]
@@ -226,7 +261,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         CreatePostCommentRequest request =
             new CreatePostCommentRequest { Username = "commenter", Body = CommentBodyOverMaxLength };
 
@@ -235,6 +270,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Body");
     }
 
     [Fact]
@@ -247,7 +288,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         CreatePostCommentRequest request =
             new CreatePostCommentRequest { Username = CommentUsernameOverMaxLength, Body = "Nice post!" };
 
@@ -256,6 +297,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Username");
     }
 
     #endregion
@@ -272,7 +319,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
@@ -295,7 +342,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         Comment comment1 = new Comment
         {
@@ -311,8 +358,8 @@ public class PostsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = post.Id
         };
-        await _commentsRepository.AddComment(comment1, ct: TestContext.Current.CancellationToken);
-        await _commentsRepository.AddComment(comment2, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment1, TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment2, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
@@ -347,6 +394,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("slug");
     }
 
     [Fact]
@@ -358,12 +411,17 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "post-without-comments",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}/comments", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -377,7 +435,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "post-without-comments",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -385,6 +443,11 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -400,7 +463,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         Comment comment1 = new Comment
         {
@@ -409,7 +472,7 @@ public class PostsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = post.Id
         };
-        await _commentsRepository.AddComment(comment1, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment1, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -437,7 +500,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         Comment comment1 = new Comment
         {
@@ -446,7 +509,7 @@ public class PostsControllerTests : IntegrationTestBase
             CreatedAt = DateTimeOffset.UtcNow,
             PostId = post.Id
         };
-        await _commentsRepository.AddComment(comment1, ct: TestContext.Current.CancellationToken);
+        await _commentsRepository.AddComment(comment1, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
@@ -478,7 +541,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -509,7 +572,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -535,7 +598,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -560,6 +623,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -574,6 +642,12 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("slug");
     }
 
     [Fact]
@@ -584,6 +658,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -598,13 +677,18 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
             bearerToken,
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion
@@ -625,7 +709,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Original Body",
             AuthorId = user.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title", Body = "Updated Body" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -655,6 +739,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -670,6 +759,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("slug");
     }
 
     [Fact]
@@ -683,7 +777,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
             new UpdatePostRequest(),
@@ -691,6 +785,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey(nameof(UpdatePostRequest));
     }
 
     [Fact]
@@ -704,7 +803,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = TitleOverMaxLength };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -713,6 +812,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Title");
     }
 
     [Fact]
@@ -726,7 +830,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Tags = ["java", "not@ValidSlug!"] };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -735,6 +839,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Tags[1]");
     }
 
     [Fact]
@@ -745,9 +854,9 @@ public class PostsControllerTests : IntegrationTestBase
         Tag tag1 = new Tag { Name = "Java", Slug = "java" };
         Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
         Tag tag3 = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(tag1, ct: TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(tag2, ct: TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(tag3, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag1, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag2, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag3, TestContext.Current.CancellationToken);
 
         Post post = new Post
         {
@@ -756,7 +865,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id
         };
         post.Tags.Add(tag1);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest { Tags = ["spring", "docker"] };
 
@@ -787,7 +896,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Original Body",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -815,7 +924,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Original Body",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Body = "Updated Body Only" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -837,7 +946,7 @@ public class PostsControllerTests : IntegrationTestBase
         (BlogUser author, string bearerToken) =
             await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Update]);
         Tag tag = new Tag { Name = "Java", Slug = "java" };
-        await _tagsRepository.AddTag(tag, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag, TestContext.Current.CancellationToken);
 
         Post post = new Post
         {
@@ -846,7 +955,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id
         };
         post.Tags.Add(tag);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
 
@@ -875,7 +984,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = true };
         DateTimeOffset before = DateTimeOffset.UtcNow;
 
@@ -905,7 +1014,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { IsPublished = false };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -933,7 +1042,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author.Id,
             PublishedAt = originalPublishedAt
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
         UpdatePostRequest request = new UpdatePostRequest { Title = "Updated Title Only" };
 
         HttpResponseMessage response = await HttpClient.PutWithBearerAsJsonAsync($"api/v1.0/posts/{post.Slug}",
@@ -957,7 +1066,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -969,6 +1078,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -983,7 +1097,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -995,6 +1109,11 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1009,7 +1128,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -1038,7 +1157,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title",
             AuthorId = user.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest
         {
@@ -1074,8 +1193,8 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "original-title-b",
             AuthorId = user.Id
         };
-        await _postsRepository.AddPost(postA, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postB, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postA, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postB, TestContext.Current.CancellationToken);
 
         UpdatePostRequest request = new UpdatePostRequest { Title = "Concurrent update title" };
 
@@ -1141,7 +1260,7 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task CreatePost_Returns400_WhenTitleIsMissing()
+    public async Task CreatePost_Returns400_WhenBodyIsEmpty()
     {
         (_, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Create]);
         HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync("api/v1.0/posts",
@@ -1150,6 +1269,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("$");
     }
 
     [Fact]
@@ -1165,6 +1290,12 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Title");
     }
 
     [Fact]
@@ -1195,6 +1326,12 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Title");
     }
 
     [Fact]
@@ -1208,6 +1345,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Title");
     }
 
     [Fact]
@@ -1222,6 +1365,11 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1239,6 +1387,11 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1290,7 +1443,7 @@ public class PostsControllerTests : IntegrationTestBase
             ReadingTime = 10,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
@@ -1317,8 +1470,8 @@ public class PostsControllerTests : IntegrationTestBase
     {
         Tag tag1 = new Tag { Name = "Java", Slug = "java" };
         Tag tag2 = new Tag { Name = "Spring", Slug = "spring" };
-        await _tagsRepository.AddTag(tag1, ct: TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(tag2, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag1, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(tag2, TestContext.Current.CancellationToken);
 
         Post post = new Post
         {
@@ -1329,7 +1482,7 @@ public class PostsControllerTests : IntegrationTestBase
         };
         post.Tags.Add(tag1);
         post.Tags.Add(tag2);
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
@@ -1350,6 +1503,11 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/posts/does-not-exist", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1361,12 +1519,17 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "draft-post",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts/{post.Slug}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1379,7 +1542,7 @@ public class PostsControllerTests : IntegrationTestBase
             Slug = "draft-post",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -1387,6 +1550,11 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1396,6 +1564,12 @@ public class PostsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync($"api/v1.0/posts/{InvalidSlug}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("slug");
     }
 
     [Fact]
@@ -1412,7 +1586,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = user.Id,
             ReadingTime = 2
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -1450,7 +1624,7 @@ public class PostsControllerTests : IntegrationTestBase
             Body = "Test post body content",
             AuthorId = _author.Id
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
@@ -1503,7 +1677,7 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = _author.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(post, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync("api/v1.0/posts?pageNumber=1&pageSize=10", TestContext.Current.CancellationToken);
@@ -1550,6 +1724,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("SortBy");
     }
 
     [Fact]
@@ -1559,6 +1739,12 @@ public class PostsControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Tags[0]");
     }
 
     [Fact]
@@ -1566,8 +1752,8 @@ public class PostsControllerTests : IntegrationTestBase
     {
         Tag javaTag = new Tag { Name = "Java", Slug = "java" };
         Tag dockerTag = new Tag { Name = "Docker", Slug = "docker" };
-        await _tagsRepository.AddTag(javaTag, ct: TestContext.Current.CancellationToken);
-        await _tagsRepository.AddTag(dockerTag, ct: TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(javaTag, TestContext.Current.CancellationToken);
+        await _tagsRepository.AddTag(dockerTag, TestContext.Current.CancellationToken);
 
         Post postWithJavaTag = new Post
         {
@@ -1585,8 +1771,8 @@ public class PostsControllerTests : IntegrationTestBase
             PublishedAt = DateTimeOffset.UtcNow
         };
         postWithDockerTag.Tags.Add(dockerTag);
-        await _postsRepository.AddPost(postWithJavaTag, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithDockerTag, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithJavaTag, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithDockerTag, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync("api/v1.0/posts?tags=java", TestContext.Current.CancellationToken);
@@ -1618,8 +1804,8 @@ public class PostsControllerTests : IntegrationTestBase
             AuthorId = author2.Id,
             PublishedAt = DateTimeOffset.UtcNow
         };
-        await _postsRepository.AddPost(postWithAuthor1, ct: TestContext.Current.CancellationToken);
-        await _postsRepository.AddPost(postWithAuthor2, ct: TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor1, TestContext.Current.CancellationToken);
+        await _postsRepository.AddPost(postWithAuthor2, TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetAsync($"api/v1.0/posts?author={author2.Id}", TestContext.Current.CancellationToken);
@@ -1637,12 +1823,13 @@ public class PostsControllerTests : IntegrationTestBase
     {
         for (int i = 0; i < 15; i++)
             await _postsRepository.AddPost(new Post
-            {
-                Title = $"Post {i}",
-                Slug = $"post-{i}",
-                AuthorId = _author.Id,
-                PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-i)
-            }, ct: TestContext.Current.CancellationToken);
+                {
+                    Title = $"Post {i}",
+                    Slug = $"post-{i}",
+                    AuthorId = _author.Id,
+                    PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-i)
+                },
+                TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.GetAsync("api/v1.0/posts?pageNumber=2&pageSize=10",
             TestContext.Current.CancellationToken);
@@ -1662,12 +1849,13 @@ public class PostsControllerTests : IntegrationTestBase
     {
         for (int i = 0; i < 5; i++)
             await _postsRepository.AddPost(new Post
-            {
-                Title = $"Post {i}",
-                Slug = $"post-{i}",
-                AuthorId = _author.Id,
-                PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-i)
-            }, ct: TestContext.Current.CancellationToken);
+                {
+                    Title = $"Post {i}",
+                    Slug = $"post-{i}",
+                    AuthorId = _author.Id,
+                    PublishedAt = DateTimeOffset.UtcNow.AddMinutes(-i)
+                },
+                TestContext.Current.CancellationToken);
 
         HttpResponseMessage response = await HttpClient.GetAsync("api/v1.0/posts?pageNumber=-50&pageSize=10",
             TestContext.Current.CancellationToken);
@@ -1712,11 +1900,12 @@ public class PostsControllerTests : IntegrationTestBase
         (BlogUser user, string bearerToken) =
             await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         await _postsRepository.AddPost(new Post
-        {
-            Title = "Draft post",
-            Slug = "draft-post",
-            AuthorId = user.Id
-        }, ct: TestContext.Current.CancellationToken);
+            {
+                Title = "Draft post",
+                Slug = "draft-post",
+                AuthorId = user.Id
+            },
+            TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts", bearerToken, TestContext.Current.CancellationToken);
@@ -1735,11 +1924,12 @@ public class PostsControllerTests : IntegrationTestBase
         await CreateRoleWithPermissions(role, [Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser(roles: [role]);
         await _postsRepository.AddPost(new Post
-        {
-            Title = "Draft post",
-            Slug = "draft-post",
-            AuthorId = user.Id
-        }, ct: TestContext.Current.CancellationToken);
+            {
+                Title = "Draft post",
+                Slug = "draft-post",
+                AuthorId = user.Id
+            },
+            TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=false",
@@ -1759,11 +1949,12 @@ public class PostsControllerTests : IntegrationTestBase
         (BlogUser user, string bearerToken) =
             await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
         await _postsRepository.AddPost(new Post
-        {
-            Title = "Draft post",
-            Slug = "draft-post",
-            AuthorId = user.Id
-        }, ct: TestContext.Current.CancellationToken);
+            {
+                Title = "Draft post",
+                Slug = "draft-post",
+                AuthorId = user.Id
+            },
+            TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=true",
@@ -1783,11 +1974,12 @@ public class PostsControllerTests : IntegrationTestBase
     {
         (BlogUser user, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read]);
         await _postsRepository.AddPost(new Post
-        {
-            Title = "Draft post",
-            Slug = "draft-post",
-            AuthorId = user.Id
-        }, ct: TestContext.Current.CancellationToken);
+            {
+                Title = "Draft post",
+                Slug = "draft-post",
+                AuthorId = user.Id
+            },
+            TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=true",
@@ -1806,11 +1998,12 @@ public class PostsControllerTests : IntegrationTestBase
     {
         (BlogUser user, string bearerToken) = await RegisterAuthenticatedUser();
         await _postsRepository.AddPost(new Post
-        {
-            Title = "Draft post",
-            Slug = "draft-post",
-            AuthorId = user.Id
-        }, ct: TestContext.Current.CancellationToken);
+            {
+                Title = "Draft post",
+                Slug = "draft-post",
+                AuthorId = user.Id
+            },
+            TestContext.Current.CancellationToken);
 
         HttpResponseMessage response =
             await HttpClient.GetWithBearerAsync("api/v1.0/posts",
@@ -1818,6 +2011,11 @@ public class PostsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion

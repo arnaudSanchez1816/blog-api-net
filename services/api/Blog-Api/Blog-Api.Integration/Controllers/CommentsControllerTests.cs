@@ -9,6 +9,8 @@ using BlogApi.Domain;
 using BlogApi.Integration.Extensions;
 using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Integration.Controllers;
 
@@ -87,6 +89,11 @@ public class CommentsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync("api/v1.0/comments/abcd", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("id");
     }
 
     [Fact]
@@ -96,6 +103,11 @@ public class CommentsControllerTests : IntegrationTestBase
             await HttpClient.GetAsync($"api/v1.0/comments/{Guid.NewGuid()}", TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -118,6 +130,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion
@@ -237,6 +254,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -254,6 +276,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("id");
     }
 
     [Fact]
@@ -280,6 +307,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Username");
     }
 
     [Fact]
@@ -305,6 +337,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Username");
     }
 
     [Fact]
@@ -330,6 +367,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Body");
     }
 
     [Fact]
@@ -355,6 +397,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Body");
     }
 
     [Fact]
@@ -370,6 +417,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -395,6 +447,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion
@@ -440,6 +497,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status404NotFound);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -452,6 +514,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("id");
     }
 
     [Fact]
@@ -463,6 +530,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -484,6 +556,11 @@ public class CommentsControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion

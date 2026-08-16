@@ -5,6 +5,8 @@ using BlogApi.Contracts.V1.Responses;
 using BlogApi.Domain;
 using BlogApi.Integration.Extensions;
 using BlogApi.Repositories.Posts;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BlogApi.Integration.Controllers;
 
@@ -67,6 +69,11 @@ public class UsersControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -78,6 +85,11 @@ public class UsersControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion
@@ -198,6 +210,11 @@ public class UsersControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("SortBy");
     }
 
     [Fact]
@@ -209,6 +226,11 @@ public class UsersControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -220,6 +242,11 @@ public class UsersControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     #endregion

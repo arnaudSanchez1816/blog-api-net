@@ -11,6 +11,7 @@ using BlogApi.Services.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Net.Http.Headers;
 using SameSiteMode = Microsoft.AspNetCore.Http.SameSiteMode;
@@ -95,7 +96,8 @@ public class AuthControllerTests : IntegrationTestBase
         const string username = "admin";
         const string email = "admin@email.com";
         const string password = "Password1234";
-        AuthenticationResult registerResult = await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
+        AuthenticationResult registerResult =
+            await _authService.Register(username, email, password, ct: TestContext.Current.CancellationToken);
 
         LoginRequest request = new LoginRequest
         {
@@ -170,6 +172,11 @@ public class AuthControllerTests : IntegrationTestBase
             await HttpClient.PostAsJsonAsync("api/v1/auth/login", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
         bool hasCookieHeaders =
             response.Headers.TryGetValues(HeaderNames.SetCookie, out IEnumerable<string>? cookieHeaders);
         if (hasCookieHeaders)
@@ -184,7 +191,7 @@ public class AuthControllerTests : IntegrationTestBase
     [InlineData(null)]
     [InlineData("")]
     [InlineData("invalidEmail@")]
-    [InlineData("invalidEmail@com")]
+    [InlineData("invalidEmail@@com")]
     [InlineData("invalidEmail")]
     public async Task Login_Returns400_WhenEmailIsInvalid(string? email)
     {
@@ -201,6 +208,20 @@ public class AuthControllerTests : IntegrationTestBase
             await HttpClient.PostAsJsonAsync("api/v1/auth/login", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+        pd.Errors.Should().ContainKey("Email");
+        bool hasCookieHeaders =
+            response.Headers.TryGetValues(HeaderNames.SetCookie, out IEnumerable<string>? cookieHeaders);
+        if (hasCookieHeaders)
+        {
+            string? refreshTokenCookie =
+                cookieHeaders!.FirstOrDefault(x => x.StartsWith($"{RefreshTokenAuthDefaults.RefreshTokenCookie}="));
+            refreshTokenCookie.Should().BeNull();
+        }
     }
 
     [Fact]
@@ -217,6 +238,11 @@ public class AuthControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("$");
     }
 
     [Fact]
@@ -236,6 +262,11 @@ public class AuthControllerTests : IntegrationTestBase
             await HttpClient.PostAsJsonAsync("api/v1/auth/login", request, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("Password");
     }
 
     [Fact]
@@ -250,6 +281,11 @@ public class AuthControllerTests : IntegrationTestBase
             await HttpClient.PostAsJsonAsync("api/v1/auth/login", new { email }, TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        ValidationProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status400BadRequest);
+        pd.Errors.Should().ContainKey("$");
     }
 
     #endregion
@@ -299,7 +335,8 @@ public class AuthControllerTests : IntegrationTestBase
                 TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        RefreshToken? refreshToken = await _tokensService.GetRefreshToken(decodedToken, ct: TestContext.Current.CancellationToken);
+        RefreshToken? refreshToken =
+            await _tokensService.GetRefreshToken(decodedToken, ct: TestContext.Current.CancellationToken);
         refreshToken.Should().NotBeNull();
         refreshToken.Invalidated.Should().BeTrue();
         refreshToken.IsActive(Factory.TimeProvider.GetUtcNow()).Should().BeFalse();
@@ -406,6 +443,11 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -416,6 +458,11 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -424,7 +471,8 @@ public class AuthControllerTests : IntegrationTestBase
         (string refreshTokenCookieValue, string _) = await RegisterAndLoginAsync();
         // Change Token expiration date manually (because there is no setter)
         string decodedToken = Uri.UnescapeDataString(refreshTokenCookieValue);
-        RefreshToken? token = await _tokensService.GetRefreshToken(decodedToken, ct: TestContext.Current.CancellationToken);
+        RefreshToken? token =
+            await _tokensService.GetRefreshToken(decodedToken, ct: TestContext.Current.CancellationToken);
         token.Should().NotBeNull();
         _context.Entry(token).Property(x => x.ExpirationDate).CurrentValue = DateTimeOffset.UtcNow.AddMinutes(-1);
         await _context.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -434,6 +482,11 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -450,6 +503,11 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -467,6 +525,11 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         secondResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await secondResponse.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -482,6 +545,11 @@ public class AuthControllerTests : IntegrationTestBase
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -517,7 +585,8 @@ public class AuthControllerTests : IntegrationTestBase
         string secondChildToken = ExtractRefreshTokenCookieValue(responses[1]);
         firstChildToken.Should().Be(secondChildToken);
 
-        RefreshToken? originalToken = await _tokensService.GetRefreshToken(decodedOriginalToken, ct: TestContext.Current.CancellationToken);
+        RefreshToken? originalToken =
+            await _tokensService.GetRefreshToken(decodedOriginalToken, ct: TestContext.Current.CancellationToken);
         originalToken.Should().NotBeNull();
         originalToken.ReplacedByToken.Should().NotBeNull();
         originalToken.ReplacedByToken!.Token.Should().Be(Uri.UnescapeDataString(firstChildToken));
