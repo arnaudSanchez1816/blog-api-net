@@ -18,4 +18,5 @@ public class AppAuthenticationOptions
 
     public TimeSpan RefreshTokensExpirationBuffer { get; init; } = TimeSpan.FromDays(7);
     public TimeSpan RefreshTokensCleanupInterval { get; init; } = TimeSpan.FromHours(24);
+    public TimeSpan AccessTokenLifetime { get; init; } = TimeSpan.FromMinutes(5);
 }

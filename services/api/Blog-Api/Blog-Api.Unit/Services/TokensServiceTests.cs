@@ -20,6 +20,7 @@ public class TokensServiceTests : IDisposable
 
     private static readonly Uri JwtIssuerUri = new Uri("https://blog-api.test/");
     private static readonly Uri JwtAudienceUri = new Uri("https://blog-api.test/");
+    private static readonly TimeSpan AccessTokenLifetime = 5.Minutes();
     private readonly Mock<IRefreshTokensRepository> _refreshTokensRepository;
 
     private readonly FakeTimeProvider _timeProvider;
@@ -35,7 +36,8 @@ public class TokensServiceTests : IDisposable
             {
                 JwtAccessSecret = JwtAccessSecret,
                 JwtIssuerUri = JwtIssuerUri,
-                JwtAudienceUri = JwtAudienceUri
+                JwtAudienceUri = JwtAudienceUri,
+                AccessTokenLifetime = AccessTokenLifetime
             });
 
         _tokensService = new TokensService(authOptions, _refreshTokensRepository.Object, _timeProvider);
@@ -100,7 +102,7 @@ public class TokensServiceTests : IDisposable
     }
 
     [Fact]
-    public void GenerateAccessToken_SetsExpiry_ToSixtyMinutesFromNow()
+    public void GenerateAccessToken_SetsExpiry_ToConfiguredAccessTokenLifetimeFromNow()
     {
         BlogUser user = CreateUser();
         DateTime beforeGeneration = DateTime.UtcNow;
@@ -110,7 +112,7 @@ public class TokensServiceTests : IDisposable
         JsonWebTokenHandler handler = new JsonWebTokenHandler();
         JsonWebToken jwt = handler.ReadJsonWebToken(token);
 
-        jwt.ValidTo.Should().BeCloseTo(beforeGeneration.AddMinutes(60), 5.Seconds());
+        jwt.ValidTo.Should().BeCloseTo(beforeGeneration.Add(AccessTokenLifetime), 5.Seconds());
     }
 
     [Fact]
@@ -203,7 +205,8 @@ public class TokensServiceTests : IDisposable
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
         refreshToken.UserId.Should().Be(user.Id);
     }
@@ -213,7 +216,8 @@ public class TokensServiceTests : IDisposable
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
         refreshToken.Used.Should().BeFalse();
         refreshToken.Invalidated.Should().BeFalse();
@@ -227,7 +231,8 @@ public class TokensServiceTests : IDisposable
         BlogUser user = CreateUser();
         DateTimeOffset beforeGeneration = DateTimeOffset.UtcNow;
 
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
         refreshToken.ExpirationDate.Should().BeCloseTo(beforeGeneration.AddDays(30), 5.Seconds());
         refreshToken.CreationDate.Should().BeCloseTo(beforeGeneration, 5.Seconds());
@@ -238,7 +243,8 @@ public class TokensServiceTests : IDisposable
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
         refreshToken.Token.Should().NotBeNullOrWhiteSpace();
         byte[] decoded = Convert.FromBase64String(refreshToken.Token);
@@ -250,8 +256,10 @@ public class TokensServiceTests : IDisposable
     {
         BlogUser user = CreateUser();
 
-        RefreshToken firstToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
-        RefreshToken secondToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken firstToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
+        RefreshToken secondToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
         firstToken.Token.Should().NotBe(secondToken.Token);
     }
@@ -261,7 +269,8 @@ public class TokensServiceTests : IDisposable
     {
         BlogUser user = CreateUser();
 
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
         _refreshTokensRepository.Verify(x => x.AddToken(refreshToken, It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -273,31 +282,36 @@ public class TokensServiceTests : IDisposable
 
         _tokensService.CreateRefreshToken(user);
 
-        _refreshTokensRepository.Verify(x => x.AddToken(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refreshTokensRepository.Verify(x => x.AddToken(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
     public async Task UseRefreshToken_SetToken_AsUsed()
     {
         BlogUser user = CreateUser();
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
         RefreshToken replacementToken = _tokensService.CreateRefreshToken(user);
 
-        await _tokensService.UseRefreshToken(refreshToken, replacementToken, ct: TestContext.Current.CancellationToken);
+        await _tokensService.UseRefreshToken(refreshToken, replacementToken, TestContext.Current.CancellationToken);
 
         refreshToken.Used.Should().BeTrue();
         refreshToken.UsedDate.Should().BeCloseTo(_timeProvider.GetUtcNow(), TimeSpan.FromSeconds(1));
         refreshToken.ReplacedByToken.Should().Be(replacementToken);
-        _refreshTokensRepository.Verify(x => x.RotateToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()), Times.Once);
+        _refreshTokensRepository.Verify(x =>
+                x.RotateToken(refreshToken, replacementToken, It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
     public async Task RevokeRefreshToken_SetToken_AsInvalidated()
     {
         BlogUser user = CreateUser();
-        RefreshToken refreshToken = await _tokensService.GenerateAndSaveRefreshToken(user, ct: TestContext.Current.CancellationToken);
+        RefreshToken refreshToken =
+            await _tokensService.GenerateAndSaveRefreshToken(user, TestContext.Current.CancellationToken);
 
-        await _tokensService.RevokeRefreshToken(refreshToken, ct: TestContext.Current.CancellationToken);
+        await _tokensService.RevokeRefreshToken(refreshToken, TestContext.Current.CancellationToken);
 
         refreshToken.Invalidated.Should().BeTrue();
         _refreshTokensRepository.Verify(x => x.UpdateToken(refreshToken, It.IsAny<CancellationToken>()), Times.Once);
