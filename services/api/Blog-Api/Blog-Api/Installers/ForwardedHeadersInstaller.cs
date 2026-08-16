@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using IPNetwork = System.Net.IPNetwork;
 
 namespace BlogApi.Installers;
 
@@ -10,11 +11,10 @@ public static class ForwardedHeadersInstaller
         services.Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-            // Dokploy's reverse proxy runs on an internal Docker network with an address
-            // that isn't known ahead of time, so the usual KnownProxies/KnownNetworks
-            // allowlist can't be used here.
-            options.KnownIPNetworks.Clear();
-            options.KnownProxies.Clear();
+            // Add all ipv4 private ranges, this should allow communication with Dokploy reverse proxy inside the docker container
+            options.KnownIPNetworks.Add(IPNetwork.Parse("10.0.0.0/8"));
+            options.KnownIPNetworks.Add(IPNetwork.Parse("172.16.0.0/12"));
+            options.KnownIPNetworks.Add(IPNetwork.Parse("192.168.0.0/16"));
         });
 
         return services;
