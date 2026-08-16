@@ -120,7 +120,7 @@ public class TagsController : ControllerBase
 
     /// <summary>
     /// </summary>
-    /// <param name="slug"></param>
+    /// <param name="tagSlug"></param>
     /// <param name="request"></param>
     /// <param name="ct"></param>
     /// <response code="200"></response>
@@ -133,9 +133,9 @@ public class TagsController : ControllerBase
     [HasPermission(Permissions.Tags.Update)]
     public async Task<ActionResult<TagResponse>> UpdateBySlug(
         [FromRoute] [RegularExpression(SlugGenerator.Pattern)]
-        string slug, [FromBody] UpdateTagRequest request, CancellationToken ct)
+        string tagSlug, [FromBody] UpdateTagRequest request, CancellationToken ct)
     {
-        Tag? tag = await _tagsService.GetTag(slug, ct);
+        Tag? tag = await _tagsService.GetTag(tagSlug, ct);
         if (tag is null)
         {
             return NotFound();

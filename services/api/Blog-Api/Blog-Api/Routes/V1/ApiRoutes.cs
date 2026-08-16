@@ -28,7 +28,9 @@ public static class ApiRoutes
         public const string GetAll = "";
         public const string Create = "";
         public const string DeleteBySlug = "{slug}";
-        public const string UpdateBySlug = "{slug}";
+
+        // tagSlug instead of slug to avoid ValidationProblemDetails errors map conflict between route param and body param
+        public const string UpdateBySlug = "{tagSlug}";
     }
 
     public static class Comments
