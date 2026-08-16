@@ -35,8 +35,12 @@ public class GlobalExceptionHandler : IExceptionHandler
             case DbException dbException:
                 problemDetails = HandleDbException(dbException);
                 break;
+            case SlugConflictException slugConflictException:
+                problemDetails = HandleSlugConflictException(slugConflictException);
+                break;
             default:
-                _logger.LogError(exception, "Unhandled exception occurred. TraceId: {TraceId}",
+                _logger.LogError(exception,
+                    "Unhandled exception occurred. TraceId: {TraceId}",
                     httpContext.TraceIdentifier);
                 problemDetails = CreateGenericProblemDetails();
                 break;
@@ -63,20 +67,30 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     private static ProblemDetails CreateGenericProblemDetails()
     {
-        return CreateBaseProblemDetails(StatusCodes.Status500InternalServerError, "Internal server error",
+        return CreateBaseProblemDetails(StatusCodes.Status500InternalServerError,
+            "Internal server error",
             "An error occured when processing this request.");
     }
 
     private ProblemDetails HandleUniqueConstraintException(UniqueConstraintException exception)
     {
-        return CreateBaseProblemDetails(StatusCodes.Status409Conflict, "Unique constraint violation",
+        return CreateBaseProblemDetails(StatusCodes.Status409Conflict,
+            "Unique constraint violation",
             "A resource with conflicting data already exists.");
+    }
+
+    private ProblemDetails HandleSlugConflictException(SlugConflictException exception)
+    {
+        return CreateBaseProblemDetails(StatusCodes.Status409Conflict,
+            "Slug conflict",
+            $"A resource with given slug already exists : {exception.Slug}");
     }
 
     private ProblemDetails HandleUpdateConcurrencyException(
         DbUpdateConcurrencyException exception)
     {
-        return CreateBaseProblemDetails(StatusCodes.Status409Conflict, "Update concurrency error",
+        return CreateBaseProblemDetails(StatusCodes.Status409Conflict,
+            "Update concurrency error",
             "The resource was modified by another transaction. Please retry.");
     }
 
