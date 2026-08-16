@@ -62,4 +62,13 @@ jobs:
           exit 1
 
       - name: Smoke test deployed API
-        run: curl -fsS "https://api.blogapinet.asanchez1816.cloud/health" > /dev/null
+        run: |
+          for i in $(seq 1 10); do
+            if curl -fsS "https://api.blogapinet.asanchez1816.cloud/health" > /dev/null; then
+              exit 0
+            fi
+            echo "Smoke test attempt $i failed, retrying in 5s..."
+            sleep 5
+          done
+          echo "Smoke test failed after retries"
+          exit 1
