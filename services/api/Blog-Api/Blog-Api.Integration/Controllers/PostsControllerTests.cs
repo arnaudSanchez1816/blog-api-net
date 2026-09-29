@@ -7,11 +7,13 @@ using BlogApi.Contracts.V1.Responses;
 using BlogApi.Data;
 using BlogApi.Domain;
 using BlogApi.Integration.Extensions;
+using BlogApi.Options;
 using BlogApi.Repositories.Comments;
 using BlogApi.Repositories.Posts;
 using BlogApi.Repositories.Tags;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace BlogApi.Integration.Controllers;
 
@@ -180,6 +182,38 @@ public class PostsControllerTests : IntegrationTestBase
             await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
         pd.Should().NotBeNull();
         pd.Status.Should().Be(StatusCodes.Status403Forbidden);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task CreatePostComment_Returns401_WhenAccessTokenIsExpired()
+    {
+        (_, string bearerToken) = await RegisterAuthenticatedUser();
+        Post post = new Post
+        {
+            Title = "Post to comment on",
+            Slug = "post-to-comment-on",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
+        CreatePostCommentRequest request = new CreatePostCommentRequest { Username = "commenter", Body = "Nice post!" };
+        // Advance time by 1 day
+        IOptions<AppAuthenticationOptions> authenticationOptions =
+            GetRequiredService<IOptions<AppAuthenticationOptions>>();
+        Factory.TimeProvider.Advance(authenticationOptions.Value.AccessTokenLifetime.Add(TimeSpan.FromDays(1)));
+
+        HttpResponseMessage response = await HttpClient.PostWithBearerAsJsonAsync(
+            $"api/v1.0/posts/{post.Slug}/comments",
+            request,
+            bearerToken,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
         pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
@@ -451,6 +485,47 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task GetPostCommentsBySlug_Returns401_WhenAccessTokenIsExpired()
+    {
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Comments.Read]);
+
+        Post post = new Post
+        {
+            Title = "Post with comments",
+            Slug = "post-with-comments",
+            AuthorId = user.Id,
+            PublishedAt = DateTimeOffset.UtcNow.AddDays(-20)
+        };
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
+
+        Comment comment1 = new Comment
+        {
+            Username = "commenter-one",
+            Body = "First comment body",
+            CreatedAt = DateTimeOffset.UtcNow,
+            PostId = post.Id
+        };
+        await _commentsRepository.AddComment(comment1, TestContext.Current.CancellationToken);
+        // Advance time by 1 day
+        IOptions<AppAuthenticationOptions> authenticationOptions =
+            GetRequiredService<IOptions<AppAuthenticationOptions>>();
+        Factory.TimeProvider.Advance(authenticationOptions.Value.AccessTokenLifetime.Add(TimeSpan.FromDays(1)));
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}/comments",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
     public async Task GetPostCommentsBySlug_ReturnsComments_WhenPostIsUnpublishedAndUserIsOwner()
     {
         (BlogUser user, string bearerToken) =
@@ -655,6 +730,35 @@ public class PostsControllerTests : IntegrationTestBase
     {
         HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync("api/v1.0/posts/does-not-exist",
             null,
+            TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task DeletePost_Returns401_WhenAccessTokenIsExpired()
+    {
+        (_, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Delete]);
+        Post post = new Post
+        {
+            Title = "Post to Delete",
+            Slug = "post-to-delete",
+            AuthorId = _author.Id,
+            PublishedAt = DateTimeOffset.UtcNow
+        };
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
+        IOptions<AppAuthenticationOptions> authenticationOptions =
+            GetRequiredService<IOptions<AppAuthenticationOptions>>();
+        Factory.TimeProvider.Advance(authenticationOptions.Value.AccessTokenLifetime.Add(TimeSpan.FromDays(1)));
+
+        HttpResponseMessage response = await HttpClient.DeleteWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+            bearerToken,
             TestContext.Current.CancellationToken);
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -1511,7 +1615,7 @@ public class PostsControllerTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetBySlug_Returns404_WhenPostIsUnpublished()
+    public async Task GetBySlug_Returns404_WhenPostIsUnpublishedAndNoAccessTokenIsProvided()
     {
         Post post = new Post
         {
@@ -1608,6 +1712,34 @@ public class PostsControllerTests : IntegrationTestBase
         body.Author.Id.Should().Be(user.Id);
         body.Author.Name.Should().Be(user.DisplayName);
         body.Tags.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBySlug_Returns401_WhenPostIsUnpublishedAndAccessTokenIsInvalid()
+    {
+        (BlogUser user, string bearerToken) = await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read]);
+        Post post = new Post
+        {
+            Title = "Draft Post",
+            Slug = "draft-post",
+            AuthorId = user.Id
+        };
+        await _postsRepository.AddPost(post, TestContext.Current.CancellationToken);
+        IOptions<AppAuthenticationOptions> authenticationOptions =
+            GetRequiredService<IOptions<AppAuthenticationOptions>>();
+        Factory.TimeProvider.Advance(authenticationOptions.Value.AccessTokenLifetime.Add(TimeSpan.FromDays(1)));
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync($"api/v1.0/posts/{post.Slug}",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -1991,6 +2123,35 @@ public class PostsControllerTests : IntegrationTestBase
             await response.Content.ReadFromJsonAsync<GetPostsResponse>(TestContext.Current.CancellationToken);
         body.Should().NotBeNull();
         body.Posts.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPosts_Returns401_WhenAccessTokenIsExpired()
+    {
+        (BlogUser user, string bearerToken) =
+            await RegisterAuthenticatedUserWithPermissions([Permissions.Posts.Read, Permissions.Posts.ReadUnpublished]);
+        await _postsRepository.AddPost(new Post
+            {
+                Title = "Draft post",
+                Slug = "draft-post",
+                AuthorId = user.Id
+            },
+            TestContext.Current.CancellationToken);
+        IOptions<AppAuthenticationOptions> authenticationOptions =
+            GetRequiredService<IOptions<AppAuthenticationOptions>>();
+        Factory.TimeProvider.Advance(authenticationOptions.Value.AccessTokenLifetime.Add(TimeSpan.FromDays(1)));
+
+        HttpResponseMessage response =
+            await HttpClient.GetWithBearerAsync("api/v1.0/posts?unpublished=true",
+                bearerToken,
+                TestContext.Current.CancellationToken);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        ProblemDetails? pd =
+            await response.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        pd.Should().NotBeNull();
+        pd.Status.Should().Be(StatusCodes.Status401Unauthorized);
+        pd.Title.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]

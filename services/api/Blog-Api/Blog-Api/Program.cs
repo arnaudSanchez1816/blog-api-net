@@ -38,7 +38,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.InstallCors();
 app.InstallRateLimiter();
-app.UseAuthentication();
+app.InstallAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

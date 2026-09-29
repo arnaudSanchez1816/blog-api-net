@@ -61,7 +61,8 @@ public class TokensService : ITokensService
         SecurityTokenDescriptor jwtDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.Add(_authOptions.AccessTokenLifetime),
+            Expires = _timeProvider.GetUtcNow().UtcDateTime.Add(_authOptions.AccessTokenLifetime),
+            NotBefore = _timeProvider.GetUtcNow().UtcDateTime,
             Issuer = _authOptions.JwtIssuerUri.ToString(),
             Audience = _authOptions.JwtAudienceUri.ToString(),
             SigningCredentials =
