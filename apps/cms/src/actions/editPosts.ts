@@ -3,10 +3,10 @@ import { parseErrorResponse } from "../utils/parseErrorResponse"
 import { addToast } from "@heroui/react"
 import { updatePost } from "@repo/client-api/posts"
 
-export async function editPostsActions(
-    { request, params }: ActionFunctionArgs,
-    accessToken: string
-) {
+export async function editPostsActions({
+    request,
+    params,
+}: ActionFunctionArgs) {
     const { method } = request
     const { postSlug } = params
 
@@ -15,20 +15,16 @@ export async function editPostsActions(
     }
 
     if (method.toUpperCase() === "PUT") {
-        return await updatePostAction(postSlug, request, accessToken)
+        return await updatePostAction(postSlug, request)
     }
 
     throw data({ message: "Invalid method" }, 400)
 }
 
-async function updatePostAction(
-    slug: string,
-    request: Request,
-    accessToken: string
-) {
+async function updatePostAction(slug: string, request: Request) {
     try {
         const updatedPostData = await request.json()
-        const updatedPost = await updatePost(slug, updatedPostData, accessToken)
+        const updatedPost = await updatePost(slug, updatedPostData)
 
         addToast({
             title: "Success",

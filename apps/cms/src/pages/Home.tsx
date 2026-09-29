@@ -9,18 +9,10 @@ import useAuth from "@repo/auth-provider/useAuth"
 
 const NB_RECENT_POSTS = 3
 
-interface RecentPostsProps {
-    token: string
-}
-
-function RecentPosts({ token }: RecentPostsProps) {
+function RecentPosts() {
     const fetchRecentPostsQuery = useCallback(
-        () =>
-            fetchUserPosts(
-                { pageSize: NB_RECENT_POSTS, sortBy: "-id" },
-                token
-            ),
-        [token]
+        () => fetchUserPosts({ pageSize: NB_RECENT_POSTS, sortBy: "-id" }),
+        []
     )
     const [data, loading, errors] = useQuery({
         queryFn: fetchRecentPostsQuery,
@@ -42,7 +34,7 @@ function RecentPosts({ token }: RecentPostsProps) {
 }
 
 export default function Home() {
-    const { user, accessToken } = useAuth()
+    const { user } = useAuth()
     return (
         <div>
             <div className="text-2xl">
@@ -58,7 +50,7 @@ export default function Home() {
             <div className="mt-8">
                 <h2 className="text-2xl font-medium">My recent articles</h2>
                 <div className="mt-4">
-                    <RecentPosts token={accessToken!} />
+                    <RecentPosts />
                 </div>
             </div>
         </div>

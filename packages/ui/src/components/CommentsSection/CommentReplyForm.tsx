@@ -13,11 +13,9 @@ export default function CommentReplyForm({
     postSlug,
     fetchComments,
 }: CommentReplyFormProps) {
-    let accessToken: string | null | undefined
     let user: UserDetails | null | undefined
     try {
         const authContext = useAuth()
-        accessToken = authContext.accessToken
         user = authContext.user
     } catch {
         /* empty */
@@ -34,14 +32,11 @@ export default function CommentReplyForm({
 
         setSubmitting(true)
         try {
-            await postComment(
-                {
-                    postSlug,
-                    username: username as string,
-                    commentBody: body as string,
-                },
-                accessToken
-            )
+            await postComment({
+                postSlug,
+                username: username as string,
+                commentBody: body as string,
+            })
 
             if (fetchComments) {
                 fetchComments()

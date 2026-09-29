@@ -1,3 +1,4 @@
+import { authFetch } from "./authFetch"
 import { checkApiUrlEnvVariable } from "./utils"
 
 export interface TagDetails {
@@ -28,21 +29,16 @@ export const fetchTags = async (): Promise<FetchTagsResult> => {
     return tags
 }
 
-export const deleteTag = async (
-    slug: string,
-    accessToken: string
-): Promise<TagDetails> => {
+export const deleteTag = async (slug: string): Promise<TagDetails> => {
     checkApiUrlEnvVariable()
 
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./tags/${slug}`, apiUrl)
 
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
     })
     if (!response.ok) {
@@ -60,20 +56,17 @@ interface EditTagParams {
 
 export const editTag = async (
     { name, newSlug }: EditTagParams,
-    slug: string,
-    accessToken: string
+    slug: string
 ): Promise<TagDetails> => {
     checkApiUrlEnvVariable()
 
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./tags/${slug}`, apiUrl)
 
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ name, slug: newSlug }),
     })
@@ -87,21 +80,19 @@ export const editTag = async (
 
 type CreateTagParams = Pick<TagDetails, "name" | "slug">
 
-export const createTag = async (
-    { name, slug }: CreateTagParams,
-    accessToken: string
-): Promise<TagDetails> => {
+export const createTag = async ({
+    name,
+    slug,
+}: CreateTagParams): Promise<TagDetails> => {
     checkApiUrlEnvVariable()
 
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./tags`, apiUrl)
 
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ name, slug }),
     })

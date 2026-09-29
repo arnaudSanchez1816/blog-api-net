@@ -12,15 +12,14 @@ import PostHeader from "@repo/ui/components/posts/PostHeader"
 import PostMarkdown from "@repo/ui/components/posts/PostMarkdown"
 import { useSearchLayoutContext } from "@repo/ui/components/layouts/SearchLayout"
 
-export async function postLoader(
-    { params }: LoaderFunctionArgs,
-    accessToken: string
-): Promise<PostDetails> {
+export async function postLoader({
+    params,
+}: LoaderFunctionArgs): Promise<PostDetails> {
     const postSlugSchema = postSchema.pick({ slug: true })
     const { slug } = await postSlugSchema.parseAsync({
         slug: params.postSlug,
     })
-    const post = await fetchPost(slug, accessToken)
+    const post = await fetchPost(slug)
 
     return post
 }

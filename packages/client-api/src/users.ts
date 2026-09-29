@@ -1,3 +1,4 @@
+import { authFetch } from "./authFetch"
 import { FetchPostsParams, PostDetails } from "./posts"
 import { checkApiUrlEnvVariable, timeoutSignal } from "./utils"
 
@@ -8,22 +9,15 @@ export interface UserDetails {
 }
 
 export const fetchCurrentUser = async (
-    token: string,
     signal?: AbortSignal
 ): Promise<UserDetails> => {
-    if (!token) {
-        throw new Error("Token is invalid")
-    }
-
     checkApiUrlEnvVariable()
 
     const url = new URL("./users/me", import.meta.env.VITE_API_URL)
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
-        mode: "cors",
         method: "get",
         signal: timeoutSignal(5000, signal),
     })
@@ -41,21 +35,14 @@ export interface FetchUserPostsResult {
     results: PostDetails[]
 }
 
-export const fetchUserPosts = async (
-    {
-        q,
-        tags,
-        page,
-        pageSize,
-        sortBy,
-        showUnpublished = false,
-    }: FetchPostsParams,
-    token: string
-): Promise<FetchUserPostsResult> => {
-    if (!token) {
-        throw new Error("Invalid token")
-    }
-
+export const fetchUserPosts = async ({
+    q,
+    tags,
+    page,
+    pageSize,
+    sortBy,
+    showUnpublished = false,
+}: FetchPostsParams): Promise<FetchUserPostsResult> => {
     checkApiUrlEnvVariable()
     const url = new URL("./users/me/posts", import.meta.env.VITE_API_URL)
     const searchParams = new URLSearchParams()
@@ -88,12 +75,10 @@ export const fetchUserPosts = async (
         searchParams.set("q", q)
     }
 
-    const response = await fetch(`${url}?${searchParams}`, {
-        mode: "cors",
+    const response = await authFetch(`${url}?${searchParams}`, {
         method: "get",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
     })
 

@@ -4,7 +4,6 @@ import PostsListSkeleton from "@repo/ui/components/PostsList/PostsListSkeleton"
 import PostsList from "@repo/ui/components/PostsList/PostsList"
 import { useCallback, useEffect, useState } from "react"
 import { fetchPosts } from "@repo/client-api/posts"
-import useAuth from "@repo/auth-provider/useAuth"
 import { Button } from "@heroui/react"
 import PencilIcon from "@repo/ui/components/Icons/PencilIcon"
 import NewArticleModal from "../components/modals/NewArticleModal"
@@ -16,28 +15,21 @@ import { useSearchLayoutContext } from "../../../../packages/ui/src/components/l
 const DEFAULT_PAGE_SIZE = 10
 
 interface AllPostsQueryParams {
-    accessToken: string
     searchParams: URLSearchParams
 }
 
-async function allPostsQuery({
-    accessToken,
-    searchParams,
-}: AllPostsQueryParams) {
+async function allPostsQuery({ searchParams }: AllPostsQueryParams) {
     const page = Number(searchParams.get("page"))
     const pageSize = Number(searchParams.get("pageSize")) || DEFAULT_PAGE_SIZE
     const sortBy = searchParams.get("sortBy")
     const showUnpublished = searchParams.get("unpublished") === "true"
 
-    return fetchPosts(
-        {
-            page,
-            pageSize,
-            sortBy,
-            showUnpublished,
-        },
-        accessToken
-    )
+    return fetchPosts({
+        page,
+        pageSize,
+        sortBy,
+        showUnpublished,
+    })
 }
 
 function NewPostButton() {
@@ -65,14 +57,10 @@ function NewPostButton() {
 }
 
 export default function AllPosts() {
-    const { accessToken } = useAuth()
     const [searchParams] = useSearchParams()
     const queryFn = useCallback(() => {
-        if (!accessToken) {
-            throw new Error("Invalid access token")
-        }
-        return allPostsQuery({ accessToken, searchParams })
-    }, [accessToken, searchParams])
+        return allPostsQuery({ searchParams })
+    }, [searchParams])
     const [allPostsData, isLoading, errors] = useQuery({
         queryKey: ["posts"],
         queryFn,

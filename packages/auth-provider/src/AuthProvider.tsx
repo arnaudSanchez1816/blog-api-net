@@ -3,15 +3,16 @@ import {
     useCallback,
     useLayoutEffect,
     useMemo,
+    useRef,
     useState,
 } from "react"
 import { fetchAccessToken } from "@repo/client-api/auth"
 import { fetchCurrentUser, UserDetails } from "@repo/client-api/users"
 import type { ReactNode } from "react"
+import { configureAuthFetch } from "@repo/client-api/authFetch"
 
 export interface AuthContextProps {
     user: UserDetails | null
-    accessToken: string | null
     login: ({ email, password }: LoginParams) => Promise<{
         user?: UserDetails
         error?: string
@@ -34,17 +35,36 @@ export const AuthProvider = ({
     loaderComponent: React.ReactElement
 }) => {
     const [user, setUser] = useState<UserDetails | null>(null)
-    const [accessToken, setAccessToken] = useState<string | null>(null)
+    const accessTokenRef = useRef<string | null>(null)
     const [init, setInit] = useState(false)
+
+    const setAccessToken = useCallback((token: string | null) => {
+        accessTokenRef.current = token
+    }, [])
 
     useLayoutEffect(() => {
         const controller = new AbortController()
+
+        // Setup the auth fetch module, this allows it to get/update the accessToken
+        // when doing a fetch retry in case of an expired token
+        // No need to pass the access token manually anymore too
+        configureAuthFetch({
+            getToken: () => accessTokenRef.current,
+            onRefreshed: setAccessToken,
+            onRefreshFailed: (response: Response) => {
+                setAccessToken(null)
+                if (response.status === 401) {
+                    // We are no longer authenticated
+                    setUser(null)
+                }
+            },
+        })
 
         const initAuthProvider = async () => {
             try {
                 const token = await fetchAccessToken(controller.signal)
                 setAccessToken(token)
-                const user = await fetchCurrentUser(token, controller.signal)
+                const user = await fetchCurrentUser(controller.signal)
                 setUser(user)
             } catch (error) {
                 if (controller.signal.aborted) {
@@ -66,7 +86,7 @@ export const AuthProvider = ({
         return () => {
             controller.abort()
         }
-    }, [])
+    }, [setAccessToken])
 
     const login = useCallback(
         async ({
@@ -127,7 +147,7 @@ export const AuthProvider = ({
                 throw error
             }
         },
-        []
+        [setAccessToken]
     )
 
     const logout = useCallback(async (): Promise<void | {
@@ -158,11 +178,11 @@ export const AuthProvider = ({
             setUser(null)
             setAccessToken(null)
         }
-    }, [])
+    }, [setAccessToken])
 
     const providerValue = useMemo(() => {
-        return { user, accessToken, login, logout }
-    }, [user, accessToken, login, logout])
+        return { user, login, logout }
+    }, [user, login, logout])
 
     if (init === false) {
         return loaderComponent || <div>Loading</div>

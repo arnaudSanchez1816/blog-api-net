@@ -5,7 +5,6 @@ import CommentReplyForm from "./CommentReplyForm"
 import useQuery from "../../hooks/useQuery"
 import { ComponentProps, ReactNode, useCallback } from "react"
 import { CommentDetails, fetchComments } from "@repo/client-api/comments"
-import useAuth from "@repo/auth-provider/useAuth"
 
 export const commentsSectionId = "comments"
 
@@ -55,17 +54,9 @@ export default function CommentsSection({
     commentRender,
     autoFetch = true,
 }: CommentsSectionProps) {
-    let accessToken: string | null | undefined
-    try {
-        const authContext = useAuth()
-        accessToken = authContext.accessToken
-    } catch {
-        /* empty */
-    }
-
     const fetchCommentsQuery = useCallback(() => {
-        return fetchComments(postSlug, accessToken)
-    }, [postSlug, accessToken])
+        return fetchComments(postSlug)
+    }, [postSlug])
 
     const [comments, loading, error, triggerFetch] = useQuery({
         queryFn: fetchCommentsQuery,

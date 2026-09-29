@@ -1,12 +1,9 @@
 import { addToast } from "@heroui/react"
 import { deleteComment } from "@repo/client-api/comments"
 import { parseErrorResponse } from "../utils/parseErrorResponse"
-import { ActionFunctionArgs } from "react-router"
+import { ActionFunctionArgs, data } from "react-router"
 
-export async function commentsAction(
-    { request, params }: ActionFunctionArgs,
-    accessToken: string
-) {
+export async function commentsAction({ request, params }: ActionFunctionArgs) {
     const { method } = request
     const { id } = params
 
@@ -15,13 +12,15 @@ export async function commentsAction(
             throw new Error("Delete comment action id invalid")
         }
 
-        return await deleteCommentAction(id, accessToken)
+        return await deleteCommentAction(id)
     }
+
+    throw data({ message: "Invalid method" }, 400)
 }
 
-async function deleteCommentAction(id: string, accessToken: string) {
+async function deleteCommentAction(id: string) {
     try {
-        const deletedComment = await deleteComment(id, accessToken)
+        const deletedComment = await deleteComment(id)
         addToast({
             title: "Success",
             description: "Comment deleted successfully",

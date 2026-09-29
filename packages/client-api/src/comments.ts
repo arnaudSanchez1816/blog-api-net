@@ -1,3 +1,4 @@
+import { authFetch } from "./authFetch"
 import { checkApiUrlEnvVariable } from "./utils"
 
 export interface CommentDetails {
@@ -14,20 +15,19 @@ export interface PostCommentParams {
     commentBody: string
 }
 
-export const postComment = async (
-    { postSlug, username, commentBody }: PostCommentParams,
-    accessToken?: string | null
-): Promise<CommentDetails> => {
+export const postComment = async ({
+    postSlug,
+    username,
+    commentBody,
+}: PostCommentParams): Promise<CommentDetails> => {
     checkApiUrlEnvVariable()
     const API_URL = import.meta.env.VITE_API_URL
 
     const url = new URL(`./posts/${postSlug}/comments`, API_URL)
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         },
         body: JSON.stringify({
             username,
@@ -51,8 +51,7 @@ export interface FetchCommentsResult {
 }
 
 export const fetchComments = async (
-    postSlug: string,
-    accessToken?: string | null
+    postSlug: string
 ): Promise<FetchCommentsResult> => {
     if (!postSlug) {
         throw new Error("PostSlug is invalid")
@@ -63,12 +62,10 @@ export const fetchComments = async (
         `./posts/${postSlug}/comments`,
         import.meta.env.VITE_API_URL
     )
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "get",
         headers: {
             "Content-Type": "application/json",
-            ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         },
     })
     if (!response.ok) {
@@ -79,8 +76,7 @@ export const fetchComments = async (
 }
 
 export const deleteComment = async (
-    commentId: string,
-    accessToken: string
+    commentId: string
 ): Promise<CommentDetails> => {
     if (!commentId) {
         throw new Error("Comment id is invalid")
@@ -88,12 +84,10 @@ export const deleteComment = async (
 
     checkApiUrlEnvVariable()
     const url = new URL(`./comments/${commentId}`, import.meta.env.VITE_API_URL)
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
     })
     if (!response.ok) {

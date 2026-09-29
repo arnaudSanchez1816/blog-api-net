@@ -1,3 +1,4 @@
+import { authFetch } from "./authFetch"
 import { checkApiUrlEnvVariable } from "./utils"
 
 export interface PostDetails {
@@ -29,17 +30,15 @@ export interface CreatePostParams {
     title: string
 }
 
-export const createPost = async (
-    { title }: CreatePostParams,
-    token: string
-): Promise<PostDetails> => {
+export const createPost = async ({
+    title,
+}: CreatePostParams): Promise<PostDetails> => {
     checkApiUrlEnvVariable()
     const url = new URL("./posts", import.meta.env.VITE_API_URL)
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
         method: "post",
         headers: {
             "Content-type": "application/json",
-            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ title }),
     })
@@ -73,17 +72,14 @@ export interface FetchPostsResult {
     results: Omit<PostDetails, "body">[]
 }
 
-export const fetchPosts = async (
-    {
-        q,
-        tags,
-        page,
-        pageSize,
-        sortBy,
-        showUnpublished = false,
-    }: FetchPostsParams,
-    token?: string
-): Promise<FetchPostsResult> => {
+export const fetchPosts = async ({
+    q,
+    tags,
+    page,
+    pageSize,
+    sortBy,
+    showUnpublished = false,
+}: FetchPostsParams): Promise<FetchPostsResult> => {
     const searchParams = new URLSearchParams()
     if (page) {
         searchParams.set("page", page.toString())
@@ -117,11 +113,9 @@ export const fetchPosts = async (
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./posts?${searchParams}`, apiUrl)
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         headers: {
             "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
         },
     })
 
@@ -136,18 +130,13 @@ export const fetchPosts = async (
     }
 }
 
-export const fetchPost = async (
-    slug: string,
-    accessToken?: string | null
-): Promise<PostDetails> => {
+export const fetchPost = async (slug: string): Promise<PostDetails> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./posts/${slug}`, apiUrl)
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         headers: {
             "Content-Type": "application/json",
-            ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         },
     })
 
@@ -161,19 +150,16 @@ export const fetchPost = async (
 }
 
 export const deletePost = async (
-    postSlug: string,
-    accessToken: string
+    postSlug: string
 ): Promise<PostDetailsWithoutCommentsAndTags> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./posts/${postSlug}`, apiUrl)
 
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "DELETE",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
     })
 
@@ -186,20 +172,15 @@ export const deletePost = async (
     return post
 }
 
-export const publishPost = async (
-    postSlug: string,
-    accessToken: string
-): Promise<void> => {
+export const publishPost = async (postSlug: string): Promise<void> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./posts/${postSlug}`, apiUrl)
 
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
             isPublished: true,
@@ -211,20 +192,15 @@ export const publishPost = async (
     }
 }
 
-export const hidePost = async (
-    postSlug: string,
-    accessToken: string
-): Promise<void> => {
+export const hidePost = async (postSlug: string): Promise<void> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./posts/${postSlug}`, apiUrl)
 
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "PUT",
         headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
             isPublished: false,
@@ -244,18 +220,15 @@ interface UpdatePostParams {
 
 export const updatePost = async (
     postSlug: string,
-    { body, title, tags }: UpdatePostParams,
-    accessToken: string
+    { body, title, tags }: UpdatePostParams
 ): Promise<Omit<PostDetails, "commentsCount">> => {
     checkApiUrlEnvVariable()
     const apiUrl = import.meta.env.VITE_API_URL
     const url = new URL(`./posts/${postSlug}`, apiUrl)
-    const response = await fetch(url, {
-        mode: "cors",
+    const response = await authFetch(url, {
         method: "PUT",
         headers: {
             "Content-type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ body, title, tags }),
     })

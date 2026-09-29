@@ -23,17 +23,13 @@ interface EditPostLoaderReturnValue {
     allTags: TagDetails[]
 }
 
-export async function editPostLoader(
-    { params }: LoaderFunctionArgs,
-    accessToken: string | null
-): Promise<EditPostLoaderReturnValue> {
+export async function editPostLoader({
+    params,
+}: LoaderFunctionArgs): Promise<EditPostLoaderReturnValue> {
     const postSlugSchema = postSchema.pick({ slug: true })
     const { slug } = await postSlugSchema.parseAsync({ slug: params.postSlug })
 
-    const [post, allTags] = await Promise.all([
-        fetchPost(slug, accessToken),
-        fetchTags(),
-    ])
+    const [post, allTags] = await Promise.all([fetchPost(slug), fetchTags()])
     return { post, allTags: allTags.results }
 }
 

@@ -30,7 +30,7 @@ import SearchLayout, {
 } from "@repo/ui/components/layouts/SearchLayout"
 
 function Root() {
-    const { user, logout, accessToken } = useAuth()
+    const { user, logout } = useAuth()
 
     const router = useMemo(
         () =>
@@ -57,15 +57,7 @@ function Root() {
                                     loader={searchLayoutLoader}
                                 >
                                     <Route index element={<Home />}></Route>
-                                    <Route
-                                        path="/posts"
-                                        action={(actionFuncArgs) =>
-                                            postsAction(
-                                                actionFuncArgs,
-                                                accessToken!
-                                            )
-                                        }
-                                    >
+                                    <Route path="/posts" action={postsAction}>
                                         <Route
                                             index
                                             element={<AllPosts />}
@@ -76,30 +68,15 @@ function Root() {
                                         <Route
                                             path=":postSlug"
                                             element={<Post />}
-                                            loader={(loaderArgs) =>
-                                                postLoader(
-                                                    loaderArgs,
-                                                    accessToken!
-                                                )
-                                            }
-                                            action={(loaderArgs) =>
-                                                postsAction(
-                                                    loaderArgs,
-                                                    accessToken!
-                                                )
-                                            }
+                                            loader={postLoader}
+                                            action={postsAction}
                                         />
                                     </Route>
                                     <Route
                                         path="/tags"
                                         element={<Tags />}
                                         loader={tagsLoader}
-                                        action={(actionFuncArgs) =>
-                                            tagsAction(
-                                                actionFuncArgs,
-                                                accessToken!
-                                            )
-                                        }
+                                        action={tagsAction}
                                     ></Route>
                                     <Route
                                         path="/search"
@@ -113,27 +90,15 @@ function Root() {
                                 <Route
                                     path="/posts/:postSlug/edit"
                                     element={<EditPost />}
-                                    loader={(actionFuncArgs) =>
-                                        editPostLoader(
-                                            actionFuncArgs,
-                                            accessToken!
-                                        )
-                                    }
-                                    action={(actionsArgs) =>
-                                        editPostsActions(
-                                            actionsArgs,
-                                            accessToken!
-                                        )
-                                    }
+                                    loader={editPostLoader}
+                                    action={editPostsActions}
                                 />
                             </Route>
                             <Route path="/login" element={<Login />}></Route>
                             <Route path="/logout" action={logout}></Route>
                             <Route
                                 path="/comments/:id"
-                                action={(actionArgs) =>
-                                    commentsAction(actionArgs, accessToken!)
-                                }
+                                action={commentsAction}
                             ></Route>
                             <Route
                                 path="/*"
@@ -145,7 +110,7 @@ function Root() {
                     </Route>
                 )
             ),
-        [accessToken, logout, user]
+        [logout, user]
     )
 
     return <RouterProvider router={router} />

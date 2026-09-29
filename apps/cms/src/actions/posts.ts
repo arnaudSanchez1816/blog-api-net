@@ -12,16 +12,13 @@ export const DELETE_INTENT = "delete"
 export const PUBLISH_INTENT = "publish"
 export const HIDE_INTENT = "hide"
 
-export async function postsAction(
-    { request, params }: ActionFunctionArgs,
-    accessToken: string
-) {
+export async function postsAction({ request, params }: ActionFunctionArgs) {
     const { method } = request
     const { postSlug } = params
 
     const formData = await request.formData()
     if (method === "POST" && !postSlug) {
-        return await createNewPost(formData, accessToken)
+        return await createNewPost(formData)
     }
 
     if (postSlug) {
@@ -29,11 +26,11 @@ export async function postsAction(
 
         switch (intent) {
             case DELETE_INTENT:
-                return await deletePostAction(postSlug, accessToken)
+                return await deletePostAction(postSlug)
             case PUBLISH_INTENT:
-                return await publishPostAction(postSlug, accessToken)
+                return await publishPostAction(postSlug)
             case HIDE_INTENT:
-                return await hidePostAction(postSlug, accessToken)
+                return await hidePostAction(postSlug)
             default:
                 throw data({ message: "Invalid intent" }, 400)
         }
@@ -42,17 +39,14 @@ export async function postsAction(
     throw data({ message: "Invalid action" }, 400)
 }
 
-async function createNewPost(formData: FormData, accessToken: string) {
+async function createNewPost(formData: FormData) {
     try {
         const title = formData.get("title")
         if (!title) {
             throw new Error("Create Tag Action title param missing")
         }
 
-        const newPost = await createPost(
-            { title: title.toString() },
-            accessToken
-        )
+        const newPost = await createPost({ title: title.toString() })
 
         addToast({
             title: "Success",
@@ -76,9 +70,9 @@ async function createNewPost(formData: FormData, accessToken: string) {
     }
 }
 
-async function deletePostAction(postSlug: string, accessToken: string) {
+async function deletePostAction(postSlug: string) {
     try {
-        await deletePost(postSlug, accessToken)
+        await deletePost(postSlug)
         addToast({
             title: "Success",
             description: "Post deleted successfully",
@@ -100,14 +94,15 @@ async function deletePostAction(postSlug: string, accessToken: string) {
     }
 }
 
-async function publishPostAction(postSlug: string, accessToken: string) {
+async function publishPostAction(postSlug: string) {
     try {
-        await publishPost(postSlug, accessToken)
+        await publishPost(postSlug)
         addToast({
             title: "Success",
             description: "Post published successfully",
             color: "success",
         })
+        return null
     } catch (error) {
         if (error instanceof Response) {
             const errorResponse = await parseErrorResponse(error)
@@ -123,14 +118,15 @@ async function publishPostAction(postSlug: string, accessToken: string) {
     }
 }
 
-async function hidePostAction(postSlug: string, accessToken: string) {
+async function hidePostAction(postSlug: string) {
     try {
-        await hidePost(postSlug, accessToken)
+        await hidePost(postSlug)
         addToast({
             title: "Success",
             description: "Post hidden successfully",
             color: "success",
         })
+        return null
     } catch (error) {
         if (error instanceof Response) {
             const errorResponse = await parseErrorResponse(error)
